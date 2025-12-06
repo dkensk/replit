@@ -10,6 +10,7 @@ import Workouts from "@/pages/Workouts";
 import Diet from "@/pages/Diet";
 import Skills from "@/pages/Skills";
 import AI from "@/pages/AI";
+import { UserProvider } from "./lib/UserContext";
 
 function Router() {
   return (
@@ -29,8 +30,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <UserProvider>
+          <Toaster />
+          <Router />
+        </UserProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

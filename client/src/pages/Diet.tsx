@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, Check } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertCircle, Check, Target, Info } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
 import { useState } from "react";
@@ -25,7 +26,7 @@ type MealSection = {
 };
 
 export default function Diet() {
-  const { macros } = useUser();
+  const { profile, updateProfile, macros, recommendedMacros } = useUser();
   const [selectedMeals, setSelectedMeals] = useState<Record<string, string>>({
     breakfast: "oatmeal",
     lunch: "chicken",
@@ -93,34 +94,64 @@ export default function Diet() {
 
   return (
     <Layout>
-      <div className="relative h-40 w-full overflow-hidden rounded-b-3xl shadow-xl mb-6">
+      <div className="relative h-48 w-full overflow-hidden rounded-b-3xl shadow-xl mb-6">
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
         <img src={foodImage} alt="Food" className="w-full h-full object-cover opacity-60" />
-        <div className="absolute bottom-4 left-6 z-20">
-          <h1 className="text-3xl font-heading font-bold text-white uppercase">Nutrition Plan</h1>
-          <p className="text-green-400 font-medium flex items-center gap-2">
-             <Check className="w-4 h-4" /> Dynamic Plan
-          </p>
+        <div className="absolute bottom-4 left-6 z-20 w-[90%]">
+          <div className="flex justify-between items-end mb-2">
+            <h1 className="text-3xl font-heading font-bold text-white uppercase">Nutrition</h1>
+            <div className="bg-black/30 backdrop-blur-md rounded-lg p-1 border border-white/10">
+              <Select 
+                value={profile.goal} 
+                onValueChange={(val: any) => updateProfile({ goal: val })}
+              >
+                <SelectTrigger className="h-8 border-none bg-transparent text-white w-[120px] focus:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="muscle">Build Muscle</SelectItem>
+                  <SelectItem value="fatloss">Lose Fat</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="flex gap-4 text-xs font-medium text-white/80 bg-black/20 p-2 rounded-lg backdrop-blur-sm inline-flex">
+            <div className="flex items-center gap-1">
+              <Target className="w-3 h-3 text-primary" />
+              <span>Target: {macros.calories} kcal</span>
+            </div>
+             <div className="flex items-center gap-1">
+              <Info className="w-3 h-3 text-muted-foreground" />
+              <span className="text-muted-foreground">Rec: {recommendedMacros.calories}</span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="px-4 pb-20 space-y-6">
         {/* Macros */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: "Protein", current: current.protein, target: macros.protein, color: "bg-blue-500" },
-            { label: "Carbs", current: current.carbs, target: macros.carbs, color: "bg-green-500" },
-            { label: "Fats", current: current.fats, target: macros.fats, color: "bg-yellow-500" },
-          ].map((macro) => (
-            <Card key={macro.label} className="bg-secondary/30 border-white/5 text-center">
+        <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-secondary/30 border-white/5 text-center">
               <CardContent className="p-3">
-                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">{macro.label}</span>
-                <span className="text-xl font-heading font-bold text-white">{macro.current}g</span>
-                <Progress value={(macro.current / macro.target) * 100} className={`h-1 mt-2 ${macro.color}`} />
-                <span className="text-[10px] text-muted-foreground mt-1 block">of {macro.target}g</span>
+                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">Protein Goal</span>
+                <div className="flex justify-center items-end gap-2">
+                   <span className="text-2xl font-heading font-bold text-white">{macros.protein}g</span>
+                   <span className="text-[10px] text-muted-foreground mb-1">/ {recommendedMacros.protein}g rec</span>
+                </div>
+                <Progress value={(current.protein / macros.protein) * 100} className="h-1 mt-2 bg-blue-500/20" />
               </CardContent>
             </Card>
-          ))}
+            <Card className="bg-secondary/30 border-white/5 text-center">
+              <CardContent className="p-3">
+                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">Calories Goal</span>
+                <div className="flex justify-center items-end gap-2">
+                   <span className="text-2xl font-heading font-bold text-white">{macros.calories}</span>
+                   <span className="text-[10px] text-muted-foreground mb-1">/ {recommendedMacros.calories} rec</span>
+                </div>
+                <Progress value={(current.calories / macros.calories) * 100} className="h-1 mt-2 bg-primary/20" />
+              </CardContent>
+            </Card>
         </div>
 
         {/* Meals Selection Accordion */}
@@ -175,17 +206,6 @@ export default function Diet() {
             })}
           </Accordion>
         </div>
-
-        {/* Allergy Alert */}
-        <Card className="bg-red-500/10 border-red-500/20">
-          <CardContent className="p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
-            <div>
-              <h4 className="font-bold text-red-400">Allergy Reminder</h4>
-              <p className="text-sm text-red-200/70">This plan excludes all peanuts and tree nuts as per your settings.</p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </Layout>
   );

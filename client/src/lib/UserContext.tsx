@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
+type WeeklySchedule = {
+  [key: string]: string; // "monday": "Legs - Strength"
+};
+
 type UserProfile = {
   age: number;
   weight: number; // lbs
@@ -8,6 +12,7 @@ type UserProfile = {
   goal: "muscle" | "fatloss";
   position: "defense" | "wing" | "center" | "goalie";
   level: "house" | "a" | "aa" | "aaa" | "junior";
+  schedule: WeeklySchedule;
 };
 
 type UserContextType = {
@@ -19,6 +24,20 @@ type UserContextType = {
     fats: number;
     calories: number;
   };
+  recommendedMacros: {
+    protein: number;
+    calories: number;
+  }
+};
+
+const defaultSchedule: WeeklySchedule = {
+  monday: "legs_strength",
+  tuesday: "upper_body",
+  wednesday: "skills_cardio",
+  thursday: "legs_explosive",
+  friday: "full_body",
+  saturday: "active_recovery",
+  sunday: "rest",
 };
 
 const defaultProfile: UserProfile = {
@@ -29,6 +48,7 @@ const defaultProfile: UserProfile = {
   goal: "muscle",
   position: "defense",
   level: "aa",
+  schedule: defaultSchedule,
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -40,7 +60,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem("puckpro_profile");
       if (saved) {
         try {
-          return { ...defaultProfile, ...JSON.parse(saved) };
+          const parsed = JSON.parse(saved);
+          return { ...defaultProfile, ...parsed, schedule: parsed.schedule || defaultSchedule };
         } catch (e) {
           console.error("Failed to parse profile", e);
         }
@@ -79,12 +100,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const remainingCalories = calories - caloriesFromProtein - caloriesFromFat;
   const carbs = Math.max(0, Math.round(remainingCalories / 4));
 
+  // Recommended values (Baseline without goal adjustment, or just explicit "recommended")
+  // We can treat the calculated values as recommended for the selected goal.
+  // The user asked to show "Recommended" vs "Target". 
+  // Let's assume Recommended is the baseline for an athlete of that weight, and Target is adjusted by Goal.
+  const recommendedProtein = Math.round(profile.weight * 1);
+  const recommendedCalories = Math.round(profile.weight * 15); // Maintenance
+
   return (
     <UserContext.Provider
       value={{
         profile,
         updateProfile,
         macros: { protein, carbs, fats, calories },
+        recommendedMacros: { protein: recommendedProtein, calories: recommendedCalories }
       }}
     >
       {children}

@@ -6,6 +6,8 @@ type UserProfile = {
   heightFt: number;
   heightIn: number;
   goal: "muscle" | "fatloss";
+  position: "defense" | "wing" | "center" | "goalie";
+  level: "house" | "a" | "aa" | "aaa" | "junior";
 };
 
 type UserContextType = {
@@ -25,13 +27,32 @@ const defaultProfile: UserProfile = {
   heightFt: 5,
   heightIn: 10,
   goal: "muscle",
+  position: "defense",
+  level: "aa",
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  // In a real app, we'd load this from localStorage or an API
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+  const [profile, setProfile] = useState<UserProfile>(() => {
+    // Load from localStorage on initialization
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("puckpro_profile");
+      if (saved) {
+        try {
+          return { ...defaultProfile, ...JSON.parse(saved) };
+        } catch (e) {
+          console.error("Failed to parse profile", e);
+        }
+      }
+    }
+    return defaultProfile;
+  });
+
+  // Save to localStorage whenever profile changes
+  useEffect(() => {
+    localStorage.setItem("puckpro_profile", JSON.stringify(profile));
+  }, [profile]);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
     setProfile((prev) => ({ ...prev, ...updates }));

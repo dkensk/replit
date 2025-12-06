@@ -1,11 +1,41 @@
 import Layout from "@/components/layout/Layout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Zap, Flame, Calendar, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Zap, Flame, Calendar, ChevronRight, Settings2 } from "lucide-react";
 import heroImage from "@assets/generated_images/cinematic_hockey_arena_ice_surface.png";
+import { useUser } from "@/lib/UserContext";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const { profile, updateProfile, macros } = useUser();
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Local state for form handling
+  const [formData, setFormData] = useState({
+    weight: profile.weight,
+    heightFt: profile.heightFt,
+    heightIn: profile.heightIn,
+    age: profile.age
+  });
+
+  // Update local state when profile changes (e.g. on first load)
+  useEffect(() => {
+    setFormData({
+      weight: profile.weight,
+      heightFt: profile.heightFt,
+      heightIn: profile.heightIn,
+      age: profile.age
+    });
+  }, [profile]);
+
+  const handleSave = () => {
+    updateProfile(formData);
+    setIsEditing(false);
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -23,6 +53,91 @@ export default function Home() {
       </div>
 
       <div className="p-6 space-y-8">
+        {/* Profile / Stats Editor */}
+        <section>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-heading font-semibold text-white">Your Stats</h2>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-primary hover:text-primary/80 hover:bg-primary/10"
+              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+            >
+              {isEditing ? "Save Changes" : <Settings2 className="w-4 h-4" />}
+            </Button>
+          </div>
+          
+          {isEditing ? (
+             <Card className="bg-secondary/50 border-primary/50 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+              <CardContent className="p-4 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Weight (lbs)</Label>
+                  <Input 
+                    type="number" 
+                    value={formData.weight}
+                    onChange={(e) => setFormData({...formData, weight: parseInt(e.target.value) || 0})}
+                    className="bg-background/50 border-white/10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Age</Label>
+                  <Input 
+                    type="number" 
+                    value={formData.age}
+                    onChange={(e) => setFormData({...formData, age: parseInt(e.target.value) || 0})}
+                    className="bg-background/50 border-white/10"
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Height</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 flex items-center gap-2">
+                      <Input 
+                        type="number" 
+                        value={formData.heightFt}
+                        onChange={(e) => setFormData({...formData, heightFt: parseInt(e.target.value) || 0})}
+                        className="bg-background/50 border-white/10"
+                      />
+                      <span className="text-muted-foreground text-sm">ft</span>
+                    </div>
+                    <div className="flex-1 flex items-center gap-2">
+                       <Input 
+                        type="number" 
+                        value={formData.heightIn}
+                        onChange={(e) => setFormData({...formData, heightIn: parseInt(e.target.value) || 0})}
+                        className="bg-background/50 border-white/10"
+                      />
+                      <span className="text-muted-foreground text-sm">in</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-3 gap-4">
+              <Card className="bg-secondary/50 border-white/5 backdrop-blur-sm">
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <span className="text-xs text-muted-foreground uppercase mb-1">Weight</span>
+                  <span className="text-xl font-bold font-heading text-white">{profile.weight} <span className="text-xs text-muted-foreground font-normal">lbs</span></span>
+                </CardContent>
+              </Card>
+              <Card className="bg-secondary/50 border-white/5 backdrop-blur-sm">
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <span className="text-xs text-muted-foreground uppercase mb-1">Height</span>
+                  <span className="text-xl font-bold font-heading text-white">{profile.heightFt}'{profile.heightIn}"</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-secondary/50 border-white/5 backdrop-blur-sm">
+                 <CardContent className="p-3 flex flex-col items-center text-center">
+                  <span className="text-xs text-muted-foreground uppercase mb-1">Target</span>
+                  <span className="text-xl font-bold font-heading text-primary">{macros.protein}g</span>
+                  <span className="text-[10px] text-muted-foreground">Protein</span>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </section>
+
         {/* Daily Stats */}
         <div className="grid grid-cols-2 gap-4">
           <Card className="bg-secondary/50 border-white/5 backdrop-blur-sm">
@@ -30,7 +145,7 @@ export default function Home() {
               <div className="p-2 rounded-full bg-orange-500/20 text-orange-500 mb-2">
                 <Flame className="w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold font-heading text-white">2,450</span>
+              <span className="text-2xl font-bold font-heading text-white">{macros.calories}</span>
               <span className="text-xs text-muted-foreground uppercase">Calories</span>
             </CardContent>
           </Card>
@@ -89,15 +204,15 @@ export default function Home() {
             <CardContent className="p-5">
               <div className="flex justify-between items-end mb-2">
                 <span className="text-sm font-medium text-muted-foreground">Protein</span>
-                <span className="text-sm font-bold text-white">140g / 180g</span>
+                <span className="text-sm font-bold text-white">{(macros.protein * 0.6).toFixed(0)}g / {macros.protein}g</span>
               </div>
-              <Progress value={78} className="h-2 bg-secondary" />
+              <Progress value={60} className="h-2 bg-secondary" />
               
               <div className="flex justify-between items-end mt-4 mb-2">
                 <span className="text-sm font-medium text-muted-foreground">Carbs</span>
-                <span className="text-sm font-bold text-white">210g / 300g</span>
+                <span className="text-sm font-bold text-white">{(macros.carbs * 0.5).toFixed(0)}g / {macros.carbs}g</span>
               </div>
-              <Progress value={65} className="h-2 bg-secondary" />
+              <Progress value={50} className="h-2 bg-secondary" />
             </CardContent>
           </Card>
         </section>

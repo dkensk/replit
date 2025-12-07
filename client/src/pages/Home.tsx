@@ -270,15 +270,26 @@ export default function Home() {
 
         {/* Streak Calendar Section */}
         <section>
-          <div className="flex justify-between items-center mb-4">
-             <div className="flex items-center gap-2">
-                <h2 className="text-xl font-heading font-semibold text-white">Activity Log</h2>
+          <div className="flex flex-col gap-4 mb-4">
+             <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-heading font-semibold text-white">Activity Log</h2>
+                </div>
+                {selectedDate && (
+                    <div className="text-right">
+                        <span className="text-xs font-bold text-primary uppercase tracking-wider block">
+                            {format(selectedDate, 'MMM do')}
+                        </span>
+                        <span className="text-sm font-medium text-white">
+                             {getScheduledWorkoutForDate(selectedDate)}
+                        </span>
+                    </div>
+                )}
              </div>
           </div>
           <Card className="bg-secondary/30 border-white/5">
              <CardContent className="p-4">
-               <div className="flex flex-col md:flex-row gap-6">
-                 <div className="flex-[2]">
+               <div className="w-full">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
@@ -296,42 +307,20 @@ export default function Home() {
                         }
                       }}
                     />
-                 </div>
-                 <div className="flex-1 flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6 min-w-[200px]">
-                    {selectedDate && (
-                      <div className="space-y-3">
-                         <div className="text-sm text-muted-foreground uppercase font-bold tracking-wider">
-                           {format(selectedDate, 'EEEE, MMM do')}
-                         </div>
-                         <div>
-                            <h3 className="text-lg font-bold text-white mb-1">
-                              {getScheduledWorkoutForDate(selectedDate)}
-                            </h3>
-                            <p className="text-sm text-gray-400">
-                              {profile.workoutHistory.includes(format(selectedDate, 'yyyy-MM-dd')) 
-                                ? "Completed ✅" 
-                                : isSameDay(selectedDate, new Date()) 
-                                  ? "Scheduled for today"
-                                  : "Scheduled"}
-                            </p>
-                         </div>
-                         {isSameDay(selectedDate, new Date()) && !isTodayCompleted && (
-                           <Button 
-                             size="sm" 
-                             className="w-full bg-primary/20 text-primary hover:bg-primary/30 border border-primary/50"
-                             onClick={() => {
-                               // This just scrolls to the next workout card or we can replicate the button
-                               // For now, let's just use it as a shortcut to complete
-                               handleCompleteWorkout();
-                             }}
-                           >
-                             Log as Complete
-                           </Button>
-                         )}
-                      </div>
-                    )}
-                 </div>
                </div>
+               
+               {/* Mobile-only action button if needed, but keeping it clean for now as requested */}
+               {isSameDay(selectedDate || new Date(), new Date()) && !isTodayCompleted && (
+                   <div className="mt-4">
+                       <Button 
+                         size="sm" 
+                         className="w-full bg-primary/20 text-primary hover:bg-primary/30 border border-primary/50"
+                         onClick={handleCompleteWorkout}
+                       >
+                         Log Today as Complete
+                       </Button>
+                   </div>
+               )}
              </CardContent>
           </Card>
         </section>

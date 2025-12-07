@@ -13,6 +13,7 @@ type UserProfile = {
   position: "defense" | "wing" | "center" | "goalie";
   level: "house" | "a" | "aa" | "aaa" | "junior";
   schedule: WeeklySchedule;
+  workoutDuration: number; // minutes
 };
 
 type UserContextType = {
@@ -49,6 +50,7 @@ const defaultProfile: UserProfile = {
   position: "defense",
   level: "aa",
   schedule: defaultSchedule,
+  workoutDuration: 60,
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -61,7 +63,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          return { ...defaultProfile, ...parsed, schedule: parsed.schedule || defaultSchedule };
+          return { 
+            ...defaultProfile, 
+            ...parsed, 
+            schedule: parsed.schedule || defaultSchedule,
+            workoutDuration: parsed.workoutDuration || 60
+          };
         } catch (e) {
           console.error("Failed to parse profile", e);
         }

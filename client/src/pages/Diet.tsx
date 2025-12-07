@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Check, Target, Info, Plus } from "lucide-react";
+import { AlertCircle, Check, Target, Info, Plus, ChefHat } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
 import { useState } from "react";
@@ -21,6 +21,7 @@ type MealOption = {
   protein: number;
   carbs: number;
   fats: number;
+  recipe?: string; // Added recipe field
 };
 
 type MealSection = {
@@ -64,42 +65,138 @@ export default function Diet() {
     fats: ""
   });
 
-  // Base meals with simple names
+  // Base meals with simple names AND recipes
   const baseMeals: MealSection[] = [
     {
       id: "breakfast",
       title: "Breakfast",
       options: [
-        { id: "oatmeal", name: "Oatmeal & Berries", calories: 550, protein: 35, carbs: 75, fats: 12 },
-        { id: "eggs_toast", name: "Eggs & Toast", calories: 520, protein: 40, carbs: 30, fats: 25 },
-        { id: "yogurt_parfait", name: "Yogurt Parfait", calories: 450, protein: 35, carbs: 50, fats: 10 }
+        { 
+          id: "oatmeal", 
+          name: "Oatmeal & Berries", 
+          calories: 550, 
+          protein: 35, 
+          carbs: 75, 
+          fats: 12,
+          recipe: "1. Mix 1 cup oats with 1 scoop whey protein.\n2. Add hot water or milk and stir well.\n3. Top with 1/2 cup mixed berries and a tbsp of chia seeds."
+        },
+        { 
+          id: "eggs_toast", 
+          name: "Eggs & Toast", 
+          calories: 520, 
+          protein: 40, 
+          carbs: 30, 
+          fats: 25,
+          recipe: "1. Scramble or fry 3 large eggs.\n2. Toast 2 slices of whole wheat bread.\n3. Serve with a side of spinach or fruit."
+        },
+        { 
+          id: "yogurt_parfait", 
+          name: "Yogurt Parfait", 
+          calories: 450, 
+          protein: 35, 
+          carbs: 50, 
+          fats: 10,
+          recipe: "1. Fill bowl with 1 cup Greek Yogurt (0% or 2%).\n2. Layer with 1/2 cup granola and honey.\n3. Top with fresh strawberries."
+        }
       ]
     },
     {
       id: "lunch",
       title: "Lunch",
       options: [
-        { id: "chicken_rice", name: "Chicken & Rice", calories: 650, protein: 50, carbs: 70, fats: 18 },
-        { id: "turkey_wrap", name: "Turkey Wrap", calories: 580, protein: 45, carbs: 55, fats: 20 },
-        { id: "beef_stirfry", name: "Beef Stir Fry", calories: 600, protein: 55, carbs: 10, fats: 35 }
+        { 
+          id: "chicken_rice", 
+          name: "Chicken & Rice", 
+          calories: 650, 
+          protein: 50, 
+          carbs: 70, 
+          fats: 18,
+          recipe: "1. Grill 6oz chicken breast with salt/pepper.\n2. Cook 1 cup of jasmine or brown rice.\n3. Serve with steamed broccoli."
+        },
+        { 
+          id: "turkey_wrap", 
+          name: "Turkey Wrap", 
+          calories: 580, 
+          protein: 45, 
+          carbs: 55, 
+          fats: 20,
+          recipe: "1. Lay out large whole wheat tortilla.\n2. Add 5oz sliced turkey, lettuce, tomato, and avocado.\n3. Roll tight and slice in half."
+        },
+        { 
+          id: "beef_stirfry", 
+          name: "Beef Stir Fry", 
+          calories: 600, 
+          protein: 55, 
+          carbs: 10, 
+          fats: 35,
+          recipe: "1. Sauté sliced lean beef strips in pan.\n2. Add bell peppers, onions, and snap peas.\n3. Season with soy sauce and garlic. Serve over cauliflower rice or regular rice."
+        }
       ]
     },
     {
       id: "snack",
       title: "Snack",
       options: [
-        { id: "protein_shake", name: "Protein Shake", calories: 350, protein: 40, carbs: 40, fats: 5 },
-        { id: "rice_cakes_pb", name: "PB & Rice Cakes", calories: 300, protein: 10, carbs: 35, fats: 14 },
-        { id: "protein_bar", name: "Protein Bar", calories: 240, protein: 20, carbs: 25, fats: 9 }
+        { 
+          id: "protein_shake", 
+          name: "Protein Shake", 
+          calories: 350, 
+          protein: 40, 
+          carbs: 40, 
+          fats: 5,
+          recipe: "1. Add 1 scoop whey isolate to shaker.\n2. Add 1 banana and 1 cup almond milk.\n3. Shake or blend with ice."
+        },
+        { 
+          id: "rice_cakes_pb", 
+          name: "PB & Rice Cakes", 
+          calories: 300, 
+          protein: 10, 
+          carbs: 35, 
+          fats: 14,
+          recipe: "1. Take 3 plain rice cakes.\n2. Spread 1 tbsp peanut butter across them.\n3. Top with sliced banana if desired."
+        },
+        { 
+          id: "protein_bar", 
+          name: "Protein Bar", 
+          calories: 240, 
+          protein: 20, 
+          carbs: 25, 
+          fats: 9,
+          recipe: "1. Unwrap and enjoy.\n2. Drink 500ml water with it for digestion."
+        }
       ]
     },
     {
       id: "dinner",
       title: "Dinner",
       options: [
-        { id: "salmon", name: "Salmon & Rice", calories: 700, protein: 45, carbs: 60, fats: 30 },
-        { id: "steak", name: "Steak & Potato", calories: 750, protein: 60, carbs: 50, fats: 35 },
-        { id: "pasta", name: "Pasta Bolognese", calories: 800, protein: 50, carbs: 90, fats: 25 }
+        { 
+          id: "salmon", 
+          name: "Salmon & Rice", 
+          calories: 700, 
+          protein: 45, 
+          carbs: 60, 
+          fats: 30,
+          recipe: "1. Bake 6oz salmon fillet at 400°F for 12-15 mins.\n2. Serve with 1 cup wild rice.\n3. Add asparagus on the side."
+        },
+        { 
+          id: "steak", 
+          name: "Steak & Potato", 
+          calories: 750, 
+          protein: 60, 
+          carbs: 50, 
+          fats: 35,
+          recipe: "1. Pan sear 8oz sirloin steak (medium rare).\n2. Bake or boil 1 medium sweet potato.\n3. Season simple with salt/pepper."
+        },
+        { 
+          id: "pasta", 
+          name: "Pasta Bolognese", 
+          calories: 800, 
+          protein: 50, 
+          carbs: 90, 
+          fats: 25,
+          recipe: "1. Brown lean ground beef/turkey in pot.\n2. Add marinara sauce and simmer.\n3. Serve over 2 cups cooked pasta."
+        }
       ]
     }
   ];
@@ -119,7 +216,8 @@ export default function Diet() {
       calories: parseInt(newMeal.calories) || 0,
       protein: parseInt(newMeal.protein) || 0,
       carbs: parseInt(newMeal.carbs) || 0,
-      fats: parseInt(newMeal.fats) || 0
+      fats: parseInt(newMeal.fats) || 0,
+      recipe: "Custom meal - no recipe instructions."
     };
     
     setCustomMeals(prev => ({
@@ -268,6 +366,19 @@ export default function Diet() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4 pt-0 pl-14">
+                    {/* Selected Meal Recipe - Only show if not checked (or maybe always show?) - Showing always is better for utility */}
+                    {selectedOption?.recipe && (
+                      <div className="bg-secondary/30 rounded-lg p-3 mb-4 border border-white/5">
+                        <div className="flex items-center gap-2 mb-2">
+                           <ChefHat className="w-4 h-4 text-primary" />
+                           <span className="text-xs font-bold text-white uppercase">Preparation</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">
+                          {selectedOption.recipe}
+                        </p>
+                      </div>
+                    )}
+
                     <div className="space-y-2 mt-2">
                       <p className="text-xs text-muted-foreground uppercase mb-2 font-bold">Swap Meal:</p>
                       {section.options.map((option) => (

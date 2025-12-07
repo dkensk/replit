@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw } from "lucide-react";
+import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell } from "lucide-react";
 import gymImage from "@assets/generated_images/athletic_gym_training_equipment.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
@@ -22,48 +22,98 @@ const WORKOUT_TYPES = [
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
-// Exercise Database
+// Exercise Database - Expanded with "Reliable Source" Quality Data
 const EXERCISES: Record<string, Array<{ id: string, name: string, category: string }>> = {
   "legs_compound": [
     { id: "back_squat", name: "Back Squat", category: "legs_compound" },
     { id: "front_squat", name: "Front Squat", category: "legs_compound" },
     { id: "leg_press", name: "Leg Press", category: "legs_compound" },
-    { id: "hack_squat", name: "Hack Squat", category: "legs_compound" }
+    { id: "hack_squat", name: "Hack Squat", category: "legs_compound" },
+    { id: "safety_bar_squat", name: "Safety Bar Squat", category: "legs_compound" },
+    { id: "zercher_squat", name: "Zercher Squat", category: "legs_compound" }
   ],
   "legs_hinge": [
     { id: "rdl", name: "Romanian Deadlift", category: "legs_hinge" },
     { id: "trap_bar", name: "Trap Bar Deadlift", category: "legs_hinge" },
-    { id: "good_morning", name: "Good Mornings", category: "legs_hinge" }
+    { id: "good_morning", name: "Good Mornings", category: "legs_hinge" },
+    { id: "kettlebell_swing", name: "Kettlebell Swing", category: "legs_hinge" },
+    { id: "single_leg_rdl", name: "Single Leg RDL", category: "legs_hinge" }
   ],
   "legs_unilateral": [
     { id: "split_squat", name: "Bulgarian Split Squat", category: "legs_unilateral" },
-    { id: "lunges", name: "Walking Lunges", category: "legs_unilateral" },
-    { id: "step_ups", name: "Box Step Ups", category: "legs_unilateral" }
+    { id: "walking_lunges", name: "Walking Lunges", category: "legs_unilateral" },
+    { id: "reverse_lunges", name: "Reverse Lunges", category: "legs_unilateral" },
+    { id: "step_ups", name: "Box Step Ups", category: "legs_unilateral" },
+    { id: "cossack_squat", name: "Cossack Squat", category: "legs_unilateral" }
   ],
   "legs_explosive": [
     { id: "box_jumps", name: "Box Jumps", category: "legs_explosive" },
     { id: "broad_jumps", name: "Broad Jumps", category: "legs_explosive" },
-    { id: "power_clean", name: "Power Clean", category: "legs_explosive" }
+    { id: "power_clean", name: "Power Clean", category: "legs_explosive" },
+    { id: "depth_jumps", name: "Depth Jumps", category: "legs_explosive" },
+    { id: "skater_jumps", name: "Skater Jumps", category: "legs_explosive" },
+    { id: "hurdle_hops", name: "Hurdle Hops", category: "legs_explosive" }
   ],
   "calves": [
-    { id: "calf_raise", name: "Standing Calf Raise", category: "calves" },
-    { id: "seated_calf", name: "Seated Calf Raise", category: "calves" }
+    { id: "standing_calf_raise", name: "Standing Calf Raise", category: "calves" },
+    { id: "seated_calf_raise", name: "Seated Calf Raise", category: "calves" },
+    { id: "single_leg_calf_raise", name: "Single Leg Calf Raise", category: "calves" }
+  ],
+  "upper_push": [
+    { id: "bench_press", name: "Bench Press", category: "upper_push" },
+    { id: "overhead_press", name: "Overhead Press", category: "upper_push" },
+    { id: "incline_dumbbell_press", name: "Incline DB Press", category: "upper_push" },
+    { id: "dips", name: "Weighted Dips", category: "upper_push" },
+    { id: "landmine_press", name: "Landmine Press", category: "upper_push" }
+  ],
+  "upper_pull": [
+    { id: "pullups", name: "Pull Ups", category: "upper_pull" },
+    { id: "barbell_row", name: "Barbell Row", category: "upper_pull" },
+    { id: "face_pulls", name: "Face Pulls", category: "upper_pull" },
+    { id: "single_arm_row", name: "Single Arm DB Row", category: "upper_pull" },
+    { id: "lat_pulldown", name: "Lat Pulldown", category: "upper_pull" }
+  ],
+  "core": [
+    { id: "plank", name: "Weighted Plank", category: "core" },
+    { id: "pallof_press", name: "Pallof Press", category: "core" },
+    { id: "ab_wheel", name: "Ab Wheel Rollout", category: "core" },
+    { id: "hanging_leg_raise", name: "Hanging Leg Raise", category: "core" },
+    { id: "russian_twist", name: "Russian Twist", category: "core" }
   ]
 };
 
-// Default workouts mapping
+// Default workouts mapping - Professional Grade
 const DEFAULT_WORKOUTS: Record<string, Array<{ id: string, sets: string, reps: string, rest: string, category: string }>> = {
   "legs_strength": [
-    { id: "back_squat", sets: "5", reps: "5", rest: "120s", category: "legs_compound" },
-    { id: "rdl", sets: "4", reps: "8", rest: "90s", category: "legs_hinge" },
-    { id: "split_squat", sets: "3", reps: "8/leg", rest: "60s", category: "legs_unilateral" },
-    { id: "calf_raise", sets: "4", reps: "15", rest: "45s", category: "calves" },
+    { id: "back_squat", sets: "5", reps: "5", rest: "3-5 min", category: "legs_compound" },
+    { id: "rdl", sets: "4", reps: "8-10", rest: "2 min", category: "legs_hinge" },
+    { id: "split_squat", sets: "3", reps: "8/leg", rest: "90s", category: "legs_unilateral" },
+    { id: "standing_calf_raise", sets: "4", reps: "15-20", rest: "60s", category: "calves" },
+    { id: "plank", sets: "3", reps: "45-60s", rest: "60s", category: "core" }
   ],
   "legs_explosive": [
-    { id: "box_jumps", sets: "4", reps: "5", rest: "90s", category: "legs_explosive" },
-    { id: "trap_bar", sets: "4", reps: "5", rest: "120s", category: "legs_hinge" },
-    { id: "lunges", sets: "3", reps: "6/leg", rest: "60s", category: "legs_unilateral" },
-    { id: "power_clean", sets: "3", reps: "3", rest: "120s", category: "legs_explosive" },
+    { id: "box_jumps", sets: "4", reps: "3-5", rest: "2 min", category: "legs_explosive" },
+    { id: "power_clean", sets: "5", reps: "3", rest: "3 min", category: "legs_explosive" },
+    { id: "trap_bar", sets: "4", reps: "5 (Explosive)", rest: "2-3 min", category: "legs_hinge" },
+    { id: "skater_jumps", sets: "3", reps: "8/side", rest: "90s", category: "legs_explosive" },
+    { id: "pallof_press", sets: "3", reps: "10/side", rest: "60s", category: "core" }
+  ],
+  "upper_body": [
+    { id: "bench_press", sets: "4", reps: "6-8", rest: "2-3 min", category: "upper_push" },
+    { id: "pullups", sets: "4", reps: "AMRAP", rest: "2 min", category: "upper_pull" },
+    { id: "overhead_press", sets: "3", reps: "8-10", rest: "2 min", category: "upper_push" },
+    { id: "barbell_row", sets: "3", reps: "10-12", rest: "90s", category: "upper_pull" },
+    { id: "face_pulls", sets: "3", reps: "15", rest: "60s", category: "upper_pull" }
+  ],
+  "full_body": [
+    { id: "trap_bar", sets: "3", reps: "8", rest: "2 min", category: "legs_hinge" },
+    { id: "landmine_press", sets: "3", reps: "10/arm", rest: "90s", category: "upper_push" },
+    { id: "walking_lunges", sets: "3", reps: "10/leg", rest: "90s", category: "legs_unilateral" },
+    { id: "single_arm_row", sets: "3", reps: "10/arm", rest: "90s", category: "upper_pull" },
+    { id: "ab_wheel", sets: "3", reps: "10", rest: "60s", category: "core" }
+  ],
+  "active_recovery": [
+     // Placeholder for lighter work, could use same structure or different UI
   ]
 };
 
@@ -179,35 +229,42 @@ export default function Workouts() {
             </div>
 
             {/* Warmup */}
-            <Card className="bg-secondary/30 border-white/5">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-primary">Warmup</h3>
-                  <span className="text-xs text-muted-foreground">10 mins</span>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-300">
-                  <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-green-500/50"/> Dynamic Stretching</li>
-                  <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-green-500/50"/> 5 min Bike (Light)</li>
-                </ul>
-              </CardContent>
-            </Card>
+            {currentWorkoutType !== "rest" && (
+              <Card className="bg-secondary/30 border-white/5 mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-primary">Warmup</h3>
+                    <span className="text-xs text-muted-foreground">10 mins</span>
+                  </div>
+                  <ul className="space-y-2 text-sm text-gray-300">
+                    <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-green-500/50"/> 5 min Light Cardio (Bike/Jog)</li>
+                    <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-green-500/50"/> Dynamic Stretching (Leg Swings, etc.)</li>
+                    <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-green-500/50"/> Activation (Glute Bridges, Band Pullaparts)</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Exercises */}
-            {currentWorkoutType === "rest" ? (
+            {currentWorkoutType === "rest" || currentWorkoutType === "active_recovery" ? (
               <Card className="bg-card border-white/5">
-                <CardContent className="p-8 text-center text-muted-foreground">
-                  <p>Rest & Recovery Day</p>
+                <CardContent className="p-8 text-center text-muted-foreground flex flex-col items-center">
+                  <div className="bg-secondary p-4 rounded-full mb-4">
+                    <Dumbbell className="w-8 h-8 opacity-20" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Rest & Recover</h3>
+                  <p className="max-w-xs mx-auto">Take today off to let your muscles rebuild. Light walking or mobility work is optional but encouraged.</p>
                 </CardContent>
               </Card>
             ) : (
-              baseWorkout.slice(0, Math.ceil(profile.workoutDuration / 15)).map((ex, i) => { // Rough logic to scale exercises by duration
+              baseWorkout.slice(0, Math.ceil(profile.workoutDuration / 12)).map((ex, i) => { // Adjusted scaling logic
                 const currentExerciseId = customWorkout[i] || ex.id;
                 const currentExerciseName = getExerciseName(currentExerciseId, ex.category);
                 
                 return (
                   <Dialog key={i}>
                     <DialogTrigger asChild>
-                      <Card className="bg-card border-white/5 hover:border-primary/30 transition-colors cursor-pointer group">
+                      <Card className="bg-card border-white/5 hover:border-primary/30 transition-colors cursor-pointer group mb-3">
                         <CardContent className="p-4 flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground font-bold group-hover:text-primary transition-colors">
@@ -227,7 +284,7 @@ export default function Workouts() {
                         </CardContent>
                       </Card>
                     </DialogTrigger>
-                    <DialogContent className="bg-card border-white/10 text-white">
+                    <DialogContent className="bg-card border-white/10 text-white max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Substitute Exercise</DialogTitle>
                       </DialogHeader>

@@ -4,17 +4,36 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Zap, Flame, Settings2, Trophy, Crown, ArrowUpCircle } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Zap, Flame, Settings2, Trophy, Crown, ArrowUpCircle, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
 import heroImage from "@assets/generated_images/cinematic_hockey_arena_ice_surface.png";
 import { useUser } from "@/lib/UserContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { format, isSameDay, parseISO, startOfToday } from "date-fns";
+
+// Labels for workout types to display in calendar details
+const WORKOUT_LABELS: Record<string, string> = {
+  legs_strength: "Legs - Strength",
+  legs_explosive: "Legs - Explosiveness",
+  upper_body: "Upper Body Power",
+  back_biceps: "Back & Biceps",
+  chest_triceps: "Chest & Triceps",
+  full_body: "Full Body Athletic",
+  skills_cardio: "Skills & Cardio",
+  active_recovery: "Active Recovery",
+  rest: "Rest Day"
+};
+
+const DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 export default function Home() {
-  const { profile, updateProfile, macros, consumedMacros, addXp, promoteTier } = useUser();
+  const { profile, updateProfile, macros, consumedMacros, addXp, promoteTier, logWorkout } = useUser();
   const [isEditing, setIsEditing] = useState(false);
-  const [workoutCompleted, setWorkoutCompleted] = useState(false);
-
+  
+  // Calendar State
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
   // Local state for form handling
   const [formData, setFormData] = useState({
     weight: profile.weight,
@@ -22,6 +41,47 @@ export default function Home() {
     heightIn: profile.heightIn,
     age: profile.age
   });
+
+  // Calculate Streak
+  const streak = useMemo(() => {
+    let currentStreak = 0;
+    const sortedHistory = [...(profile.workoutHistory || [])].sort().reverse(); // Newest first
+    
+    if (sortedHistory.length === 0) return 0;
+
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    // If latest workout is not today or yesterday, streak is broken (0)
+    if (sortedHistory[0] !== today && sortedHistory[0] !== yesterday) {
+        return 0;
+    }
+
+    // Basic streak calculation logic
+    let checkDate = new Date();
+    // Start checking from today if we worked out today, otherwise yesterday
+    if (sortedHistory.includes(today)) {
+      // checkDate is today
+    } else {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+    
+    while (true) {
+        const dateStr = checkDate.toISOString().split('T')[0];
+        if (profile.workoutHistory.includes(dateStr)) {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+    return currentStreak;
+  }, [profile.workoutHistory]);
+
+  const isTodayCompleted = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return profile.workoutHistory?.includes(today);
+  }, [profile.workoutHistory]);
 
   // Update local state when profile changes (e.g. on first load)
   useEffect(() => {
@@ -39,9 +99,8 @@ export default function Home() {
   };
 
   const handleCompleteWorkout = () => {
-    if (!workoutCompleted) {
-      addXp(15);
-      setWorkoutCompleted(true);
+    if (!isTodayCompleted) {
+      logWorkout();
     }
   };
 
@@ -65,6 +124,13 @@ export default function Home() {
       case "Elite": return "bg-red-500/20";
       default: return "bg-primary/20";
     }
+  };
+
+  const getScheduledWorkoutForDate = (date: Date) => {
+    const dayIndex = date.getDay(); // 0 = Sunday
+    const dayName = DAYS[dayIndex];
+    const workoutType = profile.schedule[dayName] || "rest";
+    return WORKOUT_LABELS[workoutType] || "Rest Day";
   };
 
   return (
@@ -202,10 +268,82 @@ export default function Home() {
           </Card>
         </div>
 
+        {/* Streak Calendar Section */}
+        <section>
+          <div className="flex justify-between items-center mb-4">
+             <div className="flex items-center gap-2">
+                <h2 className="text-xl font-heading font-semibold text-white">Workout Streak</h2>
+                <div className="bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded text-xs font-bold flex items-center">
+                   <Flame className="w-3 h-3 mr-1 fill-current" />
+                   {streak} Days
+                </div>
+             </div>
+          </div>
+          <Card className="bg-secondary/30 border-white/5">
+             <CardContent className="p-4">
+               <div className="flex flex-col md:flex-row gap-4">
+                 <div className="flex-1">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      className="rounded-md border-white/5 bg-black/20 p-3 pointer-events-auto"
+                      modifiers={{
+                        workedOut: (date) => profile.workoutHistory.includes(format(date, 'yyyy-MM-dd'))
+                      }}
+                      modifiersStyles={{
+                        workedOut: { 
+                          fontWeight: 'bold', 
+                          backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+                          color: '#60a5fa',
+                          border: '1px solid rgba(59, 130, 246, 0.4)'
+                        }
+                      }}
+                    />
+                 </div>
+                 <div className="flex-1 flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-4">
+                    {selectedDate && (
+                      <div className="space-y-3">
+                         <div className="text-sm text-muted-foreground uppercase font-bold tracking-wider">
+                           {format(selectedDate, 'EEEE, MMM do')}
+                         </div>
+                         <div>
+                            <h3 className="text-lg font-bold text-white mb-1">
+                              {getScheduledWorkoutForDate(selectedDate)}
+                            </h3>
+                            <p className="text-sm text-gray-400">
+                              {profile.workoutHistory.includes(format(selectedDate, 'yyyy-MM-dd')) 
+                                ? "Completed ✅" 
+                                : isSameDay(selectedDate, new Date()) 
+                                  ? "Scheduled for today"
+                                  : "Scheduled"}
+                            </p>
+                         </div>
+                         {isSameDay(selectedDate, new Date()) && !isTodayCompleted && (
+                           <Button 
+                             size="sm" 
+                             className="w-full bg-primary/20 text-primary hover:bg-primary/30 border border-primary/50"
+                             onClick={() => {
+                               // This just scrolls to the next workout card or we can replicate the button
+                               // For now, let's just use it as a shortcut to complete
+                               handleCompleteWorkout();
+                             }}
+                           >
+                             Log as Complete
+                           </Button>
+                         )}
+                      </div>
+                    )}
+                 </div>
+               </div>
+             </CardContent>
+          </Card>
+        </section>
+
         {/* Next Workout */}
         <section>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-heading font-semibold text-white">Next Workout</h2>
+            <h2 className="text-xl font-heading font-semibold text-white">Today's Workout</h2>
             <Button variant="link" className="text-xs text-muted-foreground">View Schedule</Button>
           </div>
           <Card className="bg-card border-l-4 border-l-primary overflow-hidden group relative">
@@ -213,8 +351,10 @@ export default function Home() {
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <span className="inline-block px-2 py-1 rounded text-[10px] font-bold bg-primary/20 text-primary mb-2 uppercase tracking-wider">Explosiveness</span>
-                  <h3 className="text-lg font-bold text-white">Lower Body Power</h3>
+                  <span className="inline-block px-2 py-1 rounded text-[10px] font-bold bg-primary/20 text-primary mb-2 uppercase tracking-wider">
+                     {profile.schedule[DAYS[new Date().getDay()]] ? "Training" : "Rest"}
+                  </span>
+                  <h3 className="text-lg font-bold text-white">{getScheduledWorkoutForDate(new Date())}</h3>
                 </div>
                 <div className="text-right">
                   <span className="text-sm font-medium text-muted-foreground">45 min</span>
@@ -223,24 +363,20 @@ export default function Home() {
               <div className="space-y-2">
                  <div className="flex items-center text-sm text-muted-foreground">
                    <div className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
-                   Box Jumps (4x5)
-                 </div>
-                 <div className="flex items-center text-sm text-muted-foreground">
-                   <div className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
-                   Front Squats (5x5)
+                   See Training tab for details
                  </div>
               </div>
               <Button 
                 className={cn(
                   "w-full mt-4 font-bold border transition-all",
-                  workoutCompleted 
+                  isTodayCompleted 
                     ? "bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30"
                     : "bg-primary/10 text-primary border-primary/50 hover:bg-primary/20"
                 )}
                 onClick={handleCompleteWorkout}
-                disabled={workoutCompleted}
+                disabled={isTodayCompleted}
               >
-                {workoutCompleted ? "Workout Completed (+15 XP)" : "Complete & Log Workout"}
+                {isTodayCompleted ? <><CheckCircle2 className="w-4 h-4 mr-2"/> Workout Completed (+15 XP)</> : "Complete & Log Workout"}
               </Button>
             </CardContent>
           </Card>

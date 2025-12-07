@@ -17,6 +17,7 @@ type UserProfile = {
   // Gamification state
   xp: number; // 0-100
   tier: "Bronze" | "Silver" | "Gold" | "Diamond" | "Elite";
+  workoutHistory: string[]; // ISO Date strings "YYYY-MM-DD"
 };
 
 type UserContextType = {
@@ -50,6 +51,7 @@ type UserContextType = {
   // Gamification methods
   addXp: (amount: number) => void;
   promoteTier: () => void;
+  logWorkout: () => void;
 };
 
 const defaultSchedule: WeeklySchedule = {
@@ -73,7 +75,8 @@ const defaultProfile: UserProfile = {
   schedule: defaultSchedule,
   workoutDuration: 60,
   xp: 0,
-  tier: "Bronze"
+  tier: "Bronze",
+  workoutHistory: []
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -92,7 +95,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             schedule: parsed.schedule || defaultSchedule,
             workoutDuration: parsed.workoutDuration || 60,
             xp: parsed.xp || 0,
-            tier: parsed.tier || "Bronze"
+            tier: parsed.tier || "Bronze",
+            workoutHistory: parsed.workoutHistory || []
           };
         } catch (e) {
           console.error("Failed to parse profile", e);
@@ -154,15 +158,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const logWorkout = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setProfile(prev => {
+      if (prev.workoutHistory.includes(today)) return prev;
+      
+      const newXp = Math.min(100, prev.xp + 15);
+      return {
+        ...prev,
+        workoutHistory: [...prev.workoutHistory, today],
+        xp: newXp
+      };
+    });
+  }, []);
+
   const toggleConsumedMeal = useCallback((mealId: string) => {
     setConsumedMeals(prev => {
       const newState = !prev[mealId];
       if (newState) {
         // Add 5 XP when marking a meal as consumed
-        // We need to call addXp, but addXp is defined in the component scope.
-        // To avoid dependency issues or complex refs, we can do it here if we had access to setProfile.
-        // Better: useEffect in Diet.tsx or just update profile here.
-        // Let's update profile here directly to keep logic centralized
         setProfile(p => ({ ...p, xp: Math.min(100, p.xp + 5) }));
       }
       return { ...prev, [mealId]: newState };
@@ -206,7 +220,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         consumedMacros,
         updateDailyStats,
         addXp,
-        promoteTier
+        promoteTier,
+        logWorkout
       }}
     >
       {children}

@@ -1,23 +1,25 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Profile } from "@shared/schema";
+import * as api from "./api";
 
 type WeeklySchedule = {
-  [key: string]: string; // "monday": "Legs - Strength"
+  [key: string]: string;
 };
 
 type UserProfile = {
   age: number;
-  weight: number; // lbs
+  weight: number;
   heightFt: number;
   heightIn: number;
   goal: "muscle" | "fatloss" | "maintain";
   position: "defense" | "wing" | "center" | "goalie";
   level: "house" | "a" | "aa" | "aaa" | "junior";
   schedule: WeeklySchedule;
-  workoutDuration: number; // minutes
-  // Gamification state
-  xp: number; // 0-100
+  workoutDuration: number;
+  xp: number;
   tier: "Bronze" | "Silver" | "Gold" | "Diamond" | "Elite";
-  workoutHistory: string[]; // ISO Date strings "YYYY-MM-DD"
+  workoutHistory: string[];
 };
 
 type UserContextType = {
@@ -33,35 +35,22 @@ type UserContextType = {
     protein: number;
     calories: number;
   };
-  // New: Lifted state for consumed meals tracking
   consumedMeals: Record<string, boolean>;
   toggleConsumedMeal: (mealId: string) => void;
   setConsumedMeals: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  // New: Consumed totals derived from selection
   consumedMacros: {
     protein: number;
     calories: number;
     carbs: number;
     fats: number;
   };
-  // We need to know WHICH meals are selected to calculate consumed macros
   selectedMeals: Record<string, string>;
   setSelectedMeals: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   updateDailyStats: (stats: { protein: number; calories: number; carbs: number; fats: number }) => void;
-  // Gamification methods
   addXp: (amount: number) => void;
   promoteTier: () => void;
   logWorkout: () => void;
-};
-
-const defaultSchedule: WeeklySchedule = {
-  monday: "legs_strength",
-  tuesday: "upper_body",
-  wednesday: "skills_cardio",
-  thursday: "legs_explosive",
-  friday: "full_body",
-  saturday: "active_recovery",
-  sunday: "rest",
+  isLoading: boolean;
 };
 
 const defaultProfile: UserProfile = {
@@ -72,7 +61,7 @@ const defaultProfile: UserProfile = {
   goal: "muscle",
   position: "defense",
   level: "aa",
-  schedule: defaultSchedule,
+  schedule: {},
   workoutDuration: 60,
   xp: 0,
   tier: "Bronze",
@@ -82,31 +71,47 @@ const defaultProfile: UserProfile = {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfile] = useState<UserProfile>(() => {
-    // Load from localStorage on initialization
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("puckpro_profile");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          return { 
-            ...defaultProfile, 
-            ...parsed, 
-            schedule: parsed.schedule || defaultSchedule,
-            workoutDuration: parsed.workoutDuration || 60,
-            xp: parsed.xp || 0,
-            tier: parsed.tier || "Bronze",
-            workoutHistory: parsed.workoutHistory || []
-          };
-        } catch (e) {
-          console.error("Failed to parse profile", e);
-        }
-      }
-    }
-    return defaultProfile;
+  const queryClient = useQueryClient();
+  
+  // Fetch profile from backend
+  const { data: backendProfile, isLoading } = useQuery({
+    queryKey: ["profile"],
+    queryFn: api.fetchProfile,
   });
 
-  // Track consumed meals state here so it persists across navigation
+  // Fetch workout logs
+  const { data: workoutLogs = [] } = useQuery({
+    queryKey: ["workouts"],
+    queryFn: api.fetchWorkoutLogs,
+  });
+
+  // Profile update mutation
+  const updateMutation = useMutation({
+    mutationFn: api.updateProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
+  // Workout log mutation
+  const workoutMutation = useMutation({
+    mutationFn: ({ date, workoutType }: { date: string; workoutType: string }) =>
+      api.logWorkout(date, workoutType),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workouts"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
+  // Promote tier mutation
+  const promoteMutation = useMutation({
+    mutationFn: api.promoteTier,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
+  // Local state for meals (can be synced with backend later if needed)
   const [consumedMeals, setConsumedMeals] = useState<Record<string, boolean>>({
     breakfast: false,
     lunch: false,
@@ -121,7 +126,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     dinner: "salmon"
   });
 
-  // Track the calculated totals
   const [consumedMacros, setConsumedMacros] = useState({
     protein: 0,
     calories: 0,
@@ -129,74 +133,72 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     fats: 0
   });
 
-  // Save to localStorage whenever profile changes
-  useEffect(() => {
-    localStorage.setItem("puckpro_profile", JSON.stringify(profile));
-  }, [profile]);
+  // Convert backend profile to frontend format
+  const profile: UserProfile = backendProfile
+    ? {
+        age: backendProfile.age,
+        weight: backendProfile.weight,
+        heightFt: backendProfile.heightFt,
+        heightIn: backendProfile.heightIn,
+        goal: backendProfile.goal as any,
+        position: backendProfile.position as any,
+        level: backendProfile.level as any,
+        schedule: backendProfile.schedule as WeeklySchedule,
+        workoutDuration: backendProfile.workoutDuration,
+        xp: backendProfile.xp,
+        tier: backendProfile.tier as any,
+        workoutHistory: workoutLogs.map(log => log.date),
+      }
+    : defaultProfile;
 
-  // WRAPPED IN USECALLBACK TO PREVENT INFINITE LOOPS
   const updateProfile = useCallback((updates: Partial<UserProfile>) => {
-    setProfile((prev) => ({ ...prev, ...updates }));
-  }, []);
+    updateMutation.mutate(updates as any);
+  }, [updateMutation]);
 
   const addXp = useCallback((amount: number) => {
-    setProfile(prev => {
-      const newXp = Math.min(100, prev.xp + amount);
-      return { ...prev, xp: newXp };
-    });
-  }, []);
+    if (!backendProfile) return;
+    const newXp = Math.min(100, backendProfile.xp + amount);
+    updateMutation.mutate({ xp: newXp });
+  }, [backendProfile, updateMutation]);
 
   const promoteTier = useCallback(() => {
-    setProfile(prev => {
-      if (prev.xp < 100) return prev;
-      
-      const tiers: UserProfile['tier'][] = ["Bronze", "Silver", "Gold", "Diamond", "Elite"];
-      const currentIndex = tiers.indexOf(prev.tier);
-      const nextTier = currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : prev.tier;
-      
-      return { ...prev, xp: 0, tier: nextTier };
-    });
-  }, []);
+    promoteMutation.mutate();
+  }, [promoteMutation]);
 
   const logWorkout = useCallback(() => {
     const today = new Date().toISOString().split('T')[0];
-    setProfile(prev => {
-      if (prev.workoutHistory.includes(today)) return prev;
-      
-      const newXp = Math.min(100, prev.xp + 15);
-      return {
-        ...prev,
-        workoutHistory: [...prev.workoutHistory, today],
-        xp: newXp
-      };
-    });
-  }, []);
+    const dayIndex = new Date().getDay();
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const dayName = dayNames[dayIndex];
+    const workoutType = profile.schedule[dayName] || "rest";
+    
+    workoutMutation.mutate({ date: today, workoutType });
+  }, [profile.schedule, workoutMutation]);
 
   const toggleConsumedMeal = useCallback((mealId: string) => {
     setConsumedMeals(prev => {
       const newState = !prev[mealId];
-      if (newState) {
+      if (newState && backendProfile) {
         // Add 5 XP when marking a meal as consumed
-        setProfile(p => ({ ...p, xp: Math.min(100, p.xp + 5) }));
+        const newXp = Math.min(100, backendProfile.xp + 5);
+        updateMutation.mutate({ xp: newXp });
       }
       return { ...prev, [mealId]: newState };
     });
-  }, []);
+  }, [backendProfile, updateMutation]);
 
   const updateDailyStats = useCallback((stats: { protein: number; calories: number; carbs: number; fats: number }) => {
     setConsumedMacros(stats);
   }, []);
 
-  // Simple calculation logic
-  const protein = Math.round(profile.weight * 1); // 1g per lb
-  
-  let baseCalories = profile.weight * 15; // Maintenance approximation
+  // Calculate macros
+  const protein = Math.round(profile.weight * 1);
+  let baseCalories = profile.weight * 15;
   if (profile.goal === "muscle") baseCalories += 500;
   if (profile.goal === "fatloss") baseCalories -= 500;
   
   const calories = Math.round(baseCalories);
   const fats = Math.round(profile.weight * 0.4);
-  
   const caloriesFromProtein = protein * 4;
   const caloriesFromFat = fats * 9;
   const remainingCalories = calories - caloriesFromProtein - caloriesFromFat;
@@ -221,7 +223,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateDailyStats,
         addXp,
         promoteTier,
-        logWorkout
+        logWorkout,
+        isLoading,
       }}
     >
       {children}

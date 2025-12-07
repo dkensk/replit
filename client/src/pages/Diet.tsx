@@ -4,8 +4,11 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Check, Target, Info } from "lucide-react";
+import { AlertCircle, Check, Target, Info, Plus } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
 import { useState } from "react";
@@ -29,10 +32,10 @@ type MealSection = {
 export default function Diet() {
   const { profile, updateProfile, macros, recommendedMacros } = useUser();
   const [selectedMeals, setSelectedMeals] = useState<Record<string, string>>({
-    breakfast: "power_oats",
-    lunch: "chicken_quinoa",
-    snack: "recovery_shake",
-    dinner: "lean_beef"
+    breakfast: "oatmeal",
+    lunch: "chicken_rice",
+    snack: "protein_shake",
+    dinner: "salmon"
   });
   
   // Track checked (consumed) meals
@@ -43,45 +46,96 @@ export default function Diet() {
     dinner: false
   });
 
-  // Athletic Performance Meals
-  const meals: MealSection[] = [
+  // State for custom meal entry
+  const [customMeals, setCustomMeals] = useState<Record<string, MealOption[]>>({
+    breakfast: [],
+    lunch: [],
+    snack: [],
+    dinner: []
+  });
+  
+  const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
+  const [currentSectionId, setCurrentSectionId] = useState("");
+  const [newMeal, setNewMeal] = useState({
+    name: "",
+    calories: "",
+    protein: "",
+    carbs: "",
+    fats: ""
+  });
+
+  // Base meals with simple names
+  const baseMeals: MealSection[] = [
     {
       id: "breakfast",
-      title: "Breakfast (Fuel Up)",
+      title: "Breakfast",
       options: [
-        { id: "power_oats", name: "Pro-Athlete Oatmeal", calories: 550, protein: 35, carbs: 75, fats: 12 }, // Oats, whey, berries, chia seeds
-        { id: "egg_scramble", name: "Muscle Scramble", calories: 520, protein: 40, carbs: 30, fats: 25 }, // 4 eggs, spinach, turkey bacon, whole wheat toast
-        { id: "greek_yogurt_bowl", name: "High-Protein Yogurt Bowl", calories: 450, protein: 35, carbs: 50, fats: 10 } // Greek yogurt, granola, honey, berries
+        { id: "oatmeal", name: "Oatmeal & Berries", calories: 550, protein: 35, carbs: 75, fats: 12 },
+        { id: "eggs_toast", name: "Eggs & Toast", calories: 520, protein: 40, carbs: 30, fats: 25 },
+        { id: "yogurt_parfait", name: "Yogurt Parfait", calories: 450, protein: 35, carbs: 50, fats: 10 }
       ]
     },
     {
       id: "lunch",
-      title: "Lunch (Sustain)",
+      title: "Lunch",
       options: [
-        { id: "chicken_quinoa", name: "Chicken & Quinoa Power Bowl", calories: 650, protein: 50, carbs: 70, fats: 18 }, // Grilled chicken breast, quinoa, roasted veg
-        { id: "turkey_wrap", name: "Loaded Turkey Club Wrap", calories: 580, protein: 45, carbs: 55, fats: 20 }, // Turkey breast, avocado, whole wheat tortilla
-        { id: "bison_burger", name: "Lean Bison Burger (No Bun)", calories: 600, protein: 55, carbs: 10, fats: 35 } // Lean bison, sweet potato fries side
+        { id: "chicken_rice", name: "Chicken & Rice", calories: 650, protein: 50, carbs: 70, fats: 18 },
+        { id: "turkey_wrap", name: "Turkey Wrap", calories: 580, protein: 45, carbs: 55, fats: 20 },
+        { id: "beef_stirfry", name: "Beef Stir Fry", calories: 600, protein: 55, carbs: 10, fats: 35 }
       ]
     },
     {
       id: "snack",
-      title: "Pre/Post Workout",
+      title: "Snack",
       options: [
-        { id: "recovery_shake", name: "Elite Recovery Shake", calories: 350, protein: 40, carbs: 40, fats: 5 }, // Whey isolate, banana, almond milk
-        { id: "rice_cakes", name: "PB & Rice Cakes", calories: 300, protein: 10, carbs: 35, fats: 14 }, // Rice cakes, peanut butter, honey (Pre-game energy)
-        { id: "protein_bar", name: "High-Quality Protein Bar", calories: 240, protein: 20, carbs: 25, fats: 9 }
+        { id: "protein_shake", name: "Protein Shake", calories: 350, protein: 40, carbs: 40, fats: 5 },
+        { id: "rice_cakes_pb", name: "PB & Rice Cakes", calories: 300, protein: 10, carbs: 35, fats: 14 },
+        { id: "protein_bar", name: "Protein Bar", calories: 240, protein: 20, carbs: 25, fats: 9 }
       ]
     },
     {
       id: "dinner",
-      title: "Dinner (Recover)",
+      title: "Dinner",
       options: [
-        { id: "salmon_rice", name: "Atlantic Salmon & Wild Rice", calories: 700, protein: 45, carbs: 60, fats: 30 }, // Omega-3 rich for recovery
-        { id: "lean_beef", name: "Steak & Sweet Potato", calories: 750, protein: 60, carbs: 50, fats: 35 }, // Red meat for iron/creatine
-        { id: "pasta_meat_sauce", name: "Whole Wheat Pasta Bolognese", calories: 800, protein: 50, carbs: 90, fats: 25 } // Carb load for next day
+        { id: "salmon", name: "Salmon & Rice", calories: 700, protein: 45, carbs: 60, fats: 30 },
+        { id: "steak", name: "Steak & Potato", calories: 750, protein: 60, carbs: 50, fats: 35 },
+        { id: "pasta", name: "Pasta Bolognese", calories: 800, protein: 50, carbs: 90, fats: 25 }
       ]
     }
   ];
+
+  // Merge base meals with custom meals
+  const meals = baseMeals.map(section => ({
+    ...section,
+    options: [...section.options, ...customMeals[section.id]]
+  }));
+
+  const handleAddCustomMeal = () => {
+    if (!newMeal.name || !currentSectionId) return;
+    
+    const meal: MealOption = {
+      id: `custom_${Date.now()}`,
+      name: newMeal.name,
+      calories: parseInt(newMeal.calories) || 0,
+      protein: parseInt(newMeal.protein) || 0,
+      carbs: parseInt(newMeal.carbs) || 0,
+      fats: parseInt(newMeal.fats) || 0
+    };
+    
+    setCustomMeals(prev => ({
+      ...prev,
+      [currentSectionId]: [...prev[currentSectionId], meal]
+    }));
+    
+    // Auto-select the new custom meal
+    setSelectedMeals(prev => ({
+      ...prev,
+      [currentSectionId]: meal.id
+    }));
+    
+    setIsCustomDialogOpen(false);
+    setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
+  };
 
   const calculateTotalConsumed = () => {
     let total = { calories: 0, protein: 0, carbs: 0, fats: 0 };
@@ -234,7 +288,7 @@ export default function Diet() {
                               {option.name}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {option.protein}g Protein • {option.carbs}g Carbs
+                              <span className="text-primary font-bold">{option.protein}g Protein</span> • {option.carbs}g Carbs • {option.fats}g Fat
                             </p>
                           </div>
                           {selectedMeals[section.id] === option.id && (
@@ -242,6 +296,20 @@ export default function Diet() {
                           )}
                         </div>
                       ))}
+                      
+                      {/* Add Custom Meal Button */}
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-primary hover:text-primary hover:bg-primary/10 mt-2"
+                        onClick={() => {
+                          setCurrentSectionId(section.id);
+                          setIsCustomDialogOpen(true);
+                        }}
+                        disabled={isChecked}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Custom Meal...
+                      </Button>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -250,6 +318,77 @@ export default function Diet() {
           </Accordion>
         </div>
       </div>
+
+      {/* Custom Meal Dialog */}
+      <Dialog open={isCustomDialogOpen} onOpenChange={setIsCustomDialogOpen}>
+        <DialogContent className="bg-card border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Add Custom Meal</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Meal Name</Label>
+              <Input 
+                id="name" 
+                placeholder="e.g., Turkey Sandwich" 
+                className="bg-secondary/50 border-white/10"
+                value={newMeal.name}
+                onChange={(e) => setNewMeal({...newMeal, name: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="calories">Calories</Label>
+                <Input 
+                  id="calories" 
+                  type="number" 
+                  placeholder="0" 
+                  className="bg-secondary/50 border-white/10"
+                  value={newMeal.calories}
+                  onChange={(e) => setNewMeal({...newMeal, calories: e.target.value})}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="protein">Protein (g)</Label>
+                <Input 
+                  id="protein" 
+                  type="number" 
+                  placeholder="0" 
+                  className="bg-secondary/50 border-white/10"
+                  value={newMeal.protein}
+                  onChange={(e) => setNewMeal({...newMeal, protein: e.target.value})}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="carbs">Carbs (g)</Label>
+                <Input 
+                  id="carbs" 
+                  type="number" 
+                  placeholder="0" 
+                  className="bg-secondary/50 border-white/10"
+                  value={newMeal.carbs}
+                  onChange={(e) => setNewMeal({...newMeal, carbs: e.target.value})}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="fats">Fats (g)</Label>
+                <Input 
+                  id="fats" 
+                  type="number" 
+                  placeholder="0" 
+                  className="bg-secondary/50 border-white/10"
+                  value={newMeal.fats}
+                  onChange={(e) => setNewMeal({...newMeal, fats: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddCustomMeal} disabled={!newMeal.name}>Add Meal</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

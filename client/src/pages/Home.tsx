@@ -242,8 +242,8 @@ export default function Home() {
               <div className="p-2 rounded-full bg-orange-500/20 text-orange-500 mb-2">
                 <Flame className="w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold font-heading text-white">{consumedMacros.calories}</span>
-              <span className="text-xs text-muted-foreground uppercase">Calories Eaten</span>
+              <span className="text-2xl font-bold font-heading text-white">{streak}</span>
+              <span className="text-xs text-muted-foreground uppercase">Day Streak</span>
             </CardContent>
           </Card>
           
@@ -272,11 +272,7 @@ export default function Home() {
         <section>
           <div className="flex justify-between items-center mb-4">
              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-heading font-semibold text-white">Workout Streak</h2>
-                <div className="bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded text-xs font-bold flex items-center">
-                   <Flame className="w-3 h-3 mr-1 fill-current" />
-                   {streak} Days
-                </div>
+                <h2 className="text-xl font-heading font-semibold text-white">Activity Log</h2>
              </div>
           </div>
           <Card className="bg-secondary/30 border-white/5">

@@ -28,7 +28,27 @@ type UserContextType = {
   recommendedMacros: {
     protein: number;
     calories: number;
-  }
+  };
+  // New: Lifted state for consumed meals tracking
+  consumedMeals: Record<string, boolean>;
+  toggleConsumedMeal: (mealId: string) => void;
+  setConsumedMeals: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  // New: Consumed totals derived from selection
+  consumedMacros: {
+    protein: number;
+    calories: number;
+    carbs: number;
+    fats: number;
+  };
+  // We need to know WHICH meals are selected to calculate consumed macros
+  selectedMeals: Record<string, string>;
+  setSelectedMeals: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  // We need the meal data to calculate sums, but that lives in Diet.tsx usually.
+  // To keep it clean without moving ALL data here, we can accept a "calculateConsumed" function or pass the current total back up.
+  // BETTER: Store simply the *values* of consumed macros here, updated by Diet.tsx effects? 
+  // OR: Move the meal options data here? No, that's too much content.
+  // SIMPLEST: Let Diet.tsx update a "dailyStats" object in context whenever its local calculation changes.
+  updateDailyStats: (stats: { protein: number; calories: number; carbs: number; fats: number }) => void;
 };
 
 const defaultSchedule: WeeklySchedule = {
@@ -77,6 +97,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return defaultProfile;
   });
 
+  // Track consumed meals state here so it persists across navigation
+  const [consumedMeals, setConsumedMeals] = useState<Record<string, boolean>>({
+    breakfast: false,
+    lunch: false,
+    snack: false,
+    dinner: false
+  });
+
+  const [selectedMeals, setSelectedMeals] = useState<Record<string, string>>({
+    breakfast: "oatmeal",
+    lunch: "chicken_rice",
+    snack: "protein_shake",
+    dinner: "salmon"
+  });
+
+  // Track the calculated totals
+  const [consumedMacros, setConsumedMacros] = useState({
+    protein: 0,
+    calories: 0,
+    carbs: 0,
+    fats: 0
+  });
+
   // Save to localStorage whenever profile changes
   useEffect(() => {
     localStorage.setItem("puckpro_profile", JSON.stringify(profile));
@@ -86,34 +129,31 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setProfile((prev) => ({ ...prev, ...updates }));
   };
 
+  const toggleConsumedMeal = (mealId: string) => {
+    setConsumedMeals(prev => ({ ...prev, [mealId]: !prev[mealId] }));
+  };
+
+  const updateDailyStats = (stats: { protein: number; calories: number; carbs: number; fats: number }) => {
+    setConsumedMacros(stats);
+  };
+
   // Simple calculation logic
-  // Protein: 1g per lb of bodyweight (as requested)
-  // Calories: rough estimate (Weight * 15 for maintenance) + modifier
   const protein = Math.round(profile.weight * 1); // 1g per lb
   
   let baseCalories = profile.weight * 15; // Maintenance approximation
   if (profile.goal === "muscle") baseCalories += 500;
   if (profile.goal === "fatloss") baseCalories -= 500;
-  // "maintain" falls through as baseCalories
   
   const calories = Math.round(baseCalories);
-  
-  // Remaining calories split (simplified)
-  // Fat: 0.4g per lb (standard athletic recommendation)
   const fats = Math.round(profile.weight * 0.4);
   
-  // Carbs: The rest
   const caloriesFromProtein = protein * 4;
   const caloriesFromFat = fats * 9;
   const remainingCalories = calories - caloriesFromProtein - caloriesFromFat;
   const carbs = Math.max(0, Math.round(remainingCalories / 4));
 
-  // Recommended values (Baseline without goal adjustment, or just explicit "recommended")
-  // We can treat the calculated values as recommended for the selected goal.
-  // The user asked to show "Recommended" vs "Target". 
-  // Let's assume Recommended is the baseline for an athlete of that weight, and Target is adjusted by Goal.
   const recommendedProtein = Math.round(profile.weight * 1);
-  const recommendedCalories = Math.round(profile.weight * 15); // Maintenance
+  const recommendedCalories = Math.round(profile.weight * 15);
 
   return (
     <UserContext.Provider
@@ -121,7 +161,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         profile,
         updateProfile,
         macros: { protein, carbs, fats, calories },
-        recommendedMacros: { protein: recommendedProtein, calories: recommendedCalories }
+        recommendedMacros: { protein: recommendedProtein, calories: recommendedCalories },
+        consumedMeals,
+        toggleConsumedMeal,
+        setConsumedMeals,
+        selectedMeals,
+        setSelectedMeals,
+        consumedMacros,
+        updateDailyStats
       }}
     >
       {children}

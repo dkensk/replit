@@ -2,51 +2,133 @@ import Layout from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Play, Lock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Play, Lock, CheckCircle2 } from "lucide-react";
 import skillsImage from "@assets/generated_images/hockey_stick_and_puck_on_ice.png";
 import { useUser } from "@/lib/UserContext";
 
 // Comprehensive drill data - Expanded with "Reliable Source" Quality Data
+// Updated: No drills locked, added instructions
 const ALL_DRILLS = [
   // --- DEFENSE ---
   // Skating & Agility
-  { id: 101, title: "Mohawk Transitions", type: "Skating", positions: ["defense"], levels: ["a", "aa", "aaa", "junior"], locked: false },
-  { id: 102, title: "Backward Crossovers (Overspeed)", type: "Skating", positions: ["defense"], levels: ["aa", "aaa", "junior"], locked: false },
-  { id: 103, title: "Pivot & Gap Control", type: "Skating", positions: ["defense"], levels: ["house", "a", "aa"], locked: false },
+  { 
+    id: 101, 
+    title: "Mohawk Transitions", 
+    type: "Skating", 
+    positions: ["defense"], 
+    levels: ["a", "aa", "aaa", "junior"], 
+    locked: false,
+    setup: "3 cones in a triangle pattern.",
+    instructions: "1. Skate forward to first cone.\n2. Open hips into mohawk (heels together).\n3. Glide around cone maintaining speed.\n4. Accelerate out."
+  },
+  { 
+    id: 102, 
+    title: "Backward Crossovers (Overspeed)", 
+    type: "Skating", 
+    positions: ["defense"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Full circle (faceoff circle).",
+    instructions: "1. Skate backward around the circle.\n2. Focus on powerful under-push.\n3. Maintain low center of gravity.\n4. Increase speed until uncomfortable."
+  },
+  { 
+    id: 103, 
+    title: "Pivot & Gap Control", 
+    type: "Skating", 
+    positions: ["defense"], 
+    levels: ["house", "a", "aa"], 
+    locked: false,
+    setup: "Partner or cone at blue line.",
+    instructions: "1. Skate backward from red line.\n2. As partner attacks, match their speed (gap).\n3. Pivot to forward when they commit wide.\n4. Angle them to the boards."
+  },
   
   // Puck Control & Passing
-  { id: 201, title: "Blue Line Walking", type: "Shooting", positions: ["defense"], levels: ["aa", "aaa", "junior"], locked: false },
-  { id: 202, title: "D-Zone Retrieval & Outlet", type: "Passing", positions: ["defense"], levels: ["a", "aa", "aaa"], locked: false },
-  { id: 203, title: "First Pass Under Pressure", type: "Passing", positions: ["defense"], levels: ["aa", "aaa", "junior"], locked: true },
-  { id: 204, title: "Saucer Pass Progression", type: "Passing", positions: ["defense"], levels: ["aa", "aaa"], locked: true },
+  { 
+    id: 201, 
+    title: "Blue Line Walking", 
+    type: "Shooting", 
+    positions: ["defense"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Pucks at blue line.",
+    instructions: "1. Receive puck at blue line.\n2. Drag puck laterally to change shooting angle.\n3. Head up, find lane through traffic.\n4. Snap shot low for tip."
+  },
+  { 
+    id: 202, 
+    title: "D-Zone Retrieval & Outlet", 
+    type: "Passing", 
+    positions: ["defense"], 
+    levels: ["a", "aa", "aaa"], 
+    locked: false,
+    setup: "Dump puck into corner.",
+    instructions: "1. Retrieve puck with shoulder check.\n2. Use net as protection (wheel or reverse).\n3. Head up immediately.\n4. Make crisp first pass to winger."
+  },
+  { 
+    id: 203, 
+    title: "First Pass Under Pressure", 
+    type: "Passing", 
+    positions: ["defense"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false, // Unlocked
+    setup: "Partner applying forecheck pressure.",
+    instructions: "1. Retrieve puck.\n2. Fake one way to freeze forechecker.\n3. Escape turn opposite way.\n4. Execute pass."
+  },
   
-  // Tactical
-  { id: 301, title: "Net Front Battles", type: "Defense", positions: ["defense"], levels: ["house", "a", "aa"], locked: false },
-  { id: 302, title: "Stick Positioning (Lane Denial)", type: "Defense", positions: ["defense"], levels: ["house", "a"], locked: false },
-  { id: 303, title: "Pinch vs Retreat Decisions", type: "Tactics", positions: ["defense"], levels: ["aaa", "junior"], locked: true },
-
   // --- FORWARD (WING/CENTER) ---
   // Shooting
-  { id: 401, title: "Quick Release Snap Shot", type: "Shooting", positions: ["wing", "center"], levels: ["a", "aa", "aaa"], locked: false },
-  { id: 402, title: "Shoot in Stride (Off-foot)", type: "Shooting", positions: ["wing", "center"], levels: ["aa", "aaa", "junior"], locked: false },
-  { id: 403, title: "One-Timer Mechanics", type: "Shooting", positions: ["wing", "center"], levels: ["aa", "aaa"], locked: true },
-  { id: 404, title: "Backhand Shelf", type: "Shooting", positions: ["wing", "center"], levels: ["house", "a", "aa"], locked: false },
+  { 
+    id: 401, 
+    title: "Quick Release Snap Shot", 
+    type: "Shooting", 
+    positions: ["wing", "center"], 
+    levels: ["a", "aa", "aaa"], 
+    locked: false,
+    setup: "Pucks in slot.",
+    instructions: "1. Receive pass.\n2. No dust (don't stickhandle unnecessarily).\n3. Pull puck into body.\n4. Snap shot immediately."
+  },
+  { 
+    id: 402, 
+    title: "Shoot in Stride", 
+    type: "Shooting", 
+    positions: ["wing", "center"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Skate down wing.",
+    instructions: "1. Skate full speed down wing.\n2. Release shot while feet are moving.\n3. Shoot off outside foot for surprise factor."
+  },
+  { 
+    id: 504, 
+    title: "Pavel Datsyuk Cutbacks", 
+    type: "Skills", 
+    positions: ["wing", "center"], 
+    levels: ["aaa", "junior"], 
+    locked: false, // Unlocked
+    setup: "2 cones near half-wall.",
+    instructions: "1. Attack cone with speed.\n2. Hard stop/cutback to open space.\n3. Accelerate in new direction.\n4. Protect puck with body."
+  },
   
-  // Skills & Handling
-  { id: 501, title: "Wall Pickups / Rim Retrieval", type: "Skills", positions: ["wing"], levels: ["a", "aa", "aaa"], locked: false },
-  { id: 502, title: "Faceoff Wins & Tie-ups", type: "Tactics", positions: ["center"], levels: ["aa", "aaa"], locked: false },
-  { id: 503, title: "Toe Drag Deception", type: "Skills", positions: ["wing", "center"], levels: ["house", "a", "aa"], locked: false },
-  { id: 504, title: "Pavel Datsyuk Cutbacks", type: "Skills", positions: ["wing", "center"], levels: ["aaa", "junior"], locked: true },
-  
-  // Tactics
-  { id: 601, title: "O-Zone Entry Options", type: "Tactics", positions: ["wing", "center"], levels: ["aa", "aaa"], locked: true },
-  { id: 602, title: "Tipping & Screening", type: "Tactics", positions: ["wing", "center"], levels: ["a", "aa"], locked: false },
-  { id: 603, title: "F3 High Support", type: "Tactics", positions: ["center"], levels: ["aa", "aaa"], locked: true },
-
   // --- UNIVERSAL ---
-  { id: 901, title: "Explosive Starts (First 3 Strides)", type: "Skating", positions: ["defense", "wing", "center"], levels: ["house", "a", "aa", "aaa"], locked: false },
-  { id: 902, title: "Tight Turns & Escapes", type: "Skating", positions: ["defense", "wing", "center"], levels: ["house", "a", "aa"], locked: false },
-  { id: 903, title: "Stickhandling Through Traffic", type: "Skills", positions: ["defense", "wing", "center"], levels: ["aa", "aaa"], locked: true }
+  { 
+    id: 901, 
+    title: "Explosive Starts", 
+    type: "Skating", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["house", "a", "aa", "aaa"], 
+    locked: false,
+    setup: "Goal line.",
+    instructions: "1. Athletic stance.\n2. First 3 steps are quick running steps (toes).\n3. Transition to full stride.\n4. Stay low."
+  },
+  { 
+    id: 903, 
+    title: "Stickhandling Through Traffic", 
+    type: "Skills", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["aa", "aaa"], 
+    locked: false, // Unlocked
+    setup: "Random obstacles/pucks scattered.",
+    instructions: "1. Stickhandle through 'minefield' of obstacles.\n2. Don't touch any obstacles.\n3. Keep head up scanning environment.\n4. Use toe drags and wide reaches."
+  }
 ];
 
 export default function Skills() {
@@ -110,25 +192,51 @@ export default function Skills() {
         <div className="grid grid-cols-1 gap-4">
           {recommendedDrills.length > 0 ? (
             recommendedDrills.map((drill) => (
-              <Card key={drill.id} className={`border-white/5 overflow-hidden group ${drill.locked ? 'bg-secondary/20' : 'bg-card hover:border-primary/50'}`}>
-                <CardContent className="p-0 flex h-24">
-                  <div className="w-24 bg-secondary flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-black/40" />
-                    {drill.locked ? <Lock className="w-6 h-6 text-muted-foreground relative z-10" /> : <Play className="w-8 h-8 text-white fill-white relative z-10" />}
-                  </div>
-                  <div className="p-4 flex-1 flex flex-col justify-center">
-                    <div className="flex justify-between items-start mb-1">
-                      <Badge variant="outline" className="border-primary/30 text-primary text-[10px] uppercase">{drill.type}</Badge>
-                      <div className="flex gap-1">
-                         {drill.levels.slice(0, 2).map(l => (
-                           <span key={l} className="text-[10px] text-muted-foreground uppercase font-bold">{l}</span>
-                         ))}
+              <Dialog key={drill.id}>
+                <DialogTrigger asChild>
+                  <Card className="bg-card border-white/5 overflow-hidden group hover:border-primary/50 cursor-pointer transition-colors">
+                    <CardContent className="p-0 flex h-24">
+                      <div className="w-24 bg-secondary flex items-center justify-center relative group-hover:bg-primary/20 transition-colors">
+                        <Play className="w-8 h-8 text-white fill-white relative z-10 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <div className="p-4 flex-1 flex flex-col justify-center">
+                        <div className="flex justify-between items-start mb-1">
+                          <Badge variant="outline" className="border-primary/30 text-primary text-[10px] uppercase">{drill.type}</Badge>
+                          <div className="flex gap-1">
+                             {drill.levels.slice(0, 2).map(l => (
+                               <span key={l} className="text-[10px] text-muted-foreground uppercase font-bold">{l}</span>
+                             ))}
+                          </div>
+                        </div>
+                        <h3 className="font-bold text-lg text-white group-hover:text-primary transition-colors">{drill.title}</h3>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-white/10 text-white">
+                  <DialogHeader>
+                    <DialogTitle>{drill.title}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="bg-secondary/30 p-3 rounded-lg border border-white/5">
+                      <span className="text-xs font-bold text-primary uppercase mb-1 block">Setup</span>
+                      <p className="text-sm text-gray-300">{drill.setup}</p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-xs font-bold text-primary uppercase mb-2 block">Instructions</span>
+                      <div className="space-y-2">
+                        {drill.instructions?.split('\n').map((step, i) => (
+                          <div key={i} className="flex gap-3 text-sm text-gray-300">
+                             <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                             <span>{step}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <h3 className={`font-bold text-lg ${drill.locked ? 'text-muted-foreground' : 'text-white'}`}>{drill.title}</h3>
                   </div>
-                </CardContent>
-              </Card>
+                </DialogContent>
+              </Dialog>
             ))
           ) : (
             <div className="text-center py-10 text-muted-foreground">

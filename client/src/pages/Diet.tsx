@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Check, Target, Info, Plus, ChefHat } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 type MealOption = {
@@ -21,7 +21,7 @@ type MealOption = {
   protein: number;
   carbs: number;
   fats: number;
-  recipe?: string; // Added recipe field
+  recipe?: string; 
 };
 
 type MealSection = {
@@ -31,22 +31,8 @@ type MealSection = {
 };
 
 export default function Diet() {
-  const { profile, updateProfile, macros, recommendedMacros } = useUser();
-  const [selectedMeals, setSelectedMeals] = useState<Record<string, string>>({
-    breakfast: "oatmeal",
-    lunch: "chicken_rice",
-    snack: "protein_shake",
-    dinner: "salmon"
-  });
+  const { profile, updateProfile, macros, recommendedMacros, consumedMeals, toggleConsumedMeal, selectedMeals, setSelectedMeals, updateDailyStats } = useUser();
   
-  // Track checked (consumed) meals
-  const [consumedMeals, setConsumedMeals] = useState<Record<string, boolean>>({
-    breakfast: false,
-    lunch: false,
-    snack: false,
-    dinner: false
-  });
-
   // State for custom meal entry
   const [customMeals, setCustomMeals] = useState<Record<string, MealOption[]>>({
     breakfast: [],
@@ -257,9 +243,14 @@ export default function Diet() {
 
   const current = calculateTotalConsumed();
 
+  // Sync totals to context whenever they change
+  useEffect(() => {
+    updateDailyStats(current);
+  }, [JSON.stringify(current), updateDailyStats]);
+
   const toggleConsumed = (mealId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent accordion toggle
-    setConsumedMeals(prev => ({ ...prev, [mealId]: !prev[mealId] }));
+    toggleConsumedMeal(mealId);
   };
 
   return (

@@ -29,10 +29,10 @@ type MealSection = {
 export default function Diet() {
   const { profile, updateProfile, macros, recommendedMacros } = useUser();
   const [selectedMeals, setSelectedMeals] = useState<Record<string, string>>({
-    breakfast: "oatmeal",
-    lunch: "chicken",
-    snack: "shake",
-    dinner: "salmon"
+    breakfast: "power_oats",
+    lunch: "chicken_quinoa",
+    snack: "recovery_shake",
+    dinner: "lean_beef"
   });
   
   // Track checked (consumed) meals
@@ -43,41 +43,42 @@ export default function Diet() {
     dinner: false
   });
 
+  // Athletic Performance Meals
   const meals: MealSection[] = [
     {
       id: "breakfast",
-      title: "Breakfast",
+      title: "Breakfast (Fuel Up)",
       options: [
-        { id: "oatmeal", name: "Oatmeal & Whey Protein", calories: 450, protein: 30, carbs: 50, fats: 10 },
-        { id: "eggs", name: "3 Eggs & Whole Wheat Toast", calories: 400, protein: 24, carbs: 25, fats: 20 },
-        { id: "yogurt", name: "Greek Yogurt Parfait", calories: 350, protein: 25, carbs: 40, fats: 8 }
+        { id: "power_oats", name: "Pro-Athlete Oatmeal", calories: 550, protein: 35, carbs: 75, fats: 12 }, // Oats, whey, berries, chia seeds
+        { id: "egg_scramble", name: "Muscle Scramble", calories: 520, protein: 40, carbs: 30, fats: 25 }, // 4 eggs, spinach, turkey bacon, whole wheat toast
+        { id: "greek_yogurt_bowl", name: "High-Protein Yogurt Bowl", calories: 450, protein: 35, carbs: 50, fats: 10 } // Greek yogurt, granola, honey, berries
       ]
     },
     {
       id: "lunch",
-      title: "Lunch",
+      title: "Lunch (Sustain)",
       options: [
-        { id: "chicken", name: "Grilled Chicken & Rice", calories: 600, protein: 45, carbs: 60, fats: 15 },
-        { id: "turkey", name: "Turkey Wrap & Salad", calories: 550, protein: 40, carbs: 50, fats: 18 },
-        { id: "beef", name: "Lean Beef Stir Fry", calories: 650, protein: 50, carbs: 55, fats: 22 }
+        { id: "chicken_quinoa", name: "Chicken & Quinoa Power Bowl", calories: 650, protein: 50, carbs: 70, fats: 18 }, // Grilled chicken breast, quinoa, roasted veg
+        { id: "turkey_wrap", name: "Loaded Turkey Club Wrap", calories: 580, protein: 45, carbs: 55, fats: 20 }, // Turkey breast, avocado, whole wheat tortilla
+        { id: "bison_burger", name: "Lean Bison Burger (No Bun)", calories: 600, protein: 55, carbs: 10, fats: 35 } // Lean bison, sweet potato fries side
       ]
     },
     {
       id: "snack",
-      title: "Snack",
+      title: "Pre/Post Workout",
       options: [
-        { id: "shake", name: "Protein Shake & Banana", calories: 250, protein: 25, carbs: 30, fats: 3 },
-        { id: "bar", name: "Protein Bar", calories: 220, protein: 20, carbs: 25, fats: 8 },
-        { id: "apple", name: "Apple & Almonds", calories: 200, protein: 6, carbs: 25, fats: 12 }
+        { id: "recovery_shake", name: "Elite Recovery Shake", calories: 350, protein: 40, carbs: 40, fats: 5 }, // Whey isolate, banana, almond milk
+        { id: "rice_cakes", name: "PB & Rice Cakes", calories: 300, protein: 10, carbs: 35, fats: 14 }, // Rice cakes, peanut butter, honey (Pre-game energy)
+        { id: "protein_bar", name: "High-Quality Protein Bar", calories: 240, protein: 20, carbs: 25, fats: 9 }
       ]
     },
     {
       id: "dinner",
-      title: "Dinner",
+      title: "Dinner (Recover)",
       options: [
-        { id: "salmon", name: "Salmon & Asparagus", calories: 550, protein: 40, carbs: 10, fats: 35 },
-        { id: "steak", name: "Sirloin Steak & Potato", calories: 700, protein: 55, carbs: 40, fats: 30 },
-        { id: "pasta", name: "Chicken Pasta", calories: 650, protein: 45, carbs: 70, fats: 15 }
+        { id: "salmon_rice", name: "Atlantic Salmon & Wild Rice", calories: 700, protein: 45, carbs: 60, fats: 30 }, // Omega-3 rich for recovery
+        { id: "lean_beef", name: "Steak & Sweet Potato", calories: 750, protein: 60, carbs: 50, fats: 35 }, // Red meat for iron/creatine
+        { id: "pasta_meat_sauce", name: "Whole Wheat Pasta Bolognese", calories: 800, protein: 50, carbs: 90, fats: 25 } // Carb load for next day
       ]
     }
   ];

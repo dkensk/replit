@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell } from "lucide-react";
+import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell, Activity, Move } from "lucide-react";
 import gymImage from "@assets/generated_images/athletic_gym_training_equipment.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
@@ -147,6 +147,25 @@ const DEFAULT_WORKOUTS: Record<string, Array<{ id: string, sets: string, reps: s
   ]
 };
 
+const STRETCHES = {
+  pre_game: [
+    { name: "Leg Swings", duration: "10 reps/side", type: "Dynamic", instructions: "Swing leg forward and back, then side to side to open hips." },
+    { name: "Arm Circles", duration: "30 secs", type: "Dynamic", instructions: "Large circles forward then backward to warm up shoulders." },
+    { name: "Walking Lunges with Twist", duration: "10 reps", type: "Dynamic", instructions: "Lunge forward and twist torso towards the front leg." },
+    { name: "High Knees", duration: "30 secs", type: "Dynamic", instructions: "Run in place driving knees up to chest height rapidly." },
+    { name: "Butt Kicks", duration: "30 secs", type: "Dynamic", instructions: "Jog in place kicking heels up to glutes to warm hamstrings." },
+    { name: "Torso Twists", duration: "20 reps", type: "Dynamic", instructions: "Stand feet wide, twist upper body left and right." }
+  ],
+  post_game: [
+    { name: "Hamstring Stretch", duration: "45 secs/leg", type: "Static", instructions: "Sit with one leg out, reach for toes keeping back straight." },
+    { name: "Quad Stretch", duration: "45 secs/leg", type: "Static", instructions: "Stand on one leg, pull other heel to glute. Keep knees together." },
+    { name: "Pigeon Pose", duration: "60 secs/side", type: "Static", instructions: "Leg bent in front, other leg straight back. Lean forward for deep glute stretch." },
+    { name: "Hip Flexor Lunge", duration: "45 secs/side", type: "Static", instructions: "Kneel on one knee, push hips forward until stretch felt in rear hip." },
+    { name: "Calf Stretch", duration: "45 secs/leg", type: "Static", instructions: "Push against wall with one leg back, heel on ground." },
+    { name: "Chest Opener", duration: "30 secs", type: "Static", instructions: "Clasp hands behind back and lift arms up to open chest." }
+  ]
+};
+
 export default function Workouts() {
   const { profile, updateProfile } = useUser();
   const [activeTab, setActiveTab] = useState("schedule");
@@ -205,9 +224,10 @@ export default function Workouts() {
 
       <div className="px-4 pb-20">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 mb-6">
+          <TabsList className="grid w-full grid-cols-3 bg-secondary/50 mb-6">
             <TabsTrigger value="schedule">Weekly Split</TabsTrigger>
-            <TabsTrigger value="today">Today's Workout</TabsTrigger>
+            <TabsTrigger value="today">Today</TabsTrigger>
+            <TabsTrigger value="stretching">Stretching</TabsTrigger>
           </TabsList>
 
           <TabsContent value="schedule" className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
@@ -344,6 +364,54 @@ export default function Workouts() {
                 );
               })
             )}
+          </TabsContent>
+
+          <TabsContent value="stretching" className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+             {/* Pre-Game Section */}
+             <div>
+               <div className="flex items-center gap-2 mb-3">
+                 <Activity className="w-5 h-5 text-primary" />
+                 <h2 className="text-lg font-bold text-white">Pre-Game (Dynamic)</h2>
+               </div>
+               <p className="text-xs text-muted-foreground mb-4">Perform these while moving to warm up muscles and joints before skating.</p>
+               
+               <div className="grid grid-cols-1 gap-3">
+                 {STRETCHES.pre_game.map((stretch, i) => (
+                   <Card key={i} className="bg-card border-white/5">
+                     <CardContent className="p-4">
+                       <div className="flex justify-between items-start mb-2">
+                         <h3 className="font-bold text-white">{stretch.name}</h3>
+                         <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">{stretch.duration}</span>
+                       </div>
+                       <p className="text-sm text-gray-400">{stretch.instructions}</p>
+                     </CardContent>
+                   </Card>
+                 ))}
+               </div>
+             </div>
+
+             {/* Post-Game Section */}
+             <div>
+               <div className="flex items-center gap-2 mb-3 mt-6">
+                 <Move className="w-5 h-5 text-blue-400" />
+                 <h2 className="text-lg font-bold text-white">Post-Game (Static)</h2>
+               </div>
+               <p className="text-xs text-muted-foreground mb-4">Hold these stretches to improve flexibility and aid recovery after games.</p>
+               
+               <div className="grid grid-cols-1 gap-3">
+                 {STRETCHES.post_game.map((stretch, i) => (
+                   <Card key={i} className="bg-card border-white/5">
+                     <CardContent className="p-4">
+                       <div className="flex justify-between items-start mb-2">
+                         <h3 className="font-bold text-white">{stretch.name}</h3>
+                         <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-1 rounded">{stretch.duration}</span>
+                       </div>
+                       <p className="text-sm text-gray-400">{stretch.instructions}</p>
+                     </CardContent>
+                   </Card>
+                 ))}
+               </div>
+             </div>
           </TabsContent>
         </Tabs>
       </div>

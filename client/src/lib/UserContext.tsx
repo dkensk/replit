@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 type WeeklySchedule = {
   [key: string]: string; // "monday": "Legs - Strength"
@@ -43,11 +43,6 @@ type UserContextType = {
   // We need to know WHICH meals are selected to calculate consumed macros
   selectedMeals: Record<string, string>;
   setSelectedMeals: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  // We need the meal data to calculate sums, but that lives in Diet.tsx usually.
-  // To keep it clean without moving ALL data here, we can accept a "calculateConsumed" function or pass the current total back up.
-  // BETTER: Store simply the *values* of consumed macros here, updated by Diet.tsx effects? 
-  // OR: Move the meal options data here? No, that's too much content.
-  // SIMPLEST: Let Diet.tsx update a "dailyStats" object in context whenever its local calculation changes.
   updateDailyStats: (stats: { protein: number; calories: number; carbs: number; fats: number }) => void;
 };
 
@@ -125,17 +120,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("puckpro_profile", JSON.stringify(profile));
   }, [profile]);
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
+  // WRAPPED IN USECALLBACK TO PREVENT INFINITE LOOPS
+  const updateProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfile((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
-  const toggleConsumedMeal = (mealId: string) => {
+  const toggleConsumedMeal = useCallback((mealId: string) => {
     setConsumedMeals(prev => ({ ...prev, [mealId]: !prev[mealId] }));
-  };
+  }, []);
 
-  const updateDailyStats = (stats: { protein: number; calories: number; carbs: number; fats: number }) => {
+  const updateDailyStats = useCallback((stats: { protein: number; calories: number; carbs: number; fats: number }) => {
     setConsumedMacros(stats);
-  };
+  }, []);
 
   // Simple calculation logic
   const protein = Math.round(profile.weight * 1); // 1g per lb

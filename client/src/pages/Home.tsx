@@ -1,17 +1,19 @@
 import Layout from "@/components/layout/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Zap, Flame, Calendar, ChevronRight, Settings2 } from "lucide-react";
+import { Zap, Flame, Settings2, Trophy, Crown, ArrowUpCircle } from "lucide-react";
 import heroImage from "@assets/generated_images/cinematic_hockey_arena_ice_surface.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
-  const { profile, updateProfile, macros, consumedMacros } = useUser();
+  const { profile, updateProfile, macros, consumedMacros, addXp, promoteTier } = useUser();
   const [isEditing, setIsEditing] = useState(false);
+  const [workoutCompleted, setWorkoutCompleted] = useState(false);
 
   // Local state for form handling
   const [formData, setFormData] = useState({
@@ -34,6 +36,35 @@ export default function Home() {
   const handleSave = () => {
     updateProfile(formData);
     setIsEditing(false);
+  };
+
+  const handleCompleteWorkout = () => {
+    if (!workoutCompleted) {
+      addXp(15);
+      setWorkoutCompleted(true);
+    }
+  };
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "Bronze": return "text-orange-400";
+      case "Silver": return "text-gray-300";
+      case "Gold": return "text-yellow-400";
+      case "Diamond": return "text-cyan-400";
+      case "Elite": return "text-red-500";
+      default: return "text-primary";
+    }
+  };
+
+  const getTierBg = (tier: string) => {
+    switch (tier) {
+      case "Bronze": return "bg-orange-500/20";
+      case "Silver": return "bg-gray-400/20";
+      case "Gold": return "bg-yellow-500/20";
+      case "Diamond": return "bg-cyan-500/20";
+      case "Elite": return "bg-red-500/20";
+      default: return "bg-primary/20";
+    }
   };
 
   return (
@@ -138,25 +169,35 @@ export default function Home() {
           )}
         </section>
 
-        {/* Daily Stats */}
+        {/* Daily Stats & Gamification */}
         <div className="grid grid-cols-2 gap-4">
           <Card className="bg-secondary/50 border-white/5 backdrop-blur-sm">
             <CardContent className="p-4 flex flex-col items-center text-center">
               <div className="p-2 rounded-full bg-orange-500/20 text-orange-500 mb-2">
                 <Flame className="w-5 h-5" />
               </div>
-              {/* Dynamic Calories */}
               <span className="text-2xl font-bold font-heading text-white">{consumedMacros.calories}</span>
               <span className="text-xs text-muted-foreground uppercase">Calories Eaten</span>
             </CardContent>
           </Card>
-          <Card className="bg-secondary/50 border-white/5 backdrop-blur-sm">
-            <CardContent className="p-4 flex flex-col items-center text-center">
-              <div className="p-2 rounded-full bg-primary/20 text-primary mb-2">
-                <Zap className="w-5 h-5" />
+          
+          {/* Readiness / Tier Card */}
+          <Card className={cn("border-white/5 backdrop-blur-sm relative overflow-hidden", getTierBg(profile.tier))}>
+            {profile.xp >= 100 && (
+               <div className="absolute inset-0 bg-black/60 z-10 flex items-center justify-center p-2">
+                 <Button size="sm" onClick={promoteTier} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold animate-pulse">
+                   <ArrowUpCircle className="w-4 h-4 mr-1" />
+                   Promote
+                 </Button>
+               </div>
+            )}
+            <CardContent className="p-4 flex flex-col items-center text-center relative z-0">
+              <div className={cn("p-2 rounded-full mb-2 bg-black/20", getTierColor(profile.tier))}>
+                {profile.tier === "Diamond" || profile.tier === "Elite" ? <Crown className="w-5 h-5" /> : <Trophy className="w-5 h-5" />}
               </div>
-              <span className="text-2xl font-bold font-heading text-white">85%</span>
-              <span className="text-xs text-muted-foreground uppercase">Readiness</span>
+              <span className={cn("text-2xl font-bold font-heading", getTierColor(profile.tier))}>{profile.xp}%</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wide font-bold">{profile.tier} Tier</span>
+              <Progress value={profile.xp} className="h-1 mt-2 w-full bg-black/20" />
             </CardContent>
           </Card>
         </div>
@@ -189,8 +230,17 @@ export default function Home() {
                    Front Squats (5x5)
                  </div>
               </div>
-              <Button className="w-full mt-4 bg-primary/10 hover:bg-primary/20 text-primary font-bold border border-primary/50">
-                Start Workout
+              <Button 
+                className={cn(
+                  "w-full mt-4 font-bold border transition-all",
+                  workoutCompleted 
+                    ? "bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30"
+                    : "bg-primary/10 text-primary border-primary/50 hover:bg-primary/20"
+                )}
+                onClick={handleCompleteWorkout}
+                disabled={workoutCompleted}
+              >
+                {workoutCompleted ? "Workout Completed (+15 XP)" : "Complete & Log Workout"}
               </Button>
             </CardContent>
           </Card>

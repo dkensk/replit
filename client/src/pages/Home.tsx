@@ -278,7 +278,7 @@ export default function Home() {
                 {selectedDate && (
                     <div className="text-right">
                         <span className="text-xs font-bold text-primary uppercase tracking-wider block">
-                            {format(selectedDate, 'MMM do')}
+                            {format(selectedDate, 'MMMM do yyyy')}
                         </span>
                         <span className="text-sm font-medium text-white">
                              {getScheduledWorkoutForDate(selectedDate)}

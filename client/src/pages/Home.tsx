@@ -10,7 +10,7 @@ import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
 
 export default function Home() {
-  const { profile, updateProfile, macros } = useUser();
+  const { profile, updateProfile, macros, consumedMacros } = useUser();
   const [isEditing, setIsEditing] = useState(false);
 
   // Local state for form handling
@@ -145,8 +145,9 @@ export default function Home() {
               <div className="p-2 rounded-full bg-orange-500/20 text-orange-500 mb-2">
                 <Flame className="w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold font-heading text-white">{macros.calories}</span>
-              <span className="text-xs text-muted-foreground uppercase">Calories</span>
+              {/* Dynamic Calories */}
+              <span className="text-2xl font-bold font-heading text-white">{consumedMacros.calories}</span>
+              <span className="text-xs text-muted-foreground uppercase">Calories Eaten</span>
             </CardContent>
           </Card>
           <Card className="bg-secondary/50 border-white/5 backdrop-blur-sm">
@@ -195,24 +196,24 @@ export default function Home() {
           </Card>
         </section>
 
-        {/* Nutrition Summary */}
+        {/* Nutrition Summary - Synced with Diet.tsx */}
         <section>
            <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-heading font-semibold text-white">Nutrition Goal</h2>
+            <h2 className="text-xl font-heading font-semibold text-white">Nutrition Progress</h2>
           </div>
           <Card className="bg-secondary/30 border-white/5">
             <CardContent className="p-5">
               <div className="flex justify-between items-end mb-2">
                 <span className="text-sm font-medium text-muted-foreground">Protein</span>
-                <span className="text-sm font-bold text-white">{(macros.protein * 0.6).toFixed(0)}g / {macros.protein}g</span>
+                <span className="text-sm font-bold text-white">{consumedMacros.protein}g / {macros.protein}g</span>
               </div>
-              <Progress value={60} className="h-2 bg-secondary" />
+              <Progress value={(consumedMacros.protein / macros.protein) * 100} className="h-2 bg-secondary" />
               
               <div className="flex justify-between items-end mt-4 mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Carbs</span>
-                <span className="text-sm font-bold text-white">{(macros.carbs * 0.5).toFixed(0)}g / {macros.carbs}g</span>
+                <span className="text-sm font-medium text-muted-foreground">Calories</span>
+                <span className="text-sm font-bold text-white">{consumedMacros.calories} / {macros.calories}</span>
               </div>
-              <Progress value={50} className="h-2 bg-secondary" />
+              <Progress value={(consumedMacros.calories / macros.calories) * 100} className="h-2 bg-secondary" />
             </CardContent>
           </Card>
         </section>

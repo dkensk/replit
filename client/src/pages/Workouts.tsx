@@ -14,6 +14,8 @@ const WORKOUT_TYPES = [
   { id: "legs_strength", label: "Legs - Strength" },
   { id: "legs_explosive", label: "Legs - Explosiveness" },
   { id: "upper_body", label: "Upper Body Power" },
+  { id: "back_biceps", label: "Back & Biceps" },
+  { id: "chest_triceps", label: "Chest & Triceps" },
   { id: "full_body", label: "Full Body Athletic" },
   { id: "skills_cardio", label: "Skills & Cardio" },
   { id: "active_recovery", label: "Active Recovery" },
@@ -64,14 +66,28 @@ const EXERCISES: Record<string, Array<{ id: string, name: string, category: stri
     { id: "overhead_press", name: "Overhead Press", category: "upper_push" },
     { id: "incline_dumbbell_press", name: "Incline DB Press", category: "upper_push" },
     { id: "dips", name: "Weighted Dips", category: "upper_push" },
-    { id: "landmine_press", name: "Landmine Press", category: "upper_push" }
+    { id: "landmine_press", name: "Landmine Press", category: "upper_push" },
+    { id: "pushups", name: "Weighted Pushups", category: "upper_push" }
   ],
   "upper_pull": [
     { id: "pullups", name: "Pull Ups", category: "upper_pull" },
     { id: "barbell_row", name: "Barbell Row", category: "upper_pull" },
     { id: "face_pulls", name: "Face Pulls", category: "upper_pull" },
     { id: "single_arm_row", name: "Single Arm DB Row", category: "upper_pull" },
-    { id: "lat_pulldown", name: "Lat Pulldown", category: "upper_pull" }
+    { id: "lat_pulldown", name: "Lat Pulldown", category: "upper_pull" },
+    { id: "tbar_row", name: "T-Bar Row", category: "upper_pull" }
+  ],
+  "isolation_bicep": [
+    { id: "barbell_curl", name: "Barbell Curl", category: "isolation_bicep" },
+    { id: "hammer_curl", name: "Hammer Curl", category: "isolation_bicep" },
+    { id: "preacher_curl", name: "Preacher Curl", category: "isolation_bicep" },
+    { id: "incline_curl", name: "Incline DB Curl", category: "isolation_bicep" }
+  ],
+  "isolation_tricep": [
+    { id: "skull_crusher", name: "Skull Crushers", category: "isolation_tricep" },
+    { id: "tricep_pushdown", name: "Cable Pushdown", category: "isolation_tricep" },
+    { id: "overhead_extension", name: "Overhead Extension", category: "isolation_tricep" },
+    { id: "close_grip_bench", name: "Close Grip Bench", category: "isolation_tricep" }
   ],
   "core": [
     { id: "plank", name: "Weighted Plank", category: "core" },
@@ -104,6 +120,20 @@ const DEFAULT_WORKOUTS: Record<string, Array<{ id: string, sets: string, reps: s
     { id: "overhead_press", sets: "3", reps: "8-10", rest: "2 min", category: "upper_push" },
     { id: "barbell_row", sets: "3", reps: "10-12", rest: "90s", category: "upper_pull" },
     { id: "face_pulls", sets: "3", reps: "15", rest: "60s", category: "upper_pull" }
+  ],
+  "back_biceps": [
+    { id: "pullups", sets: "4", reps: "8-10", rest: "2 min", category: "upper_pull" },
+    { id: "barbell_row", sets: "4", reps: "8-12", rest: "90s", category: "upper_pull" },
+    { id: "lat_pulldown", sets: "3", reps: "12-15", rest: "60s", category: "upper_pull" },
+    { id: "barbell_curl", sets: "3", reps: "10-12", rest: "60s", category: "isolation_bicep" },
+    { id: "hammer_curl", sets: "3", reps: "12-15", rest: "60s", category: "isolation_bicep" }
+  ],
+  "chest_triceps": [
+    { id: "bench_press", sets: "4", reps: "6-8", rest: "2-3 min", category: "upper_push" },
+    { id: "incline_dumbbell_press", sets: "3", reps: "8-10", rest: "2 min", category: "upper_push" },
+    { id: "dips", sets: "3", reps: "10-12", rest: "90s", category: "upper_push" },
+    { id: "skull_crusher", sets: "3", reps: "10-12", rest: "60s", category: "isolation_tricep" },
+    { id: "tricep_pushdown", sets: "3", reps: "12-15", rest: "60s", category: "isolation_tricep" }
   ],
   "full_body": [
     { id: "trap_bar", sets: "3", reps: "8", rest: "2 min", category: "legs_hinge" },

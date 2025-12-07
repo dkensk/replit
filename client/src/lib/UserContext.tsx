@@ -14,6 +14,9 @@ type UserProfile = {
   level: "house" | "a" | "aa" | "aaa" | "junior";
   schedule: WeeklySchedule;
   workoutDuration: number; // minutes
+  // Gamification state
+  xp: number; // 0-100
+  tier: "Bronze" | "Silver" | "Gold" | "Diamond" | "Elite";
 };
 
 type UserContextType = {
@@ -44,6 +47,9 @@ type UserContextType = {
   selectedMeals: Record<string, string>;
   setSelectedMeals: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   updateDailyStats: (stats: { protein: number; calories: number; carbs: number; fats: number }) => void;
+  // Gamification methods
+  addXp: (amount: number) => void;
+  promoteTier: () => void;
 };
 
 const defaultSchedule: WeeklySchedule = {
@@ -66,6 +72,8 @@ const defaultProfile: UserProfile = {
   level: "aa",
   schedule: defaultSchedule,
   workoutDuration: 60,
+  xp: 0,
+  tier: "Bronze"
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -82,7 +90,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             ...defaultProfile, 
             ...parsed, 
             schedule: parsed.schedule || defaultSchedule,
-            workoutDuration: parsed.workoutDuration || 60
+            workoutDuration: parsed.workoutDuration || 60,
+            xp: parsed.xp || 0,
+            tier: parsed.tier || "Bronze"
           };
         } catch (e) {
           console.error("Failed to parse profile", e);
@@ -125,8 +135,38 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setProfile((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  const addXp = useCallback((amount: number) => {
+    setProfile(prev => {
+      const newXp = Math.min(100, prev.xp + amount);
+      return { ...prev, xp: newXp };
+    });
+  }, []);
+
+  const promoteTier = useCallback(() => {
+    setProfile(prev => {
+      if (prev.xp < 100) return prev;
+      
+      const tiers: UserProfile['tier'][] = ["Bronze", "Silver", "Gold", "Diamond", "Elite"];
+      const currentIndex = tiers.indexOf(prev.tier);
+      const nextTier = currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : prev.tier;
+      
+      return { ...prev, xp: 0, tier: nextTier };
+    });
+  }, []);
+
   const toggleConsumedMeal = useCallback((mealId: string) => {
-    setConsumedMeals(prev => ({ ...prev, [mealId]: !prev[mealId] }));
+    setConsumedMeals(prev => {
+      const newState = !prev[mealId];
+      if (newState) {
+        // Add 5 XP when marking a meal as consumed
+        // We need to call addXp, but addXp is defined in the component scope.
+        // To avoid dependency issues or complex refs, we can do it here if we had access to setProfile.
+        // Better: useEffect in Diet.tsx or just update profile here.
+        // Let's update profile here directly to keep logic centralized
+        setProfile(p => ({ ...p, xp: Math.min(100, p.xp + 5) }));
+      }
+      return { ...prev, [mealId]: newState };
+    });
   }, []);
 
   const updateDailyStats = useCallback((stats: { protein: number; calories: number; carbs: number; fats: number }) => {
@@ -164,7 +204,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         selectedMeals,
         setSelectedMeals,
         consumedMacros,
-        updateDailyStats
+        updateDailyStats,
+        addXp,
+        promoteTier
       }}
     >
       {children}

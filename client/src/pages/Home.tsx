@@ -289,7 +289,7 @@ export default function Home() {
           </div>
           <Card className="bg-secondary/30 border-white/5">
              <CardContent className="p-4">
-               <div className="w-full flex justify-center bg-black/20 rounded-md border-white/5 border p-3">
+               <div className="w-full flex justify-center bg-black/20 rounded-md border-white/5 border p-2">
                     <Calendar
                       mode="single"
                       selected={selectedDate}

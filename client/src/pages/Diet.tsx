@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Check, Target, Info } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
@@ -32,6 +33,14 @@ export default function Diet() {
     lunch: "chicken",
     snack: "shake",
     dinner: "salmon"
+  });
+  
+  // Track checked (consumed) meals
+  const [consumedMeals, setConsumedMeals] = useState<Record<string, boolean>>({
+    breakfast: false,
+    lunch: false,
+    snack: false,
+    dinner: false
   });
 
   const meals: MealSection[] = [
@@ -77,13 +86,16 @@ export default function Diet() {
     let total = { calories: 0, protein: 0, carbs: 0, fats: 0 };
     
     meals.forEach(section => {
-      const selectedId = selectedMeals[section.id];
-      const option = section.options.find(opt => opt.id === selectedId);
-      if (option) {
-        total.calories += option.calories;
-        total.protein += option.protein;
-        total.carbs += option.carbs;
-        total.fats += option.fats;
+      // Only count if checked
+      if (consumedMeals[section.id]) {
+        const selectedId = selectedMeals[section.id];
+        const option = section.options.find(opt => opt.id === selectedId);
+        if (option) {
+          total.calories += option.calories;
+          total.protein += option.protein;
+          total.carbs += option.carbs;
+          total.fats += option.fats;
+        }
       }
     });
     
@@ -91,6 +103,11 @@ export default function Diet() {
   };
 
   const current = calculateTotalConsumed();
+
+  const toggleConsumed = (mealId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent accordion toggle
+    setConsumedMeals(prev => ({ ...prev, [mealId]: !prev[mealId] }));
+  };
 
   return (
     <Layout>
@@ -105,11 +122,12 @@ export default function Diet() {
                 value={profile.goal} 
                 onValueChange={(val: any) => updateProfile({ goal: val })}
               >
-                <SelectTrigger className="h-8 border-none bg-transparent text-white w-[120px] focus:ring-0">
+                <SelectTrigger className="h-8 border-none bg-transparent text-white w-[130px] focus:ring-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="muscle">Build Muscle</SelectItem>
+                  <SelectItem value="maintain">Maintain</SelectItem>
                   <SelectItem value="fatloss">Lose Fat</SelectItem>
                 </SelectContent>
               </Select>
@@ -134,20 +152,20 @@ export default function Diet() {
         <div className="grid grid-cols-2 gap-3">
             <Card className="bg-secondary/30 border-white/5 text-center">
               <CardContent className="p-3">
-                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">Protein Goal</span>
+                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">Protein Consumed</span>
                 <div className="flex justify-center items-end gap-2">
-                   <span className="text-2xl font-heading font-bold text-white">{macros.protein}g</span>
-                   <span className="text-[10px] text-muted-foreground mb-1">/ {recommendedMacros.protein}g rec</span>
+                   <span className="text-2xl font-heading font-bold text-white">{current.protein}g</span>
+                   <span className="text-[10px] text-muted-foreground mb-1">/ {macros.protein}g goal</span>
                 </div>
                 <Progress value={(current.protein / macros.protein) * 100} className="h-1 mt-2 bg-blue-500/20" />
               </CardContent>
             </Card>
             <Card className="bg-secondary/30 border-white/5 text-center">
               <CardContent className="p-3">
-                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">Calories Goal</span>
+                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">Calories Consumed</span>
                 <div className="flex justify-center items-end gap-2">
-                   <span className="text-2xl font-heading font-bold text-white">{macros.calories}</span>
-                   <span className="text-[10px] text-muted-foreground mb-1">/ {recommendedMacros.calories} rec</span>
+                   <span className="text-2xl font-heading font-bold text-white">{current.calories}</span>
+                   <span className="text-[10px] text-muted-foreground mb-1">/ {macros.calories} goal</span>
                 </div>
                 <Progress value={(current.calories / macros.calories) * 100} className="h-1 mt-2 bg-primary/20" />
               </CardContent>
@@ -160,30 +178,54 @@ export default function Diet() {
           <Accordion type="single" collapsible className="w-full space-y-2">
             {meals.map((section) => {
               const selectedOption = section.options.find(opt => opt.id === selectedMeals[section.id]);
+              const isChecked = consumedMeals[section.id];
               
               return (
-                <AccordionItem key={section.id} value={section.id} className="border-none bg-card rounded-xl overflow-hidden border border-white/5">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-white/5">
-                    <div className="flex flex-col items-start text-left w-full">
-                      <div className="flex justify-between w-full pr-4">
-                        <span className="text-xs font-bold text-primary uppercase tracking-wider">{section.title}</span>
-                        <span className="text-xs text-muted-foreground">{selectedOption?.calories} kcal</span>
+                <AccordionItem key={section.id} value={section.id} className={cn(
+                  "border-none rounded-xl overflow-hidden border border-white/5 transition-colors",
+                  isChecked ? "bg-primary/5 border-primary/20" : "bg-card"
+                )}>
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-white/5 group">
+                    <div className="flex items-center w-full gap-3">
+                       <div 
+                         className={cn(
+                           "h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors z-20",
+                           isChecked ? "bg-primary border-primary" : "border-muted-foreground group-hover:border-white"
+                         )}
+                         onClick={(e) => toggleConsumed(section.id, e)}
+                       >
+                         {isChecked && <Check className="w-3.5 h-3.5 text-black font-bold" />}
+                       </div>
+                       
+                       <div className="flex flex-col items-start text-left w-full">
+                        <div className="flex justify-between w-full pr-4">
+                          <span className={cn(
+                            "text-xs font-bold uppercase tracking-wider transition-colors",
+                            isChecked ? "text-primary" : "text-muted-foreground"
+                          )}>{section.title}</span>
+                          <span className="text-xs text-muted-foreground">{selectedOption?.calories} kcal</span>
+                        </div>
+                        <span className={cn(
+                          "text-lg font-bold mt-1 transition-all",
+                          isChecked ? "text-white/50 line-through" : "text-white"
+                        )}>{selectedOption?.name}</span>
                       </div>
-                      <span className="text-lg font-bold text-white mt-1">{selectedOption?.name}</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4 pt-0">
-                    <div className="space-y-2 mt-4">
-                      <p className="text-xs text-muted-foreground uppercase mb-2 font-bold">Select Option:</p>
+                  <AccordionContent className="px-4 pb-4 pt-0 pl-14">
+                    <div className="space-y-2 mt-2">
+                      <p className="text-xs text-muted-foreground uppercase mb-2 font-bold">Swap Meal:</p>
                       {section.options.map((option) => (
                         <div 
                           key={option.id}
-                          onClick={() => setSelectedMeals(prev => ({ ...prev, [section.id]: option.id }))}
+                          onClick={() => !isChecked && setSelectedMeals(prev => ({ ...prev, [section.id]: option.id }))}
                           className={cn(
-                            "p-3 rounded-lg border transition-all cursor-pointer flex justify-between items-center",
+                            "p-3 rounded-lg border transition-all flex justify-between items-center",
                             selectedMeals[section.id] === option.id 
                               ? "bg-primary/10 border-primary" 
-                              : "bg-secondary/50 border-transparent hover:bg-secondary"
+                              : "bg-secondary/50 border-transparent",
+                            !isChecked && "cursor-pointer hover:bg-secondary",
+                            isChecked && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <div>

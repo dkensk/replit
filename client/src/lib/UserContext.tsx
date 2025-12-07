@@ -9,7 +9,7 @@ type UserProfile = {
   weight: number; // lbs
   heightFt: number;
   heightIn: number;
-  goal: "muscle" | "fatloss";
+  goal: "muscle" | "fatloss" | "maintain";
   position: "defense" | "wing" | "center" | "goalie";
   level: "house" | "a" | "aa" | "aaa" | "junior";
   schedule: WeeklySchedule;
@@ -94,6 +94,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   let baseCalories = profile.weight * 15; // Maintenance approximation
   if (profile.goal === "muscle") baseCalories += 500;
   if (profile.goal === "fatloss") baseCalories -= 500;
+  // "maintain" falls through as baseCalories
   
   const calories = Math.round(baseCalories);
   

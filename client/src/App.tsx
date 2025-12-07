@@ -9,6 +9,7 @@ import Onboarding from "@/pages/Onboarding";
 import Workouts from "@/pages/Workouts";
 import Diet from "@/pages/Diet";
 import Skills from "@/pages/Skills";
+import Review from "@/pages/Review";
 import AI from "@/pages/AI";
 import { UserProvider } from "./lib/UserContext";
 
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/workouts" component={Workouts} />
       <Route path="/diet" component={Diet} />
       <Route path="/skills" component={Skills} />
+      <Route path="/review" component={Review} />
       <Route path="/ai" component={AI} />
       <Route component={NotFound} />
     </Switch>

@@ -281,13 +281,13 @@ export default function Home() {
           </div>
           <Card className="bg-secondary/30 border-white/5">
              <CardContent className="p-4">
-               <div className="flex flex-col gap-4">
+               <div className="flex flex-col gap-6 pb-2">
                  <div className="w-full">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      className="rounded-md border-white/5 bg-black/20 p-3 pointer-events-auto w-full"
+                      className="rounded-md border-white/5 bg-black/20 p-3 pointer-events-auto w-full mb-2"
                       modifiers={{
                         workedOut: (date) => profile.workoutHistory.includes(format(date, 'yyyy-MM-dd'))
                       }}

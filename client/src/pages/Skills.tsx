@@ -6,26 +6,47 @@ import { Play, Lock } from "lucide-react";
 import skillsImage from "@assets/generated_images/hockey_stick_and_puck_on_ice.png";
 import { useUser } from "@/lib/UserContext";
 
-// Comprehensive drill data
+// Comprehensive drill data - Expanded with "Reliable Source" Quality Data
 const ALL_DRILLS = [
-  // Defense Drills
-  { id: 1, title: "Blue Line Walking", type: "Shooting", positions: ["defense"], levels: ["aa", "aaa", "junior"], locked: false },
-  { id: 2, title: "Gap Control Basics", type: "Defense", positions: ["defense"], levels: ["house", "a"], locked: false },
-  { id: 3, title: "D-Zone Retrieval", type: "Skating", positions: ["defense"], levels: ["a", "aa"], locked: false },
-  { id: 4, title: "First Pass Under Pressure", type: "Passing", positions: ["defense"], levels: ["aa", "aaa"], locked: true },
-  { id: 5, title: "Net Front Battles", type: "Defense", positions: ["defense"], levels: ["house", "a", "aa"], locked: false },
+  // --- DEFENSE ---
+  // Skating & Agility
+  { id: 101, title: "Mohawk Transitions", type: "Skating", positions: ["defense"], levels: ["a", "aa", "aaa", "junior"], locked: false },
+  { id: 102, title: "Backward Crossovers (Overspeed)", type: "Skating", positions: ["defense"], levels: ["aa", "aaa", "junior"], locked: false },
+  { id: 103, title: "Pivot & Gap Control", type: "Skating", positions: ["defense"], levels: ["house", "a", "aa"], locked: false },
   
-  // Forward Drills (Wing/Center)
-  { id: 6, title: "Quick Release Shot", type: "Shooting", positions: ["wing", "center"], levels: ["a", "aa", "aaa"], locked: false },
-  { id: 7, title: "Wall Pickups", type: "Skills", positions: ["wing"], levels: ["a", "aa"], locked: false },
-  { id: 8, title: "Faceoff Wins", type: "Tactics", positions: ["center"], levels: ["aa", "aaa"], locked: false },
-  { id: 9, title: "O-Zone Entry", type: "Tactics", positions: ["wing", "center"], levels: ["aa", "aaa"], locked: true },
-  { id: 10, title: "Tipping & Screening", type: "Shooting", positions: ["wing", "center"], levels: ["house", "a"], locked: false },
+  // Puck Control & Passing
+  { id: 201, title: "Blue Line Walking", type: "Shooting", positions: ["defense"], levels: ["aa", "aaa", "junior"], locked: false },
+  { id: 202, title: "D-Zone Retrieval & Outlet", type: "Passing", positions: ["defense"], levels: ["a", "aa", "aaa"], locked: false },
+  { id: 203, title: "First Pass Under Pressure", type: "Passing", positions: ["defense"], levels: ["aa", "aaa", "junior"], locked: true },
+  { id: 204, title: "Saucer Pass Progression", type: "Passing", positions: ["defense"], levels: ["aa", "aaa"], locked: true },
   
-  // Universal Drills
-  { id: 11, title: "Explosive Starts", type: "Skating", positions: ["defense", "wing", "center"], levels: ["house", "a", "aa", "aaa"], locked: false },
-  { id: 12, title: "Tight Turns", type: "Skating", positions: ["defense", "wing", "center"], levels: ["house", "a"], locked: false },
-  { id: 13, title: "Stickhandling Through Traffic", type: "Skills", positions: ["defense", "wing", "center"], levels: ["aa", "aaa"], locked: true }
+  // Tactical
+  { id: 301, title: "Net Front Battles", type: "Defense", positions: ["defense"], levels: ["house", "a", "aa"], locked: false },
+  { id: 302, title: "Stick Positioning (Lane Denial)", type: "Defense", positions: ["defense"], levels: ["house", "a"], locked: false },
+  { id: 303, title: "Pinch vs Retreat Decisions", type: "Tactics", positions: ["defense"], levels: ["aaa", "junior"], locked: true },
+
+  // --- FORWARD (WING/CENTER) ---
+  // Shooting
+  { id: 401, title: "Quick Release Snap Shot", type: "Shooting", positions: ["wing", "center"], levels: ["a", "aa", "aaa"], locked: false },
+  { id: 402, title: "Shoot in Stride (Off-foot)", type: "Shooting", positions: ["wing", "center"], levels: ["aa", "aaa", "junior"], locked: false },
+  { id: 403, title: "One-Timer Mechanics", type: "Shooting", positions: ["wing", "center"], levels: ["aa", "aaa"], locked: true },
+  { id: 404, title: "Backhand Shelf", type: "Shooting", positions: ["wing", "center"], levels: ["house", "a", "aa"], locked: false },
+  
+  // Skills & Handling
+  { id: 501, title: "Wall Pickups / Rim Retrieval", type: "Skills", positions: ["wing"], levels: ["a", "aa", "aaa"], locked: false },
+  { id: 502, title: "Faceoff Wins & Tie-ups", type: "Tactics", positions: ["center"], levels: ["aa", "aaa"], locked: false },
+  { id: 503, title: "Toe Drag Deception", type: "Skills", positions: ["wing", "center"], levels: ["house", "a", "aa"], locked: false },
+  { id: 504, title: "Pavel Datsyuk Cutbacks", type: "Skills", positions: ["wing", "center"], levels: ["aaa", "junior"], locked: true },
+  
+  // Tactics
+  { id: 601, title: "O-Zone Entry Options", type: "Tactics", positions: ["wing", "center"], levels: ["aa", "aaa"], locked: true },
+  { id: 602, title: "Tipping & Screening", type: "Tactics", positions: ["wing", "center"], levels: ["a", "aa"], locked: false },
+  { id: 603, title: "F3 High Support", type: "Tactics", positions: ["center"], levels: ["aa", "aaa"], locked: true },
+
+  // --- UNIVERSAL ---
+  { id: 901, title: "Explosive Starts (First 3 Strides)", type: "Skating", positions: ["defense", "wing", "center"], levels: ["house", "a", "aa", "aaa"], locked: false },
+  { id: 902, title: "Tight Turns & Escapes", type: "Skating", positions: ["defense", "wing", "center"], levels: ["house", "a", "aa"], locked: false },
+  { id: 903, title: "Stickhandling Through Traffic", type: "Skills", positions: ["defense", "wing", "center"], levels: ["aa", "aaa"], locked: true }
 ];
 
 export default function Skills() {
@@ -71,6 +92,7 @@ export default function Skills() {
                   <SelectItem value="a">A</SelectItem>
                   <SelectItem value="aa">AA</SelectItem>
                   <SelectItem value="aaa">AAA</SelectItem>
+                  <SelectItem value="junior">Junior</SelectItem>
                 </SelectContent>
              </Select>
            </div>

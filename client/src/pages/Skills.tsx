@@ -386,6 +386,280 @@ const ALL_DRILLS = [
     locked: false,
     setup: "Approach cone or partner.",
     instructions: "1. Sell the fake with head and shoulders.\n2. Move puck opposite direction.\n3. Accelerate past defender.\n4. Protect puck with body."
+  },
+
+  // --- GOALIE DRILLS ---
+  { 
+    id: 601, 
+    title: "Basic Stance & Ready Position", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["house", "a"], 
+    locked: false,
+    setup: "In crease, facing shooter.",
+    instructions: "1. Feet shoulder-width apart.\n2. Knees bent, weight on balls of feet.\n3. Glove and blocker up and ready.\n4. Stick flat on ice in front."
+  },
+  { 
+    id: 602, 
+    title: "Butterfly Technique", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["house", "a", "aa"], 
+    locked: false,
+    setup: "In crease.",
+    instructions: "1. Drop to knees simultaneously.\n2. Flare pads outward to seal ice.\n3. Keep upper body tall.\n4. Recover quickly to feet."
+  },
+  { 
+    id: 603, 
+    title: "T-Push Movement", 
+    type: "Skating", 
+    positions: ["goalie"], 
+    levels: ["house", "a", "aa"], 
+    locked: false,
+    setup: "Post to post.",
+    instructions: "1. Lead with front skate.\n2. Push off back skate powerfully.\n3. Glide across crease.\n4. Set up square to new angle."
+  },
+  { 
+    id: 604, 
+    title: "Butterfly Slide", 
+    type: "Skating", 
+    positions: ["goalie"], 
+    levels: ["a", "aa", "aaa"], 
+    locked: false,
+    setup: "In crease, post to post.",
+    instructions: "1. Drop into butterfly.\n2. Push laterally with lead leg.\n3. Keep pads sealed to ice while sliding.\n4. Arrive set and square."
+  },
+  { 
+    id: 605, 
+    title: "Post Integration", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["a", "aa", "aaa"], 
+    locked: false,
+    setup: "At goal post.",
+    instructions: "1. Seal post with pad.\n2. Blocker protects short side.\n3. Glove ready for pass out.\n4. Eyes track puck carrier."
+  },
+  { 
+    id: 606, 
+    title: "Rebound Control", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Partner shooting pucks.",
+    instructions: "1. Absorb shots into body.\n2. Direct rebounds to corners.\n3. Cover loose pucks quickly.\n4. Track puck through traffic."
+  },
+  { 
+    id: 607, 
+    title: "Glove Saves", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["house", "a", "aa"], 
+    locked: false,
+    setup: "Partner with pucks.",
+    instructions: "1. Track puck into glove.\n2. Catch in pocket, not webbing.\n3. Bring glove to body after catch.\n4. Squeeze immediately."
+  },
+  { 
+    id: 608, 
+    title: "Blocker Saves & Direction", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["a", "aa", "aaa"], 
+    locked: false,
+    setup: "Partner shooting.",
+    instructions: "1. Angle blocker toward corner.\n2. Firm wrist on impact.\n3. Direct puck to safe area.\n4. Recover to ready position."
+  },
+  { 
+    id: 609, 
+    title: "Puck Tracking Drills", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["house", "a", "aa", "aaa"], 
+    locked: false,
+    setup: "Multiple shooters.",
+    instructions: "1. Eyes follow puck at all times.\n2. Track through screens.\n3. Find puck after pass.\n4. Anticipate shot release."
+  },
+  { 
+    id: 610, 
+    title: "Crease Movement Patterns", 
+    type: "Skating", 
+    positions: ["goalie"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Full crease.",
+    instructions: "1. Post to post movements.\n2. Out and back to challenge.\n3. Lateral shuffles.\n4. Combine with saves."
+  },
+  { 
+    id: 611, 
+    title: "Breakaway Technique", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["a", "aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Shooter from center ice.",
+    instructions: "1. Challenge aggressively.\n2. Read shooter's hands.\n3. Stay patient, don't commit early.\n4. Poke check or butterfly at release."
+  },
+  { 
+    id: 612, 
+    title: "Playing the Puck", 
+    type: "Skills", 
+    positions: ["goalie"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Dump-ins behind net.",
+    instructions: "1. Communicate with defense.\n2. Stop puck cleanly.\n3. Set up for tape-to-tape pass.\n4. Return to crease quickly."
+  },
+
+  // --- MORE HOUSE/BEGINNER DRILLS ---
+  { 
+    id: 916, 
+    title: "Forward Skating Basics", 
+    type: "Skating", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["house"], 
+    locked: false,
+    setup: "Open ice.",
+    instructions: "1. Bend knees, lean forward slightly.\n2. Push out and back with each stride.\n3. Glide and recover.\n4. Keep arms relaxed."
+  },
+  { 
+    id: 917, 
+    title: "Balance & Edge Control", 
+    type: "Skating", 
+    positions: ["defense", "wing", "center", "goalie"], 
+    levels: ["house", "a"], 
+    locked: false,
+    setup: "Open ice.",
+    instructions: "1. Glide on one foot.\n2. Hold for 5 seconds.\n3. Switch feet.\n4. Practice inside and outside edges."
+  },
+  { 
+    id: 918, 
+    title: "Basic Passing", 
+    type: "Passing", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["house"], 
+    locked: false,
+    setup: "Partner 10 feet away.",
+    instructions: "1. Cup puck on blade.\n2. Sweep toward target.\n3. Follow through pointing at partner.\n4. Receive pass with soft hands."
+  },
+  { 
+    id: 919, 
+    title: "Receiving Passes", 
+    type: "Passing", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["house", "a"], 
+    locked: false,
+    setup: "Partner passing pucks.",
+    instructions: "1. Present blade as target.\n2. Cushion puck on reception.\n3. Control before next move.\n4. Keep eyes on puck."
+  },
+  { 
+    id: 920, 
+    title: "Skating with Puck", 
+    type: "Skills", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["house"], 
+    locked: false,
+    setup: "Open ice with puck.",
+    instructions: "1. Keep puck in front of body.\n2. Look up periodically.\n3. Use long strides.\n4. Cup puck gently."
+  },
+  { 
+    id: 921, 
+    title: "Basic Body Positioning", 
+    type: "Skills", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["house", "a"], 
+    locked: false,
+    setup: "With partner.",
+    instructions: "1. Stay between opponent and net.\n2. Use body, not stick.\n3. Keep feet moving.\n4. Maintain balance."
+  },
+  { 
+    id: 922, 
+    title: "Slap Shot Introduction", 
+    type: "Shooting", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["a", "aa"], 
+    locked: false,
+    setup: "Stationary with pucks.",
+    instructions: "1. Wind up stick behind body.\n2. Strike ice before puck.\n3. Follow through high.\n4. Transfer weight forward."
+  },
+  { 
+    id: 923, 
+    title: "Power Skating Drills", 
+    type: "Skating", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Full ice.",
+    instructions: "1. Deep knee bend throughout.\n2. Full extension on each stride.\n3. Quick recovery under body.\n4. Drive arms for power."
+  },
+  { 
+    id: 924, 
+    title: "Stick Protection", 
+    type: "Skills", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["house", "a", "aa"], 
+    locked: false,
+    setup: "Puck with defender nearby.",
+    instructions: "1. Keep body between puck and defender.\n2. Extend stick away from checker.\n3. Use free arm for balance.\n4. Pivot to maintain protection."
+  },
+  { 
+    id: 925, 
+    title: "Quick Feet Agility", 
+    type: "Skating", 
+    positions: ["defense", "wing", "center", "goalie"], 
+    levels: ["house", "a", "aa", "aaa"], 
+    locked: false,
+    setup: "In place or with cones.",
+    instructions: "1. Quick choppy steps in place.\n2. Move laterally on command.\n3. Forward and back sprints.\n4. React to visual cues."
+  },
+  { 
+    id: 926, 
+    title: "2-on-1 Rush Attack", 
+    type: "Skills", 
+    positions: ["wing", "center"], 
+    levels: ["a", "aa", "aaa", "junior"], 
+    locked: false,
+    setup: "With partner vs one defender.",
+    instructions: "1. Wide entry, spread defense.\n2. Puck carrier drives wide.\n3. Trailer fills middle lane.\n4. Pass or shoot based on read."
+  },
+  { 
+    id: 927, 
+    title: "Defensive Zone Coverage", 
+    type: "Skills", 
+    positions: ["defense"], 
+    levels: ["a", "aa", "aaa"], 
+    locked: false,
+    setup: "5v5 in D-zone.",
+    instructions: "1. Cover your man or zone.\n2. Communicate with partner.\n3. Box out in front of net.\n4. Clear rebounds quickly."
+  },
+  { 
+    id: 928, 
+    title: "Forecheck Pressure", 
+    type: "Skills", 
+    positions: ["wing", "center"], 
+    levels: ["a", "aa", "aaa"], 
+    locked: false,
+    setup: "Enter offensive zone.",
+    instructions: "1. First man pressures puck.\n2. Second man supports/angles.\n3. Third man covers high.\n4. Force turnovers."
+  },
+  { 
+    id: 929, 
+    title: "Neutral Zone Transition", 
+    type: "Skating", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "Full ice.",
+    instructions: "1. Quick transition on turnover.\n2. Head up, find open ice.\n3. Support puck carrier.\n4. Attack with speed."
+  },
+  { 
+    id: 930, 
+    title: "Penalty Kill Positioning", 
+    type: "Skills", 
+    positions: ["defense", "wing", "center"], 
+    levels: ["aa", "aaa", "junior"], 
+    locked: false,
+    setup: "4v5 in D-zone.",
+    instructions: "1. Maintain box formation.\n2. Pressure puck on perimeter.\n3. Block shooting lanes.\n4. Clear when possible."
   }
 ];
 
@@ -418,6 +692,7 @@ export default function Skills() {
                   <SelectItem value="defense">Defense</SelectItem>
                   <SelectItem value="wing">Wing</SelectItem>
                   <SelectItem value="center">Center</SelectItem>
+                  <SelectItem value="goalie">Goalie</SelectItem>
                 </SelectContent>
              </Select>
              <Select 

@@ -42,19 +42,20 @@ export default function Home() {
     age: profile.age
   });
 
-  // Calculate Streak
-  const streak = useMemo(() => {
+  // Calculate Streak - returns both count and the dates in the streak
+  const { streak, streakDates } = useMemo(() => {
+    const streakDatesSet = new Set<string>();
     let currentStreak = 0;
     const sortedHistory = [...(profile.workoutHistory || [])].sort().reverse(); // Newest first
     
-    if (sortedHistory.length === 0) return 0;
+    if (sortedHistory.length === 0) return { streak: 0, streakDates: streakDatesSet };
 
     const today = new Date().toISOString().split('T')[0];
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
     // If latest workout is not today or yesterday, streak is broken (0)
     if (sortedHistory[0] !== today && sortedHistory[0] !== yesterday) {
-        return 0;
+        return { streak: 0, streakDates: streakDatesSet };
     }
 
     // Basic streak calculation logic
@@ -70,12 +71,13 @@ export default function Home() {
         const dateStr = checkDate.toISOString().split('T')[0];
         if (profile.workoutHistory.includes(dateStr)) {
             currentStreak++;
+            streakDatesSet.add(dateStr);
             checkDate.setDate(checkDate.getDate() - 1);
         } else {
             break;
         }
     }
-    return currentStreak;
+    return { streak: currentStreak, streakDates: streakDatesSet };
   }, [profile.workoutHistory]);
 
   const isTodayCompleted = useMemo(() => {
@@ -297,10 +299,10 @@ export default function Home() {
                       disabled={(date) => date > new Date()}
                       className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full [&_button[data-selected-single=true]]:rounded-full"
                       modifiers={{
-                        workedOut: (date) => profile.workoutHistory.includes(format(date, 'yyyy-MM-dd'))
+                        streakDay: (date) => streakDates.has(format(date, 'yyyy-MM-dd'))
                       }}
                       modifiersStyles={{
-                        workedOut: { 
+                        streakDay: { 
                           fontWeight: 'bold', 
                           border: '2px solid #60a5fa',
                           color: '#60a5fa',

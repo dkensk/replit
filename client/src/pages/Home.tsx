@@ -289,7 +289,7 @@ export default function Home() {
           </div>
           <Card className="bg-secondary/30 border-white/5">
              <CardContent className="p-4">
-               <div className="w-full flex justify-center bg-black/20 rounded-md border-white/5 border p-2">
+               <div className="w-full flex justify-center">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
@@ -303,24 +303,11 @@ export default function Home() {
                           fontWeight: 'bold', 
                           backgroundColor: 'rgba(59, 130, 246, 0.2)', 
                           color: '#60a5fa',
-                          border: '1px solid rgba(59, 130, 246, 0.4)'
+                          borderRadius: '9999px'
                         }
                       }}
                     />
                </div>
-               
-               {/* Mobile-only action button if needed, but keeping it clean for now as requested */}
-               {isSameDay(selectedDate || new Date(), new Date()) && !isTodayCompleted && (
-                   <div className="mt-4">
-                       <Button 
-                         size="sm" 
-                         className="w-full bg-primary/20 text-primary hover:bg-primary/30 border border-primary/50"
-                         onClick={handleCompleteWorkout}
-                       >
-                         Log Today as Complete
-                       </Button>
-                   </div>
-               )}
              </CardContent>
           </Card>
         </section>

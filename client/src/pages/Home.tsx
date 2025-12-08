@@ -287,14 +287,14 @@ export default function Home() {
                 )}
              </div>
           </div>
-          <Card className="bg-secondary/30 border-white/5">
+          <Card className="bg-secondary/30 border-white/5 overflow-hidden">
              <CardContent className="p-4">
-               <div className="w-full flex justify-center">
+               <div className="w-full flex justify-center overflow-hidden">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      className="pointer-events-auto bg-transparent border-0 p-0"
+                      className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full"
                       modifiers={{
                         workedOut: (date) => profile.workoutHistory.includes(format(date, 'yyyy-MM-dd'))
                       }}

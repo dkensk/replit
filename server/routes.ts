@@ -8,6 +8,12 @@ import {
   insertMealLogSchema,
 } from "@shared/schema";
 import { z } from "zod";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -238,6 +244,54 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error promoting tier:", error);
       res.status(500).json({ error: "Failed to promote tier" });
+    }
+  });
+
+  // AI Chat endpoint
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { messages, profile } = req.body;
+
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: "Messages array required" });
+      }
+
+      const systemPrompt = `You are Coach AI, an expert hockey training assistant. ${
+        profile
+          ? `The user is a ${profile.position} playing at the ${profile.level} level, ${profile.age} years old, weighing ${profile.weight} lbs.`
+          : ""
+      }
+
+You provide personalized advice on:
+- Hockey-specific workouts and training
+- Nutrition for athletes
+- Skill development drills
+- Game strategy and positioning
+- Mental preparation
+
+Keep responses concise (2-3 sentences), actionable, and encouraging. Use hockey terminology appropriately.`;
+
+      const chatMessages = [
+        { role: "system" as const, content: systemPrompt },
+        ...messages.map((m: { role: string; content: string }) => ({
+          role: m.role === "user" ? ("user" as const) : ("assistant" as const),
+          content: m.content,
+        })),
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: chatMessages,
+        max_tokens: 200,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content || "I'm having trouble responding right now. Please try again.";
+
+      res.json({ response });
+    } catch (error) {
+      console.error("Error in chat:", error);
+      res.status(500).json({ error: "Failed to get AI response" });
     }
   });
 

@@ -206,50 +206,65 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setConsumedMacros(stats);
   }, []);
 
-  // Calculate macros using proper formulas for youth hockey athletes
-  // Research shows young hockey players need 2,750-3,000+ calories/day
-  // Using Mifflin-St Jeor equation with high activity multiplier for athletes
+  // Calculate macros using evidence-based formulas for youth hockey athletes
+  // Sources: PMC research, ISSA, sports nutrition guidelines
+  // Teen athletes (13-16): Maintenance 2,200-3,200 cal/day depending on size/activity
   
   const weightKg = profile.weight * 0.453592; // Convert lbs to kg
   const heightCm = (profile.heightFt * 12 + profile.heightIn) * 2.54; // Convert to cm
   
-  // BMR using Mifflin-St Jeor (assumes male hockey player)
+  // BMR using Mifflin-St Jeor equation
   const bmr = 10 * weightKg + 6.25 * heightCm - 5 * profile.age + 5;
   
-  // Activity multiplier: 1.8 for hockey athletes (high activity level)
-  // Youth athletes need extra calories for growth (add 10-15% for ages under 18)
-  const activityMultiplier = profile.age < 18 ? 1.9 : 1.8;
-  let baseCalories = bmr * activityMultiplier;
+  // Activity multiplier based on hockey level (moderate-high activity)
+  // 1.55 = moderate active, 1.725 = very active, 1.9 = extremely active
+  const levelMultiplier = {
+    house: 1.55,
+    a: 1.65,
+    aa: 1.725,
+    aaa: 1.8,
+    junior: 1.9
+  };
+  const activityMultiplier = levelMultiplier[profile.level] || 1.65;
   
-  // Minimum calorie floors for young athletes (safety measure)
-  const minCalories = profile.age <= 13 ? 2400 : profile.age <= 16 ? 2600 : 2200;
-  baseCalories = Math.max(baseCalories, minCalories);
+  // Calculate maintenance calories
+  let maintenanceCalories = bmr * activityMultiplier;
   
-  // Smaller goal adjustments for young athletes (±200-300 instead of ±500)
-  // Young athletes should not be in large deficits
-  if (profile.goal === "muscle") baseCalories += 300;
-  if (profile.goal === "fatloss") {
-    // More conservative deficit for youth - only 10% reduction, minimum floor applies
-    const deficit = profile.age < 16 ? 200 : 300;
-    baseCalories = Math.max(baseCalories - deficit, minCalories);
+  // Age-appropriate minimum floors (prevent underfueling during growth)
+  const minCalories = profile.age <= 13 ? 2000 : profile.age <= 15 ? 2200 : profile.age <= 17 ? 2400 : 2000;
+  maintenanceCalories = Math.max(maintenanceCalories, minCalories);
+  
+  // Goal adjustments based on research:
+  // - Muscle gain: +300-500 cal surplus
+  // - Fat loss: NOT recommended for teens, but if selected, very mild deficit with floor
+  // - Maintain: maintenance calories
+  let goalCalories = maintenanceCalories;
+  
+  if (profile.goal === "muscle") {
+    goalCalories = maintenanceCalories + 350; // Moderate surplus for muscle gain
+  } else if (profile.goal === "fatloss") {
+    // Very conservative for youth - focus on body recomposition, not aggressive cuts
+    // Only 10-15% reduction with strict minimums
+    const mildDeficit = maintenanceCalories * 0.1;
+    goalCalories = Math.max(maintenanceCalories - mildDeficit, minCalories);
   }
   
-  const calories = Math.round(baseCalories);
+  const calories = Math.round(goalCalories);
   
-  // Protein: 1.4-1.7 g/kg for hockey players (using ~1.5 g/kg = 0.68 g/lb)
-  const protein = Math.round(profile.weight * 0.7);
+  // Protein: 1.2-1.5 g/kg for teen athletes (0.55-0.68 g/lb)
+  const protein = Math.round(profile.weight * 0.6);
   
-  // Fat: 25-30% of calories
-  const fats = Math.round((calories * 0.25) / 9);
+  // Fat: 25-30% of calories (essential for growth and hormones)
+  const fats = Math.round((calories * 0.28) / 9);
   
-  // Carbs: Remaining calories (6-8 g/kg for athletes)
+  // Carbs: Remaining calories (primary fuel for hockey)
   const caloriesFromProtein = protein * 4;
   const caloriesFromFat = fats * 9;
   const remainingCalories = calories - caloriesFromProtein - caloriesFromFat;
   const carbs = Math.max(0, Math.round(remainingCalories / 4));
 
-  const recommendedProtein = Math.round(profile.weight * 0.7);
-  const recommendedCalories = Math.round(bmr * activityMultiplier);
+  const recommendedProtein = Math.round(profile.weight * 0.6);
+  const recommendedCalories = Math.round(maintenanceCalories);
 
   return (
     <UserContext.Provider

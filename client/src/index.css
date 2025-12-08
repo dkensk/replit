@@ -140,16 +140,17 @@
   box-shadow: 0 0 10px hsla(190, 100%, 50%, 0.3), 0 0 20px hsla(190, 100%, 50%, 0.1);
 }
 
-/* Calendar streak day styling - logged workout days get a centered blue circle */
+/* Calendar streak day styling - logged workout days get a centered cyan circle */
 .streak-logged-day {
-  background-color: #3b82f6 !important;
-  color: white !important;
+  background-color: hsl(190 100% 50%) !important;
+  color: hsl(222 47% 11%) !important;
   font-weight: bold !important;
   border-radius: 9999px !important;
+  box-shadow: none !important;
 }
 
-/* When a logged day is also selected, keep blue with a ring */
+/* When a logged day is also selected, keep the same simple circle */
 .streak-logged-day[data-selected-single="true"] {
-  background-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6 !important;
+  background-color: hsl(190 100% 50%) !important;
+  box-shadow: none !important;
 }

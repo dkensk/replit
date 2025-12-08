@@ -297,17 +297,12 @@ export default function Home() {
                       selected={selectedDate}
                       onSelect={(date) => date && setSelectedDate(date)}
                       disabled={(date) => date > new Date()}
-                      className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full [&_button[data-selected-single=true]]:rounded-full"
+                      className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full"
                       modifiers={{
-                        streakDay: (date) => streakDates.has(format(date, 'yyyy-MM-dd'))
+                        logged: (date) => streakDates.has(format(date, 'yyyy-MM-dd'))
                       }}
-                      modifiersStyles={{
-                        streakDay: { 
-                          fontWeight: 'bold', 
-                          color: 'white',
-                          borderRadius: '9999px',
-                          backgroundColor: '#3b82f6'
-                        }
+                      modifiersClassNames={{
+                        logged: "streak-logged-day"
                       }}
                     />
                </div>

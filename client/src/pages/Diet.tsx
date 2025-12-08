@@ -51,7 +51,7 @@ export default function Diet() {
     fats: ""
   });
 
-  // Base meals with simple names AND recipes
+  // Base meals with simple names AND recipes - Expanded for all ages
   const baseMeals: MealSection[] = [
     {
       id: "breakfast",
@@ -83,6 +83,69 @@ export default function Diet() {
           carbs: 50, 
           fats: 10,
           recipe: "1. Fill bowl with 1 cup Greek Yogurt (0% or 2%).\n2. Layer with 1/2 cup granola and honey.\n3. Top with fresh strawberries."
+        },
+        { 
+          id: "pancakes_protein", 
+          name: "Protein Pancakes", 
+          calories: 480, 
+          protein: 38, 
+          carbs: 55, 
+          fats: 14,
+          recipe: "1. Mix 1 cup pancake mix with 1 scoop protein powder.\n2. Add 1 egg and 3/4 cup milk, stir until smooth.\n3. Cook on griddle and top with fresh fruit and maple syrup."
+        },
+        { 
+          id: "avocado_toast", 
+          name: "Avocado Toast & Eggs", 
+          calories: 490, 
+          protein: 28, 
+          carbs: 35, 
+          fats: 28,
+          recipe: "1. Toast 2 slices whole grain bread.\n2. Mash 1 ripe avocado and spread on toast.\n3. Top with 2 poached eggs and everything seasoning."
+        },
+        { 
+          id: "smoothie_bowl", 
+          name: "Protein Smoothie Bowl", 
+          calories: 520, 
+          protein: 40, 
+          carbs: 60, 
+          fats: 15,
+          recipe: "1. Blend frozen berries, banana, Greek yogurt, and protein powder.\n2. Pour into bowl.\n3. Top with granola, chia seeds, and sliced almonds."
+        },
+        { 
+          id: "breakfast_burrito", 
+          name: "Breakfast Burrito", 
+          calories: 600, 
+          protein: 42, 
+          carbs: 45, 
+          fats: 28,
+          recipe: "1. Scramble 3 eggs with diced peppers.\n2. Add black beans and shredded cheese.\n3. Wrap in large tortilla with salsa."
+        },
+        { 
+          id: "overnight_oats", 
+          name: "Overnight Oats", 
+          calories: 480, 
+          protein: 30, 
+          carbs: 65, 
+          fats: 14,
+          recipe: "1. Mix 1 cup oats with 1 cup milk and Greek yogurt.\n2. Add chia seeds and honey, refrigerate overnight.\n3. Top with fresh fruit in the morning."
+        },
+        { 
+          id: "french_toast", 
+          name: "French Toast", 
+          calories: 540, 
+          protein: 32, 
+          carbs: 60, 
+          fats: 18,
+          recipe: "1. Dip bread slices in beaten eggs with cinnamon.\n2. Cook on buttered griddle until golden.\n3. Serve with fruit and a drizzle of maple syrup."
+        },
+        { 
+          id: "egg_muffins", 
+          name: "Egg Muffin Cups", 
+          calories: 420, 
+          protein: 35, 
+          carbs: 15, 
+          fats: 26,
+          recipe: "1. Whisk 6 eggs with diced veggies and cheese.\n2. Pour into muffin tin and bake at 350°F for 20 mins.\n3. Store extras in fridge for quick breakfasts."
         }
       ]
     },
@@ -116,6 +179,78 @@ export default function Diet() {
           carbs: 10, 
           fats: 35,
           recipe: "1. Sauté sliced lean beef strips in pan.\n2. Add bell peppers, onions, and snap peas.\n3. Season with soy sauce and garlic. Serve over cauliflower rice or regular rice."
+        },
+        { 
+          id: "tuna_salad", 
+          name: "Tuna Power Salad", 
+          calories: 520, 
+          protein: 48, 
+          carbs: 25, 
+          fats: 28,
+          recipe: "1. Mix 2 cans tuna with light mayo and mustard.\n2. Serve over mixed greens with cherry tomatoes.\n3. Add hard-boiled egg and olive oil dressing."
+        },
+        { 
+          id: "chicken_caesar", 
+          name: "Chicken Caesar Salad", 
+          calories: 580, 
+          protein: 52, 
+          carbs: 20, 
+          fats: 32,
+          recipe: "1. Grill and slice 6oz chicken breast.\n2. Toss romaine with Caesar dressing and parmesan.\n3. Top with chicken and croutons."
+        },
+        { 
+          id: "quinoa_bowl", 
+          name: "Quinoa Power Bowl", 
+          calories: 620, 
+          protein: 45, 
+          carbs: 65, 
+          fats: 22,
+          recipe: "1. Cook 1 cup quinoa according to package.\n2. Top with grilled chicken, chickpeas, and cucumber.\n3. Drizzle with tahini dressing."
+        },
+        { 
+          id: "burrito_bowl", 
+          name: "Burrito Bowl", 
+          calories: 680, 
+          protein: 48, 
+          carbs: 70, 
+          fats: 24,
+          recipe: "1. Layer brown rice in bowl.\n2. Add grilled chicken, black beans, corn, and salsa.\n3. Top with cheese, sour cream, and guacamole."
+        },
+        { 
+          id: "grilled_cheese_soup", 
+          name: "Grilled Cheese & Soup", 
+          calories: 550, 
+          protein: 28, 
+          carbs: 50, 
+          fats: 28,
+          recipe: "1. Make grilled cheese with whole grain bread and cheddar.\n2. Heat up tomato soup.\n3. Serve together for a classic combo."
+        },
+        { 
+          id: "teriyaki_chicken", 
+          name: "Teriyaki Chicken Bowl", 
+          calories: 640, 
+          protein: 52, 
+          carbs: 68, 
+          fats: 18,
+          recipe: "1. Cook chicken thighs in teriyaki sauce.\n2. Serve over white rice with steamed edamame.\n3. Garnish with sesame seeds and green onion."
+        },
+        { 
+          id: "turkey_sandwich", 
+          name: "Turkey Club Sandwich", 
+          calories: 560, 
+          protein: 42, 
+          carbs: 45, 
+          fats: 24,
+          recipe: "1. Layer turkey, bacon, lettuce, tomato on toasted bread.\n2. Add light mayo.\n3. Serve with side of fruit or chips."
+        },
+        { 
+          id: "shrimp_tacos", 
+          name: "Shrimp Tacos", 
+          calories: 520, 
+          protein: 40, 
+          carbs: 48, 
+          fats: 20,
+          recipe: "1. Sauté shrimp with taco seasoning.\n2. Serve in corn tortillas with cabbage slaw.\n3. Top with lime crema and cilantro."
         }
       ]
     },
@@ -149,6 +284,87 @@ export default function Diet() {
           carbs: 25, 
           fats: 9,
           recipe: "1. Unwrap and enjoy.\n2. Drink 500ml water with it for digestion."
+        },
+        { 
+          id: "trail_mix", 
+          name: "Trail Mix & Fruit", 
+          calories: 320, 
+          protein: 12, 
+          carbs: 35, 
+          fats: 18,
+          recipe: "1. Mix almonds, walnuts, and dried cranberries.\n2. Add a handful of dark chocolate chips.\n3. Pair with an apple or banana."
+        },
+        { 
+          id: "greek_yogurt", 
+          name: "Greek Yogurt & Honey", 
+          calories: 280, 
+          protein: 25, 
+          carbs: 30, 
+          fats: 8,
+          recipe: "1. Scoop 1 cup Greek yogurt into bowl.\n2. Drizzle with 1 tbsp honey.\n3. Sprinkle with cinnamon and walnuts."
+        },
+        { 
+          id: "cottage_cheese", 
+          name: "Cottage Cheese & Fruit", 
+          calories: 260, 
+          protein: 28, 
+          carbs: 22, 
+          fats: 8,
+          recipe: "1. Scoop 1 cup cottage cheese into bowl.\n2. Top with pineapple chunks or peaches.\n3. Add a drizzle of honey."
+        },
+        { 
+          id: "apple_almond", 
+          name: "Apple & Almond Butter", 
+          calories: 290, 
+          protein: 8, 
+          carbs: 35, 
+          fats: 16,
+          recipe: "1. Slice 1 medium apple.\n2. Serve with 2 tbsp almond butter for dipping.\n3. Sprinkle with cinnamon."
+        },
+        { 
+          id: "hard_boiled_eggs", 
+          name: "Hard Boiled Eggs", 
+          calories: 210, 
+          protein: 18, 
+          carbs: 2, 
+          fats: 14,
+          recipe: "1. Boil 3 eggs for 10-12 minutes.\n2. Cool and peel.\n3. Season with salt and pepper."
+        },
+        { 
+          id: "beef_jerky", 
+          name: "Beef Jerky & Cheese", 
+          calories: 280, 
+          protein: 32, 
+          carbs: 8, 
+          fats: 14,
+          recipe: "1. Grab 2oz beef jerky.\n2. Pair with 1oz cheese stick.\n3. Great grab-and-go option."
+        },
+        { 
+          id: "hummus_veggies", 
+          name: "Hummus & Veggies", 
+          calories: 220, 
+          protein: 8, 
+          carbs: 25, 
+          fats: 12,
+          recipe: "1. Scoop 4 tbsp hummus into bowl.\n2. Cut carrots, celery, and cucumber.\n3. Dip and enjoy."
+        },
+        { 
+          id: "smoothie", 
+          name: "Fruit Smoothie", 
+          calories: 340, 
+          protein: 30, 
+          carbs: 45, 
+          fats: 6,
+          recipe: "1. Blend 1 cup frozen berries with 1 scoop protein.\n2. Add 1 cup milk and banana.\n3. Blend until smooth."
+        },
+        { 
+          id: "energy_balls", 
+          name: "Energy Balls", 
+          calories: 260, 
+          protein: 12, 
+          carbs: 28, 
+          fats: 14,
+          recipe: "1. Mix oats, peanut butter, honey, and chocolate chips.\n2. Roll into 6 balls.\n3. Refrigerate for 30 mins before eating."
         }
       ]
     },
@@ -182,6 +398,87 @@ export default function Diet() {
           carbs: 90, 
           fats: 25,
           recipe: "1. Brown lean ground beef/turkey in pot.\n2. Add marinara sauce and simmer.\n3. Serve over 2 cups cooked pasta."
+        },
+        { 
+          id: "chicken_breast", 
+          name: "Baked Chicken Breast", 
+          calories: 650, 
+          protein: 55, 
+          carbs: 45, 
+          fats: 22,
+          recipe: "1. Season chicken breast with herbs and olive oil.\n2. Bake at 400°F for 25 minutes.\n3. Serve with roasted vegetables and quinoa."
+        },
+        { 
+          id: "pork_chops", 
+          name: "Grilled Pork Chops", 
+          calories: 680, 
+          protein: 52, 
+          carbs: 40, 
+          fats: 32,
+          recipe: "1. Season pork chops with garlic and rosemary.\n2. Grill 4-5 minutes per side.\n3. Serve with mashed potatoes and green beans."
+        },
+        { 
+          id: "shrimp_pasta", 
+          name: "Shrimp Alfredo", 
+          calories: 720, 
+          protein: 48, 
+          carbs: 65, 
+          fats: 30,
+          recipe: "1. Sauté shrimp in garlic butter.\n2. Cook fettuccine and toss with alfredo sauce.\n3. Combine and top with parmesan."
+        },
+        { 
+          id: "turkey_meatballs", 
+          name: "Turkey Meatballs", 
+          calories: 620, 
+          protein: 50, 
+          carbs: 55, 
+          fats: 22,
+          recipe: "1. Mix ground turkey with breadcrumbs and egg.\n2. Bake meatballs at 400°F for 20 mins.\n3. Serve over whole wheat pasta with marinara."
+        },
+        { 
+          id: "fish_tacos", 
+          name: "Fish Tacos", 
+          calories: 580, 
+          protein: 42, 
+          carbs: 52, 
+          fats: 24,
+          recipe: "1. Season tilapia with cumin and grill.\n2. Serve in corn tortillas with cabbage slaw.\n3. Top with lime crema and fresh cilantro."
+        },
+        { 
+          id: "chicken_stir_fry", 
+          name: "Chicken Stir Fry", 
+          calories: 640, 
+          protein: 52, 
+          carbs: 55, 
+          fats: 20,
+          recipe: "1. Slice chicken breast and stir fry with vegetables.\n2. Add soy sauce and sesame oil.\n3. Serve over brown rice."
+        },
+        { 
+          id: "bbq_chicken", 
+          name: "BBQ Chicken & Cornbread", 
+          calories: 720, 
+          protein: 55, 
+          carbs: 65, 
+          fats: 28,
+          recipe: "1. Grill chicken thighs with BBQ sauce.\n2. Serve with baked beans and cornbread.\n3. Add coleslaw on the side."
+        },
+        { 
+          id: "stuffed_peppers", 
+          name: "Stuffed Bell Peppers", 
+          calories: 580, 
+          protein: 42, 
+          carbs: 48, 
+          fats: 24,
+          recipe: "1. Mix ground turkey with rice and tomato sauce.\n2. Stuff into halved bell peppers.\n3. Bake at 375°F for 35 minutes with cheese on top."
+        },
+        { 
+          id: "cod_veggies", 
+          name: "Baked Cod & Veggies", 
+          calories: 520, 
+          protein: 48, 
+          carbs: 35, 
+          fats: 18,
+          recipe: "1. Season cod with lemon and dill.\n2. Bake at 400°F with zucchini and tomatoes.\n3. Serve with a side of brown rice."
         }
       ]
     }

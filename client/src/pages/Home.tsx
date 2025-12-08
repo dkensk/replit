@@ -304,10 +304,9 @@ export default function Home() {
                       modifiersStyles={{
                         streakDay: { 
                           fontWeight: 'bold', 
-                          border: '2px solid #60a5fa',
-                          color: '#60a5fa',
+                          color: 'white',
                           borderRadius: '9999px',
-                          backgroundColor: 'transparent'
+                          backgroundColor: '#3b82f6'
                         }
                       }}
                     />

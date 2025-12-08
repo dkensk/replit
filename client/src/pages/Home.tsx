@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Zap, Flame, Settings2, Trophy, Crown, ArrowUpCircle, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
+import { Zap, Flame, Settings2, Trophy, Crown, ArrowUpCircle, Calendar as CalendarIcon, CheckCircle2, Undo2 } from "lucide-react";
 import heroImage from "@assets/generated_images/cinematic_hockey_arena_ice_surface.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect, useMemo } from "react";
@@ -28,7 +28,7 @@ const WORKOUT_LABELS: Record<string, string> = {
 const DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 export default function Home() {
-  const { profile, updateProfile, macros, consumedMacros, addXp, promoteTier, logWorkout } = useUser();
+  const { profile, updateProfile, macros, consumedMacros, addXp, promoteTier, logWorkout, undoWorkout } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   
   // Calendar State
@@ -338,18 +338,29 @@ export default function Home() {
                    See Training tab for details
                  </div>
               </div>
-              <Button 
-                className={cn(
-                  "w-full mt-4 font-bold border transition-all",
-                  isTodayCompleted 
-                    ? "bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30"
-                    : "bg-primary/10 text-primary border-primary/50 hover:bg-primary/20"
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  className={cn(
+                    "flex-1 font-bold border transition-all",
+                    isTodayCompleted 
+                      ? "bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30"
+                      : "bg-primary/10 text-primary border-primary/50 hover:bg-primary/20"
+                  )}
+                  onClick={handleCompleteWorkout}
+                  disabled={isTodayCompleted}
+                >
+                  {isTodayCompleted ? <><CheckCircle2 className="w-4 h-4 mr-2"/> Workout Completed (+15 XP)</> : "Complete & Log Workout"}
+                </Button>
+                {isTodayCompleted && (
+                  <Button 
+                    variant="outline"
+                    className="border-muted-foreground/30 text-muted-foreground hover:text-white hover:border-white/50"
+                    onClick={undoWorkout}
+                  >
+                    <Undo2 className="w-4 h-4 mr-1"/> Undo
+                  </Button>
                 )}
-                onClick={handleCompleteWorkout}
-                disabled={isTodayCompleted}
-              >
-                {isTodayCompleted ? <><CheckCircle2 className="w-4 h-4 mr-2"/> Workout Completed (+15 XP)</> : "Complete & Log Workout"}
-              </Button>
+              </div>
             </CardContent>
           </Card>
         </section>

@@ -37,6 +37,16 @@ export async function logWorkout(date: string, workoutType: string): Promise<Wor
   return res.json();
 }
 
+export async function deleteWorkout(date: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/workouts/${date}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to delete workout");
+  }
+}
+
 export async function fetchMealLogs(date: string): Promise<MealLog[]> {
   const res = await fetch(`${API_BASE}/meals/${date}`);
   if (!res.ok) throw new Error("Failed to fetch meal logs");

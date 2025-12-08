@@ -50,6 +50,7 @@ type UserContextType = {
   addXp: (amount: number) => void;
   promoteTier: () => void;
   logWorkout: () => void;
+  undoWorkout: () => void;
   isLoading: boolean;
 };
 
@@ -107,6 +108,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const promoteMutation = useMutation({
     mutationFn: api.promoteTier,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
+  // Undo workout mutation
+  const undoWorkoutMutation = useMutation({
+    mutationFn: (date: string) => api.deleteWorkout(date),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workouts"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
   });
@@ -175,6 +185,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     workoutMutation.mutate({ date: today, workoutType });
   }, [profile.schedule, workoutMutation]);
 
+  const undoWorkout = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    undoWorkoutMutation.mutate(today);
+  }, [undoWorkoutMutation]);
+
   const toggleConsumedMeal = useCallback((mealId: string) => {
     setConsumedMeals(prev => {
       const newState = !prev[mealId];
@@ -224,6 +239,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         addXp,
         promoteTier,
         logWorkout,
+        undoWorkout,
         isLoading,
       }}
     >

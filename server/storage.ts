@@ -31,6 +31,7 @@ export interface IStorage {
   getWorkoutLogs(userId: string): Promise<WorkoutLog[]>;
   logWorkout(log: InsertWorkoutLog): Promise<WorkoutLog>;
   getWorkoutLogByDate(userId: string, date: string): Promise<WorkoutLog | undefined>;
+  deleteWorkoutByDate(userId: string, date: string): Promise<boolean>;
   
   // Meal log methods
   getMealLogsForDate(userId: string, date: string): Promise<MealLog[]>;
@@ -91,6 +92,13 @@ export class DatabaseStorage implements IStorage {
       .from(workoutLogs)
       .where(and(eq(workoutLogs.userId, userId), eq(workoutLogs.date, date)));
     return log;
+  }
+
+  async deleteWorkoutByDate(userId: string, date: string): Promise<boolean> {
+    const result = await db
+      .delete(workoutLogs)
+      .where(and(eq(workoutLogs.userId, userId), eq(workoutLogs.date, date)));
+    return true;
   }
 
   // Meal log methods

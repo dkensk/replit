@@ -139,3 +139,17 @@
 .neon-glow {
   box-shadow: 0 0 10px hsla(190, 100%, 50%, 0.3), 0 0 20px hsla(190, 100%, 50%, 0.1);
 }
+
+/* Calendar streak day styling - logged workout days get a centered blue circle */
+.streak-logged-day {
+  background-color: #3b82f6 !important;
+  color: white !important;
+  font-weight: bold !important;
+  border-radius: 9999px !important;
+}
+
+/* When a logged day is also selected, keep blue with a ring */
+.streak-logged-day[data-selected-single="true"] {
+  background-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6 !important;
+}

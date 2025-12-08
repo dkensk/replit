@@ -124,6 +124,28 @@ export async function registerRoutes(
     }
   });
 
+  // Delete/undo a workout
+  app.delete("/api/workouts/:date", async (req, res) => {
+    try {
+      const defaultUserId = "default-user";
+      const { date } = req.params;
+      
+      await storage.deleteWorkoutByDate(defaultUserId, date);
+      
+      // Remove XP from profile
+      const profile = await storage.getProfileByUserId(defaultUserId);
+      if (profile) {
+        const newXp = Math.max(0, profile.xp - 15);
+        await storage.updateProfile(defaultUserId, { xp: newXp });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting workout:", error);
+      res.status(500).json({ error: "Failed to delete workout" });
+    }
+  });
+
   // Get meal logs for a date
   app.get("/api/meals/:date", async (req, res) => {
     try {

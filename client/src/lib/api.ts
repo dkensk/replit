@@ -88,3 +88,20 @@ export async function promoteTier(): Promise<Profile> {
   }
   return res.json();
 }
+
+export async function sendChatMessage(
+  messages: { role: string; content: string }[],
+  profile: { position: string; level: string; age: number; weight: number } | null
+): Promise<string> {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, profile }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to get AI response");
+  }
+  const data = await res.json();
+  return data.response;
+}

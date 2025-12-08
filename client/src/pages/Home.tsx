@@ -293,7 +293,7 @@ export default function Home() {
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      onSelect={(date) => date && setSelectedDate(date)}
                       disabled={(date) => date > new Date()}
                       className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full [&_button[data-selected-single=true]]:rounded-full"
                       modifiers={{

@@ -299,10 +299,12 @@ export default function Home() {
                       disabled={(date) => date > new Date()}
                       className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full"
                       modifiers={{
-                        logged: (date) => streakDates.has(format(date, 'yyyy-MM-dd'))
+                        logged: (date) => streakDates.has(format(date, 'yyyy-MM-dd')),
+                        today: (date) => format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
                       }}
                       modifiersClassNames={{
-                        logged: "streak-logged-day"
+                        logged: "streak-logged-day",
+                        today: "calendar-today"
                       }}
                     />
                </div>

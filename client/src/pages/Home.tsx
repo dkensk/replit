@@ -294,7 +294,8 @@ export default function Home() {
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full"
+                      disabled={(date) => date > new Date()}
+                      className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full [&_button[data-selected-single=true]]:rounded-full"
                       modifiers={{
                         workedOut: (date) => profile.workoutHistory.includes(format(date, 'yyyy-MM-dd'))
                       }}

@@ -24,7 +24,7 @@ const WORKOUT_TYPES = [
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
-// Exercise Database - Expanded with "Reliable Source" Quality Data
+// Exercise Database - Expanded with "Reliable Source" Quality Data for All Ages
 const EXERCISES: Record<string, Array<{ id: string, name: string, category: string }>> = {
   "legs_compound": [
     { id: "back_squat", name: "Back Squat", category: "legs_compound" },
@@ -32,21 +32,40 @@ const EXERCISES: Record<string, Array<{ id: string, name: string, category: stri
     { id: "leg_press", name: "Leg Press", category: "legs_compound" },
     { id: "hack_squat", name: "Hack Squat", category: "legs_compound" },
     { id: "safety_bar_squat", name: "Safety Bar Squat", category: "legs_compound" },
-    { id: "zercher_squat", name: "Zercher Squat", category: "legs_compound" }
+    { id: "zercher_squat", name: "Zercher Squat", category: "legs_compound" },
+    { id: "goblet_squat", name: "Goblet Squat", category: "legs_compound" },
+    { id: "bodyweight_squat", name: "Bodyweight Squat", category: "legs_compound" },
+    { id: "box_squat", name: "Box Squat", category: "legs_compound" },
+    { id: "pause_squat", name: "Pause Squat", category: "legs_compound" },
+    { id: "anderson_squat", name: "Anderson Squat", category: "legs_compound" },
+    { id: "sissy_squat", name: "Sissy Squat", category: "legs_compound" }
   ],
   "legs_hinge": [
     { id: "rdl", name: "Romanian Deadlift", category: "legs_hinge" },
     { id: "trap_bar", name: "Trap Bar Deadlift", category: "legs_hinge" },
     { id: "good_morning", name: "Good Mornings", category: "legs_hinge" },
     { id: "kettlebell_swing", name: "Kettlebell Swing", category: "legs_hinge" },
-    { id: "single_leg_rdl", name: "Single Leg RDL", category: "legs_hinge" }
+    { id: "single_leg_rdl", name: "Single Leg RDL", category: "legs_hinge" },
+    { id: "conventional_deadlift", name: "Conventional Deadlift", category: "legs_hinge" },
+    { id: "sumo_deadlift", name: "Sumo Deadlift", category: "legs_hinge" },
+    { id: "hip_thrust", name: "Barbell Hip Thrust", category: "legs_hinge" },
+    { id: "glute_bridge", name: "Glute Bridge", category: "legs_hinge" },
+    { id: "cable_pull_through", name: "Cable Pull Through", category: "legs_hinge" },
+    { id: "hyperextension", name: "Back Extension", category: "legs_hinge" },
+    { id: "nordic_curl", name: "Nordic Hamstring Curl", category: "legs_hinge" }
   ],
   "legs_unilateral": [
     { id: "split_squat", name: "Bulgarian Split Squat", category: "legs_unilateral" },
     { id: "walking_lunges", name: "Walking Lunges", category: "legs_unilateral" },
     { id: "reverse_lunges", name: "Reverse Lunges", category: "legs_unilateral" },
     { id: "step_ups", name: "Box Step Ups", category: "legs_unilateral" },
-    { id: "cossack_squat", name: "Cossack Squat", category: "legs_unilateral" }
+    { id: "cossack_squat", name: "Cossack Squat", category: "legs_unilateral" },
+    { id: "lateral_lunges", name: "Lateral Lunges", category: "legs_unilateral" },
+    { id: "curtsy_lunges", name: "Curtsy Lunges", category: "legs_unilateral" },
+    { id: "pistol_squat", name: "Pistol Squat", category: "legs_unilateral" },
+    { id: "single_leg_press", name: "Single Leg Press", category: "legs_unilateral" },
+    { id: "single_leg_squat", name: "Single Leg Squat to Box", category: "legs_unilateral" },
+    { id: "rear_foot_elevated_split", name: "Rear Foot Elevated Split Squat", category: "legs_unilateral" }
   ],
   "legs_explosive": [
     { id: "box_jumps", name: "Box Jumps", category: "legs_explosive" },
@@ -54,12 +73,25 @@ const EXERCISES: Record<string, Array<{ id: string, name: string, category: stri
     { id: "power_clean", name: "Power Clean", category: "legs_explosive" },
     { id: "depth_jumps", name: "Depth Jumps", category: "legs_explosive" },
     { id: "skater_jumps", name: "Skater Jumps", category: "legs_explosive" },
-    { id: "hurdle_hops", name: "Hurdle Hops", category: "legs_explosive" }
+    { id: "hurdle_hops", name: "Hurdle Hops", category: "legs_explosive" },
+    { id: "vertical_jump", name: "Vertical Jump", category: "legs_explosive" },
+    { id: "tuck_jumps", name: "Tuck Jumps", category: "legs_explosive" },
+    { id: "split_jump", name: "Split Jumps", category: "legs_explosive" },
+    { id: "single_leg_hop", name: "Single Leg Hops", category: "legs_explosive" },
+    { id: "lateral_bounds", name: "Lateral Bounds", category: "legs_explosive" },
+    { id: "hang_clean", name: "Hang Clean", category: "legs_explosive" },
+    { id: "jump_squat", name: "Jump Squat", category: "legs_explosive" },
+    { id: "medicine_ball_slam", name: "Medicine Ball Slam", category: "legs_explosive" },
+    { id: "sprint_starts", name: "Sprint Starts", category: "legs_explosive" }
   ],
   "calves": [
     { id: "standing_calf_raise", name: "Standing Calf Raise", category: "calves" },
     { id: "seated_calf_raise", name: "Seated Calf Raise", category: "calves" },
-    { id: "single_leg_calf_raise", name: "Single Leg Calf Raise", category: "calves" }
+    { id: "single_leg_calf_raise", name: "Single Leg Calf Raise", category: "calves" },
+    { id: "donkey_calf_raise", name: "Donkey Calf Raise", category: "calves" },
+    { id: "calf_press", name: "Calf Press (Leg Press)", category: "calves" },
+    { id: "jump_rope", name: "Jump Rope", category: "calves" },
+    { id: "tibialis_raise", name: "Tibialis Raise", category: "calves" }
   ],
   "upper_push": [
     { id: "bench_press", name: "Bench Press", category: "upper_push" },
@@ -67,7 +99,16 @@ const EXERCISES: Record<string, Array<{ id: string, name: string, category: stri
     { id: "incline_dumbbell_press", name: "Incline DB Press", category: "upper_push" },
     { id: "dips", name: "Weighted Dips", category: "upper_push" },
     { id: "landmine_press", name: "Landmine Press", category: "upper_push" },
-    { id: "pushups", name: "Weighted Pushups", category: "upper_push" }
+    { id: "pushups", name: "Weighted Pushups", category: "upper_push" },
+    { id: "decline_bench", name: "Decline Bench Press", category: "upper_push" },
+    { id: "dumbbell_bench", name: "Dumbbell Bench Press", category: "upper_push" },
+    { id: "floor_press", name: "Floor Press", category: "upper_push" },
+    { id: "pike_pushup", name: "Pike Pushups", category: "upper_push" },
+    { id: "arnold_press", name: "Arnold Press", category: "upper_push" },
+    { id: "push_press", name: "Push Press", category: "upper_push" },
+    { id: "cable_fly", name: "Cable Fly", category: "upper_push" },
+    { id: "dumbbell_fly", name: "Dumbbell Fly", category: "upper_push" },
+    { id: "machine_chest_press", name: "Machine Chest Press", category: "upper_push" }
   ],
   "upper_pull": [
     { id: "pullups", name: "Pull Ups", category: "upper_pull" },
@@ -75,26 +116,79 @@ const EXERCISES: Record<string, Array<{ id: string, name: string, category: stri
     { id: "face_pulls", name: "Face Pulls", category: "upper_pull" },
     { id: "single_arm_row", name: "Single Arm DB Row", category: "upper_pull" },
     { id: "lat_pulldown", name: "Lat Pulldown", category: "upper_pull" },
-    { id: "tbar_row", name: "T-Bar Row", category: "upper_pull" }
+    { id: "tbar_row", name: "T-Bar Row", category: "upper_pull" },
+    { id: "chin_ups", name: "Chin Ups", category: "upper_pull" },
+    { id: "pendlay_row", name: "Pendlay Row", category: "upper_pull" },
+    { id: "cable_row", name: "Seated Cable Row", category: "upper_pull" },
+    { id: "inverted_row", name: "Inverted Row", category: "upper_pull" },
+    { id: "meadows_row", name: "Meadows Row", category: "upper_pull" },
+    { id: "chest_supported_row", name: "Chest Supported Row", category: "upper_pull" },
+    { id: "straight_arm_pulldown", name: "Straight Arm Pulldown", category: "upper_pull" },
+    { id: "rear_delt_fly", name: "Rear Delt Fly", category: "upper_pull" },
+    { id: "band_pull_apart", name: "Band Pull Apart", category: "upper_pull" }
   ],
   "isolation_bicep": [
     { id: "barbell_curl", name: "Barbell Curl", category: "isolation_bicep" },
     { id: "hammer_curl", name: "Hammer Curl", category: "isolation_bicep" },
     { id: "preacher_curl", name: "Preacher Curl", category: "isolation_bicep" },
-    { id: "incline_curl", name: "Incline DB Curl", category: "isolation_bicep" }
+    { id: "incline_curl", name: "Incline DB Curl", category: "isolation_bicep" },
+    { id: "concentration_curl", name: "Concentration Curl", category: "isolation_bicep" },
+    { id: "cable_curl", name: "Cable Curl", category: "isolation_bicep" },
+    { id: "spider_curl", name: "Spider Curl", category: "isolation_bicep" },
+    { id: "ez_bar_curl", name: "EZ Bar Curl", category: "isolation_bicep" },
+    { id: "reverse_curl", name: "Reverse Curl", category: "isolation_bicep" },
+    { id: "drag_curl", name: "Drag Curl", category: "isolation_bicep" }
   ],
   "isolation_tricep": [
     { id: "skull_crusher", name: "Skull Crushers", category: "isolation_tricep" },
     { id: "tricep_pushdown", name: "Cable Pushdown", category: "isolation_tricep" },
     { id: "overhead_extension", name: "Overhead Extension", category: "isolation_tricep" },
-    { id: "close_grip_bench", name: "Close Grip Bench", category: "isolation_tricep" }
+    { id: "close_grip_bench", name: "Close Grip Bench", category: "isolation_tricep" },
+    { id: "tricep_kickback", name: "Tricep Kickback", category: "isolation_tricep" },
+    { id: "rope_pushdown", name: "Rope Pushdown", category: "isolation_tricep" },
+    { id: "diamond_pushup", name: "Diamond Pushups", category: "isolation_tricep" },
+    { id: "jm_press", name: "JM Press", category: "isolation_tricep" },
+    { id: "tricep_dips", name: "Bench Dips", category: "isolation_tricep" }
   ],
   "core": [
     { id: "plank", name: "Weighted Plank", category: "core" },
     { id: "pallof_press", name: "Pallof Press", category: "core" },
     { id: "ab_wheel", name: "Ab Wheel Rollout", category: "core" },
     { id: "hanging_leg_raise", name: "Hanging Leg Raise", category: "core" },
-    { id: "russian_twist", name: "Russian Twist", category: "core" }
+    { id: "russian_twist", name: "Russian Twist", category: "core" },
+    { id: "dead_bug", name: "Dead Bug", category: "core" },
+    { id: "bird_dog", name: "Bird Dog", category: "core" },
+    { id: "bicycle_crunch", name: "Bicycle Crunch", category: "core" },
+    { id: "mountain_climber", name: "Mountain Climbers", category: "core" },
+    { id: "side_plank", name: "Side Plank", category: "core" },
+    { id: "v_ups", name: "V-Ups", category: "core" },
+    { id: "toe_touches", name: "Toe Touches", category: "core" },
+    { id: "cable_crunch", name: "Cable Crunch", category: "core" },
+    { id: "hollow_hold", name: "Hollow Hold", category: "core" },
+    { id: "woodchop", name: "Cable Woodchop", category: "core" },
+    { id: "suitcase_carry", name: "Suitcase Carry", category: "core" },
+    { id: "farmers_walk", name: "Farmers Walk", category: "core" }
+  ],
+  "shoulders": [
+    { id: "lateral_raise", name: "Lateral Raise", category: "shoulders" },
+    { id: "front_raise", name: "Front Raise", category: "shoulders" },
+    { id: "upright_row", name: "Upright Row", category: "shoulders" },
+    { id: "shrugs", name: "Barbell Shrugs", category: "shoulders" },
+    { id: "cuban_rotation", name: "Cuban Rotation", category: "shoulders" },
+    { id: "y_raise", name: "Y Raise", category: "shoulders" },
+    { id: "prone_y_raise", name: "Prone Y Raise", category: "shoulders" },
+    { id: "reverse_fly_machine", name: "Reverse Fly Machine", category: "shoulders" }
+  ],
+  "mobility": [
+    { id: "hip_90_90", name: "90/90 Hip Stretch", category: "mobility" },
+    { id: "world_greatest", name: "World's Greatest Stretch", category: "mobility" },
+    { id: "cat_cow", name: "Cat-Cow Stretch", category: "mobility" },
+    { id: "thoracic_rotation", name: "Thoracic Rotation", category: "mobility" },
+    { id: "hip_circles", name: "Hip Circles", category: "mobility" },
+    { id: "ankle_mobility", name: "Ankle Mobility Drill", category: "mobility" },
+    { id: "foam_roll_quads", name: "Foam Roll Quads", category: "mobility" },
+    { id: "foam_roll_it_band", name: "Foam Roll IT Band", category: "mobility" },
+    { id: "lacrosse_ball_glute", name: "Lacrosse Ball Glute Release", category: "mobility" }
   ]
 };
 

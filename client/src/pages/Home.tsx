@@ -338,10 +338,10 @@ export default function Home() {
                    See Training tab for details
                  </div>
               </div>
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-col gap-2 mt-4">
                 <Button 
                   className={cn(
-                    "flex-1 font-bold border transition-all",
+                    "w-full font-bold border transition-all",
                     isTodayCompleted 
                       ? "bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30"
                       : "bg-primary/10 text-primary border-primary/50 hover:bg-primary/20"
@@ -353,11 +353,12 @@ export default function Home() {
                 </Button>
                 {isTodayCompleted && (
                   <Button 
-                    variant="outline"
-                    className="border-muted-foreground/30 text-muted-foreground hover:text-white hover:border-white/50"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-white"
                     onClick={undoWorkout}
                   >
-                    <Undo2 className="w-4 h-4 mr-1"/> Undo
+                    <Undo2 className="w-3 h-3 mr-1"/> Undo
                   </Button>
                 )}
               </div>

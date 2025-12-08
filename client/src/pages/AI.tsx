@@ -2,7 +2,7 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Send, Bot, Sparkles } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useUser } from "@/lib/UserContext";
@@ -157,5 +157,3 @@ export default function AI() {
     </Layout>
   );
 }
-
-import { Badge } from "@/components/ui/badge";

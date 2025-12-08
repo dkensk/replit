@@ -140,6 +140,11 @@
   box-shadow: 0 0 10px hsla(190, 100%, 50%, 0.3), 0 0 20px hsla(190, 100%, 50%, 0.1);
 }
 
+/* Make all calendar day numbers white */
+.rdp-day {
+  color: white !important;
+}
+
 /* Calendar streak day styling - logged workout days get a centered cyan circle */
 .streak-logged-day {
   background-color: hsl(190 100% 50%) !important;

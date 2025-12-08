@@ -159,3 +159,11 @@
   background-color: hsl(190 100% 50%) !important;
   box-shadow: none !important;
 }
+
+/* Today's date - outlined circle (not filled until workout completed) */
+.calendar-today:not(.streak-logged-day) {
+  background-color: transparent !important;
+  border: 2px solid hsl(190 100% 50%) !important;
+  border-radius: 9999px !important;
+  color: white !important;
+}

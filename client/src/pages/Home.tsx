@@ -301,9 +301,10 @@ export default function Home() {
                       modifiersStyles={{
                         workedOut: { 
                           fontWeight: 'bold', 
-                          backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+                          border: '2px solid #60a5fa',
                           color: '#60a5fa',
-                          borderRadius: '9999px'
+                          borderRadius: '9999px',
+                          backgroundColor: 'transparent'
                         }
                       }}
                     />

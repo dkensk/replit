@@ -206,21 +206,50 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setConsumedMacros(stats);
   }, []);
 
-  // Calculate macros
-  const protein = Math.round(profile.weight * 1);
-  let baseCalories = profile.weight * 15;
-  if (profile.goal === "muscle") baseCalories += 500;
-  if (profile.goal === "fatloss") baseCalories -= 500;
+  // Calculate macros using proper formulas for youth hockey athletes
+  // Research shows young hockey players need 2,750-3,000+ calories/day
+  // Using Mifflin-St Jeor equation with high activity multiplier for athletes
+  
+  const weightKg = profile.weight * 0.453592; // Convert lbs to kg
+  const heightCm = (profile.heightFt * 12 + profile.heightIn) * 2.54; // Convert to cm
+  
+  // BMR using Mifflin-St Jeor (assumes male hockey player)
+  const bmr = 10 * weightKg + 6.25 * heightCm - 5 * profile.age + 5;
+  
+  // Activity multiplier: 1.8 for hockey athletes (high activity level)
+  // Youth athletes need extra calories for growth (add 10-15% for ages under 18)
+  const activityMultiplier = profile.age < 18 ? 1.9 : 1.8;
+  let baseCalories = bmr * activityMultiplier;
+  
+  // Minimum calorie floors for young athletes (safety measure)
+  const minCalories = profile.age <= 13 ? 2400 : profile.age <= 16 ? 2600 : 2200;
+  baseCalories = Math.max(baseCalories, minCalories);
+  
+  // Smaller goal adjustments for young athletes (±200-300 instead of ±500)
+  // Young athletes should not be in large deficits
+  if (profile.goal === "muscle") baseCalories += 300;
+  if (profile.goal === "fatloss") {
+    // More conservative deficit for youth - only 10% reduction, minimum floor applies
+    const deficit = profile.age < 16 ? 200 : 300;
+    baseCalories = Math.max(baseCalories - deficit, minCalories);
+  }
   
   const calories = Math.round(baseCalories);
-  const fats = Math.round(profile.weight * 0.4);
+  
+  // Protein: 1.4-1.7 g/kg for hockey players (using ~1.5 g/kg = 0.68 g/lb)
+  const protein = Math.round(profile.weight * 0.7);
+  
+  // Fat: 25-30% of calories
+  const fats = Math.round((calories * 0.25) / 9);
+  
+  // Carbs: Remaining calories (6-8 g/kg for athletes)
   const caloriesFromProtein = protein * 4;
   const caloriesFromFat = fats * 9;
   const remainingCalories = calories - caloriesFromProtein - caloriesFromFat;
   const carbs = Math.max(0, Math.round(remainingCalories / 4));
 
-  const recommendedProtein = Math.round(profile.weight * 1);
-  const recommendedCalories = Math.round(profile.weight * 15);
+  const recommendedProtein = Math.round(profile.weight * 0.7);
+  const recommendedCalories = Math.round(bmr * activityMultiplier);
 
   return (
     <UserContext.Provider

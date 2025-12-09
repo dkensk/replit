@@ -24,6 +24,8 @@ export const profiles = pgTable("profiles", {
   workoutDuration: integer("workout_duration").notNull().default(60),
   xp: integer("xp").notNull().default(0),
   tier: text("tier").notNull().default("Bronze"), // Bronze | Silver | Gold | Diamond | Elite
+  livebarnConnected: boolean("livebarn_connected").notNull().default(false),
+  livebarnRink: text("livebarn_rink"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

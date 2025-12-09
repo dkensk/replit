@@ -770,126 +770,120 @@ export default function Diet() {
           setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
         }
       }}>
-        <DialogContent className="bg-card border-white/10 text-white max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Custom Meal</DialogTitle>
+        <DialogContent className="bg-card border-white/10 text-white max-w-sm p-5">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-lg">Add Custom Meal</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {/* Photo Upload Section */}
-            <div className="grid gap-2">
-              <Label>Snap a Photo (AI will detect nutrition)</Label>
-              <div className="flex flex-col items-center gap-3">
-                {imagePreview ? (
-                  <div className="relative w-full">
-                    <img 
-                      src={imagePreview} 
-                      alt="Food preview" 
-                      className="w-full h-32 object-cover rounded-lg border border-white/10"
-                    />
-                    {isAnalyzing && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
-                        <div className="flex items-center gap-2 text-primary">
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          <span className="text-sm">Analyzing...</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <label 
-                    htmlFor="food-photo" 
-                    className="w-full h-24 border-2 border-dashed border-primary/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors"
-                  >
-                    <Camera className="w-8 h-8 text-primary mb-1" />
-                    <span className="text-xs text-muted-foreground">Tap to take photo</span>
-                  </label>
-                )}
-                <input
-                  id="food-photo"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  data-testid="input-food-photo"
-                />
-                {imagePreview && !isAnalyzing && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs text-muted-foreground"
-                    onClick={() => {
-                      setImagePreview(null);
-                      setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
-                    }}
-                  >
-                    Clear & try again
-                  </Button>
-                )}
+          
+          <div className="space-y-4">
+            {/* Photo Upload - Compact */}
+            <div className="flex items-center gap-3">
+              {imagePreview ? (
+                <div className="relative w-16 h-16 flex-shrink-0">
+                  <img 
+                    src={imagePreview} 
+                    alt="Food" 
+                    className="w-16 h-16 object-cover rounded-lg border border-white/10"
+                  />
+                  {isAnalyzing && (
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-lg">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <label 
+                  htmlFor="food-photo" 
+                  className="w-16 h-16 flex-shrink-0 border-2 border-dashed border-primary/40 rounded-lg flex items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors"
+                >
+                  <Camera className="w-6 h-6 text-primary" />
+                </label>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white">
+                  {isAnalyzing ? "Analyzing photo..." : imagePreview ? "Photo captured" : "Take a photo"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {imagePreview ? (
+                    <button 
+                      className="text-primary hover:underline"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
+                      }}
+                    >
+                      Clear & retry
+                    </button>
+                  ) : "AI detects nutrition automatically"}
+                </p>
               </div>
-            </div>
-
-            <div className="relative flex items-center">
-              <div className="flex-grow border-t border-white/10"></div>
-              <span className="mx-4 text-xs text-muted-foreground">or enter manually</span>
-              <div className="flex-grow border-t border-white/10"></div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="name">Meal Name</Label>
-              <Input 
-                id="name" 
-                placeholder="e.g., Turkey Sandwich" 
-                className="bg-secondary/50 border-white/10"
-                value={newMeal.name}
-                onChange={(e) => setNewMeal({...newMeal, name: e.target.value})}
-                data-testid="input-meal-name"
+              <input
+                id="food-photo"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleImageUpload}
+                data-testid="input-food-photo"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="calories">Calories</Label>
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex-1 border-t border-white/10"></div>
+              <span>or enter manually</span>
+              <div className="flex-1 border-t border-white/10"></div>
+            </div>
+
+            {/* Meal Name */}
+            <Input 
+              placeholder="Meal name (e.g., Turkey Sandwich)" 
+              className="bg-secondary/50 border-white/10 h-10"
+              value={newMeal.name}
+              onChange={(e) => setNewMeal({...newMeal, name: e.target.value})}
+              data-testid="input-meal-name"
+            />
+            
+            {/* Nutrition Grid - Compact 4-column */}
+            <div className="grid grid-cols-4 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground uppercase">Cal</Label>
                 <Input 
-                  id="calories" 
                   type="number" 
                   placeholder="0" 
-                  className="bg-secondary/50 border-white/10"
+                  className="bg-secondary/50 border-white/10 h-9 text-sm px-2"
                   value={newMeal.calories}
                   onChange={(e) => setNewMeal({...newMeal, calories: e.target.value})}
                   data-testid="input-meal-calories"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="protein">Protein (g)</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground uppercase">Protein</Label>
                 <Input 
-                  id="protein" 
                   type="number" 
                   placeholder="0" 
-                  className="bg-secondary/50 border-white/10"
+                  className="bg-secondary/50 border-white/10 h-9 text-sm px-2"
                   value={newMeal.protein}
                   onChange={(e) => setNewMeal({...newMeal, protein: e.target.value})}
                   data-testid="input-meal-protein"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="carbs">Carbs (g)</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground uppercase">Carbs</Label>
                 <Input 
-                  id="carbs" 
                   type="number" 
                   placeholder="0" 
-                  className="bg-secondary/50 border-white/10"
+                  className="bg-secondary/50 border-white/10 h-9 text-sm px-2"
                   value={newMeal.carbs}
                   onChange={(e) => setNewMeal({...newMeal, carbs: e.target.value})}
                   data-testid="input-meal-carbs"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="fats">Fats (g)</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground uppercase">Fats</Label>
                 <Input 
-                  id="fats" 
                   type="number" 
                   placeholder="0" 
-                  className="bg-secondary/50 border-white/10"
+                  className="bg-secondary/50 border-white/10 h-9 text-sm px-2"
                   value={newMeal.fats}
                   onChange={(e) => setNewMeal({...newMeal, fats: e.target.value})}
                   data-testid="input-meal-fats"
@@ -897,9 +891,10 @@ export default function Diet() {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)} data-testid="button-cancel-meal">Cancel</Button>
-            <Button onClick={handleAddCustomMeal} disabled={!newMeal.name || isAnalyzing} data-testid="button-add-meal">Add Meal</Button>
+
+          <DialogFooter className="pt-4 gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsCustomDialogOpen(false)} data-testid="button-cancel-meal" className="flex-1">Cancel</Button>
+            <Button size="sm" onClick={handleAddCustomMeal} disabled={!newMeal.name || isAnalyzing} data-testid="button-add-meal" className="flex-1">Add Meal</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

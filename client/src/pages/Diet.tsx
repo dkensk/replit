@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Check, Target, Info, Plus, ChefHat } from "lucide-react";
+import { AlertCircle, Check, Target, Info, Plus, ChefHat, Camera, Loader2 } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
@@ -50,6 +50,49 @@ export default function Diet() {
     carbs: "",
     fats: ""
   });
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAnalyzing(true);
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string;
+      setImagePreview(base64);
+      
+      try {
+        const response = await fetch("/api/analyze-food", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: base64 }),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setNewMeal({
+            name: data.name || "",
+            calories: String(data.calories || 0),
+            protein: String(data.protein || 0),
+            carbs: String(data.carbs || 0),
+            fats: String(data.fats || 0),
+          });
+        } else {
+          console.error("Failed to analyze food:", response.status);
+          alert("Could not analyze the photo. Please try again or enter the details manually.");
+        }
+      } catch (error) {
+        console.error("Error analyzing food:", error);
+        alert("Could not analyze the photo. Please try again or enter the details manually.");
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Base meals with simple names AND recipes - Expanded for all ages
   const baseMeals: MealSection[] = [
@@ -516,6 +559,7 @@ export default function Diet() {
     
     setIsCustomDialogOpen(false);
     setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
+    setImagePreview(null);
   };
 
   const calculateTotalConsumed = () => {
@@ -719,12 +763,78 @@ export default function Diet() {
       </div>
 
       {/* Custom Meal Dialog */}
-      <Dialog open={isCustomDialogOpen} onOpenChange={setIsCustomDialogOpen}>
-        <DialogContent className="bg-card border-white/10 text-white">
+      <Dialog open={isCustomDialogOpen} onOpenChange={(open) => {
+        setIsCustomDialogOpen(open);
+        if (!open) {
+          setImagePreview(null);
+          setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
+        }
+      }}>
+        <DialogContent className="bg-card border-white/10 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Custom Meal</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Photo Upload Section */}
+            <div className="grid gap-2">
+              <Label>Snap a Photo (AI will detect nutrition)</Label>
+              <div className="flex flex-col items-center gap-3">
+                {imagePreview ? (
+                  <div className="relative w-full">
+                    <img 
+                      src={imagePreview} 
+                      alt="Food preview" 
+                      className="w-full h-32 object-cover rounded-lg border border-white/10"
+                    />
+                    {isAnalyzing && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
+                        <div className="flex items-center gap-2 text-primary">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span className="text-sm">Analyzing...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <label 
+                    htmlFor="food-photo" 
+                    className="w-full h-24 border-2 border-dashed border-primary/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors"
+                  >
+                    <Camera className="w-8 h-8 text-primary mb-1" />
+                    <span className="text-xs text-muted-foreground">Tap to take photo</span>
+                  </label>
+                )}
+                <input
+                  id="food-photo"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  data-testid="input-food-photo"
+                />
+                {imagePreview && !isAnalyzing && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-muted-foreground"
+                    onClick={() => {
+                      setImagePreview(null);
+                      setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
+                    }}
+                  >
+                    Clear & try again
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="relative flex items-center">
+              <div className="flex-grow border-t border-white/10"></div>
+              <span className="mx-4 text-xs text-muted-foreground">or enter manually</span>
+              <div className="flex-grow border-t border-white/10"></div>
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="name">Meal Name</Label>
               <Input 
@@ -733,6 +843,7 @@ export default function Diet() {
                 className="bg-secondary/50 border-white/10"
                 value={newMeal.name}
                 onChange={(e) => setNewMeal({...newMeal, name: e.target.value})}
+                data-testid="input-meal-name"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -745,6 +856,7 @@ export default function Diet() {
                   className="bg-secondary/50 border-white/10"
                   value={newMeal.calories}
                   onChange={(e) => setNewMeal({...newMeal, calories: e.target.value})}
+                  data-testid="input-meal-calories"
                 />
               </div>
               <div className="grid gap-2">
@@ -756,6 +868,7 @@ export default function Diet() {
                   className="bg-secondary/50 border-white/10"
                   value={newMeal.protein}
                   onChange={(e) => setNewMeal({...newMeal, protein: e.target.value})}
+                  data-testid="input-meal-protein"
                 />
               </div>
               <div className="grid gap-2">
@@ -767,6 +880,7 @@ export default function Diet() {
                   className="bg-secondary/50 border-white/10"
                   value={newMeal.carbs}
                   onChange={(e) => setNewMeal({...newMeal, carbs: e.target.value})}
+                  data-testid="input-meal-carbs"
                 />
               </div>
               <div className="grid gap-2">
@@ -778,13 +892,14 @@ export default function Diet() {
                   className="bg-secondary/50 border-white/10"
                   value={newMeal.fats}
                   onChange={(e) => setNewMeal({...newMeal, fats: e.target.value})}
+                  data-testid="input-meal-fats"
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddCustomMeal} disabled={!newMeal.name}>Add Meal</Button>
+            <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)} data-testid="button-cancel-meal">Cancel</Button>
+            <Button onClick={handleAddCustomMeal} disabled={!newMeal.name || isAnalyzing} data-testid="button-add-meal">Add Meal</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

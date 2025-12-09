@@ -255,45 +255,38 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   if (profile.age <= 14) {
     // 13-14 year old ranges
     if (profile.goal === "maintain") {
-      // Maintain: 2,300-2,600 cal
       goalCalories = Math.min(Math.max(baseCalories, 2300), 2600);
-      // Protein: 0.5-0.7g/lb (70-95g for ~130lb teen)
-      proteinGrams = Math.round(profile.weight * 0.6);
     } else if (profile.goal === "muscle") {
-      // Muscle: 2,500-2,900 cal (+200-300 surplus)
       goalCalories = Math.min(Math.max(baseCalories + 250, 2500), 2900);
-      // Protein: 90-110g range (upper safe range for teens)
-      proteinGrams = Math.round(Math.min(Math.max(profile.weight * 0.75, 90), 110));
     } else {
-      // Fat loss: 2,000-2,300 cal (gentle deficit)
       goalCalories = Math.min(Math.max(baseCalories - 250, 2000), 2300);
-      // Protein: 0.6-0.7g/lb to preserve muscle
-      proteinGrams = Math.round(profile.weight * 0.65);
     }
   } else if (profile.age <= 16) {
     // 15-16 year old ranges (slightly higher)
     if (profile.goal === "maintain") {
       goalCalories = Math.min(Math.max(baseCalories, 2400), 2800);
-      proteinGrams = Math.round(profile.weight * 0.65);
     } else if (profile.goal === "muscle") {
       goalCalories = Math.min(Math.max(baseCalories + 300, 2600), 3100);
-      proteinGrams = Math.round(Math.min(Math.max(profile.weight * 0.8, 100), 130));
     } else {
       goalCalories = Math.min(Math.max(baseCalories - 300, 2200), 2500);
-      proteinGrams = Math.round(profile.weight * 0.7);
     }
   } else {
     // 17+ year old ranges
     if (profile.goal === "maintain") {
       goalCalories = Math.round(baseCalories);
-      proteinGrams = Math.round(profile.weight * 0.7);
     } else if (profile.goal === "muscle") {
       goalCalories = Math.round(baseCalories + 350);
-      proteinGrams = Math.round(profile.weight * 0.85);
     } else {
       goalCalories = Math.round(Math.max(baseCalories - 350, 2000));
-      proteinGrams = Math.round(profile.weight * 0.8);
     }
+  }
+  
+  // Protein: 0.8-1g per pound of body weight for all goals
+  // Muscle/fat loss: 1g per lb, Maintain: 0.9g per lb
+  if (profile.goal === "muscle" || profile.goal === "fatloss") {
+    proteinGrams = Math.round(profile.weight * 1.0);
+  } else {
+    proteinGrams = Math.round(profile.weight * 0.9);
   }
   
   const calories = Math.round(goalCalories);

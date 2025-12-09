@@ -6,6 +6,7 @@ import {
   updateProfileSchema,
   insertWorkoutLogSchema,
   insertMealLogSchema,
+  insertCustomMealSchema,
 } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
@@ -214,6 +215,38 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error toggling meal:", error);
       res.status(500).json({ error: "Failed to toggle meal status" });
+    }
+  });
+
+  // Get saved custom meals
+  app.get("/api/custom-meals", async (req, res) => {
+    try {
+      const defaultUserId = "default-user";
+      const meals = await storage.getCustomMeals(defaultUserId);
+      res.json(meals);
+    } catch (error) {
+      console.error("Error fetching custom meals:", error);
+      res.status(500).json({ error: "Failed to fetch custom meals" });
+    }
+  });
+
+  // Save a custom meal
+  app.post("/api/custom-meals", async (req, res) => {
+    try {
+      const defaultUserId = "default-user";
+      const data = insertCustomMealSchema.parse({
+        ...req.body,
+        userId: defaultUserId,
+      });
+
+      const meal = await storage.createCustomMeal(data);
+      res.json(meal);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error saving custom meal:", error);
+      res.status(500).json({ error: "Failed to save custom meal" });
     }
   });
 

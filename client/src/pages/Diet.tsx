@@ -8,11 +8,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Check, Target, Info, Plus, ChefHat, Camera, Loader2 } from "lucide-react";
+import { AlertCircle, Check, Target, Info, Plus, ChefHat, Camera, Loader2, History } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+type SavedCustomMeal = {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  mealType: string;
+  createdAt?: string;
+};
 
 type MealOption = {
   id: string;
@@ -52,6 +64,42 @@ export default function Diet() {
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
+
+  // Fetch saved custom meals from database
+  const { data: savedCustomMeals = [] } = useQuery<SavedCustomMeal[]>({
+    queryKey: ["/api/custom-meals"],
+    queryFn: async () => {
+      const res = await fetch("/api/custom-meals");
+      if (!res.ok) throw new Error("Failed to fetch custom meals");
+      return res.json();
+    },
+  });
+
+  // Mutation to save custom meal
+  const saveCustomMealMutation = useMutation({
+    mutationFn: async (meal: { name: string; calories: number; protein: number; carbs: number; fats: number; mealType: string }) => {
+      const res = await fetch("/api/custom-meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(meal),
+      });
+      if (!res.ok) throw new Error("Failed to save custom meal");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-meals"] });
+    },
+  });
+
+  // Get saved custom meals for a specific meal type (most recent first, limit to 3)
+  const getSavedMealsForType = (mealType: string) => {
+    return [...savedCustomMeals]
+      .filter(m => m.mealType === mealType)
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      .slice(0, 3);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -536,8 +584,9 @@ export default function Diet() {
   const handleAddCustomMeal = () => {
     if (!newMeal.name || !currentSectionId) return;
     
+    const mealId = `custom_${Date.now()}`;
     const meal: MealOption = {
-      id: `custom_${Date.now()}`,
+      id: mealId,
       name: newMeal.name,
       calories: parseInt(newMeal.calories) || 0,
       protein: parseInt(newMeal.protein) || 0,
@@ -545,6 +594,16 @@ export default function Diet() {
       fats: parseInt(newMeal.fats) || 0,
       recipe: "Custom meal - no recipe instructions."
     };
+    
+    // Save to database
+    saveCustomMealMutation.mutate({
+      name: newMeal.name,
+      calories: parseInt(newMeal.calories) || 0,
+      protein: parseInt(newMeal.protein) || 0,
+      carbs: parseInt(newMeal.carbs) || 0,
+      fats: parseInt(newMeal.fats) || 0,
+      mealType: currentSectionId,
+    });
     
     setCustomMeals(prev => ({
       ...prev,
@@ -554,12 +613,37 @@ export default function Diet() {
     // Auto-select the new custom meal
     setSelectedMeals(prev => ({
       ...prev,
-      [currentSectionId]: meal.id
+      [currentSectionId]: mealId
     }));
     
     setIsCustomDialogOpen(false);
     setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
     setImagePreview(null);
+  };
+
+  // Quickly add a saved custom meal to the current section
+  const handleQuickAddSavedMeal = (savedMeal: SavedCustomMeal, sectionId: string) => {
+    const mealId = `custom_${Date.now()}`;
+    const meal: MealOption = {
+      id: mealId,
+      name: savedMeal.name,
+      calories: savedMeal.calories,
+      protein: savedMeal.protein,
+      carbs: savedMeal.carbs,
+      fats: savedMeal.fats,
+      recipe: "Custom meal - no recipe instructions."
+    };
+    
+    setCustomMeals(prev => ({
+      ...prev,
+      [sectionId]: [...prev[sectionId], meal]
+    }));
+    
+    // Auto-select the meal
+    setSelectedMeals(prev => ({
+      ...prev,
+      [sectionId]: mealId
+    }));
   };
 
   const calculateTotalConsumed = () => {
@@ -749,10 +833,36 @@ export default function Diet() {
                           setIsCustomDialogOpen(true);
                         }}
                         disabled={isChecked}
+                        data-testid={`button-add-custom-${section.id}`}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Custom Meal...
                       </Button>
+                      
+                      {/* Saved Custom Meals - Quick Add */}
+                      {getSavedMealsForType(section.id).length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                            <History className="w-3 h-3" />
+                            Recent custom meals:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {getSavedMealsForType(section.id).map((savedMeal) => (
+                              <Button
+                                key={savedMeal.id}
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-7 px-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={() => handleQuickAddSavedMeal(savedMeal, section.id)}
+                                disabled={isChecked}
+                                data-testid={`button-quick-add-${savedMeal.id}`}
+                              >
+                                {savedMeal.name}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

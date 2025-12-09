@@ -8,13 +8,16 @@ import {
   type InsertWorkoutLog,
   type MealLog,
   type InsertMealLog,
+  type CustomMeal,
+  type InsertCustomMeal,
   users,
   profiles,
   workoutLogs,
-  mealLogs
+  mealLogs,
+  customMeals
 } from "@shared/schema";
 import { db } from "../db/index";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -37,6 +40,10 @@ export interface IStorage {
   getMealLogsForDate(userId: string, date: string): Promise<MealLog[]>;
   upsertMealLog(log: InsertMealLog): Promise<MealLog>;
   toggleMealConsumed(userId: string, date: string, mealType: string): Promise<MealLog | undefined>;
+  
+  // Custom meal methods
+  getCustomMeals(userId: string): Promise<CustomMeal[]>;
+  createCustomMeal(meal: InsertCustomMeal): Promise<CustomMeal>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -155,6 +162,20 @@ export class DatabaseStorage implements IStorage {
       return updated;
     }
     return undefined;
+  }
+
+  // Custom meal methods
+  async getCustomMeals(userId: string): Promise<CustomMeal[]> {
+    return await db
+      .select()
+      .from(customMeals)
+      .where(eq(customMeals.userId, userId))
+      .orderBy(desc(customMeals.createdAt));
+  }
+
+  async createCustomMeal(meal: InsertCustomMeal): Promise<CustomMeal> {
+    const [newMeal] = await db.insert(customMeals).values(meal).returning();
+    return newMeal;
   }
 }
 

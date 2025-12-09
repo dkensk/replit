@@ -47,6 +47,18 @@ export const mealLogs = pgTable("meal_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const customMeals = pgTable("custom_meals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  calories: integer("calories").notNull(),
+  protein: integer("protein").notNull(),
+  carbs: integer("carbs").notNull(),
+  fats: integer("fats").notNull(),
+  mealType: text("meal_type").notNull(), // breakfast | lunch | snack | dinner
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -68,6 +80,11 @@ export const insertMealLogSchema = createInsertSchema(mealLogs).omit({
   createdAt: true,
 });
 
+export const insertCustomMealSchema = createInsertSchema(customMeals).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const updateProfileSchema = createInsertSchema(profiles).omit({
   id: true,
   userId: true,
@@ -83,4 +100,6 @@ export type InsertWorkoutLog = z.infer<typeof insertWorkoutLogSchema>;
 export type WorkoutLog = typeof workoutLogs.$inferSelect;
 export type InsertMealLog = z.infer<typeof insertMealLogSchema>;
 export type MealLog = typeof mealLogs.$inferSelect;
+export type InsertCustomMeal = z.infer<typeof insertCustomMealSchema>;
+export type CustomMeal = typeof customMeals.$inferSelect;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;

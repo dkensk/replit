@@ -20,6 +20,8 @@ type UserProfile = {
   xp: number;
   tier: "Bronze" | "Silver" | "Gold" | "Diamond" | "Elite";
   workoutHistory: string[];
+  livebarnConnected: boolean;
+  livebarnRink: string | null;
 };
 
 type UserContextType = {
@@ -66,7 +68,9 @@ const defaultProfile: UserProfile = {
   workoutDuration: 60,
   xp: 0,
   tier: "Bronze",
-  workoutHistory: []
+  workoutHistory: [],
+  livebarnConnected: false,
+  livebarnRink: null
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -158,6 +162,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         xp: backendProfile.xp,
         tier: backendProfile.tier as any,
         workoutHistory: workoutLogs.map(log => log.date),
+        livebarnConnected: backendProfile.livebarnConnected ?? false,
+        livebarnRink: backendProfile.livebarnRink ?? null,
       }
     : defaultProfile;
 

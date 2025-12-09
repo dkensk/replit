@@ -4,19 +4,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Video, Calendar, Clock, MapPin, Play, Download, Scissors, AlertCircle } from "lucide-react";
+import { Video, Calendar, Clock, MapPin, Play, Download, Scissors, AlertCircle, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useUser } from "@/lib/UserContext";
 
 export default function Review() {
-  const [isConnected, setIsConnected] = useState(false);
+  const { profile, updateProfile } = useUser();
   const [isLive, setIsLive] = useState(false);
-  const [selectedRink, setSelectedRink] = useState("");
+  
+  // Use profile data for connection and rink
+  const isConnected = profile.livebarnConnected;
+  const selectedRink = profile.livebarnRink || "";
 
   const handleConnect = () => {
-    // Mock connection delay
-    setTimeout(() => {
-      setIsConnected(true);
-    }, 1000);
+    // Save connection to profile (persisted)
+    updateProfile({ livebarnConnected: true });
+  };
+
+  const handleDisconnect = () => {
+    // Disconnect and clear rink selection
+    updateProfile({ livebarnConnected: false, livebarnRink: null });
+  };
+
+  const handleRinkChange = (rink: string) => {
+    // Save rink selection to profile
+    updateProfile({ livebarnRink: rink });
   };
 
   return (
@@ -68,6 +80,23 @@ export default function Review() {
           </Card>
         ) : (
           <>
+            {/* Connected Status */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2 text-sm text-green-500">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                Connected to LiveBarn
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleDisconnect}
+                className="text-muted-foreground hover:text-red-500 text-xs"
+              >
+                <LogOut className="w-3 h-3 mr-1" />
+                Disconnect
+              </Button>
+            </div>
+
             {/* Game Selector Controls */}
             <Card className="bg-secondary/30 border-white/5">
               <CardContent className="p-4 space-y-4">
@@ -90,7 +119,7 @@ export default function Review() {
 
                 <div className="space-y-2">
                   <Label className="text-xs uppercase text-muted-foreground">Venue</Label>
-                  <Select value={selectedRink} onValueChange={setSelectedRink}>
+                  <Select value={selectedRink} onValueChange={handleRinkChange}>
                     <SelectTrigger className="bg-card border-white/10">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-red-500" />

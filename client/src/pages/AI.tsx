@@ -71,34 +71,36 @@ export default function AI() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1 p-4 bg-black/20">
-          <div className="space-y-4">
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                data-testid={`message-${msg.role}-${i}`}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
-              >
+        <ScrollArea className="flex-1 bg-black/20">
+          <div className="min-h-full flex flex-col justify-end p-4">
+            <div className="space-y-4">
+              {messages.map((msg, i) => (
                 <div
-                  className={`max-w-[85%] p-4 rounded-2xl text-sm shadow-sm ${
-                    msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-tr-none'
-                      : 'bg-card text-white rounded-tl-none border border-white/10'
-                  }`}
+                  key={i}
+                  data-testid={`message-${msg.role}-${i}`}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
                 >
-                  {msg.content}
+                  <div
+                    className={`max-w-[85%] p-4 rounded-2xl text-sm shadow-sm ${
+                      msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-tr-none'
+                        : 'bg-card text-white rounded-tl-none border border-white/10'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {isTyping && (
-              <div className="flex justify-start animate-in fade-in duration-300" data-testid="typing-indicator">
-                <div className="bg-card text-white rounded-2xl rounded-tl-none border border-white/10 p-4 flex gap-1 items-center h-12">
-                  <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce"></div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start animate-in fade-in duration-300" data-testid="typing-indicator">
+                  <div className="bg-card text-white rounded-2xl rounded-tl-none border border-white/10 p-4 flex gap-1 items-center h-12">
+                    <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce"></div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             <div ref={scrollRef} />
           </div>
         </ScrollArea>

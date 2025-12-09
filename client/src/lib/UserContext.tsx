@@ -223,18 +223,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setConsumedMacros(stats);
   }, []);
 
-  // Calculate macros using evidence-based formulas for youth hockey athletes
-  // Sources: PMC research, ISSA, sports nutrition guidelines
-  // Teen athletes (13-16): Maintenance 2,200-3,200 cal/day depending on size/activity
+  // Calculate macros for youth hockey athletes based on age and goal
+  // Guidelines for 13-year-old active teen athletes:
+  // - Maintain: 2,300-2,600 cal, protein 0.5-0.7g/lb (70-95g)
+  // - Muscle: 2,500-2,900 cal (+200-300 surplus), protein 90-110g
+  // - Fat loss: 2,000-2,300 cal (small 200-300 deficit)
   
-  const weightKg = profile.weight * 0.453592; // Convert lbs to kg
-  const heightCm = (profile.heightFt * 12 + profile.heightIn) * 2.54; // Convert to cm
+  const weightKg = profile.weight * 0.453592;
+  const heightCm = (profile.heightFt * 12 + profile.heightIn) * 2.54;
   
   // BMR using Mifflin-St Jeor equation
   const bmr = 10 * weightKg + 6.25 * heightCm - 5 * profile.age + 5;
   
-  // Activity multiplier based on hockey level (moderate-high activity)
-  // 1.55 = moderate active, 1.725 = very active, 1.9 = extremely active
+  // Activity multiplier based on hockey level
   const levelMultiplier = {
     house: 1.55,
     a: 1.65,
@@ -244,41 +245,59 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
   const activityMultiplier = levelMultiplier[profile.level] || 1.65;
   
-  // Calculate maintenance calories
-  let maintenanceCalories = bmr * activityMultiplier;
+  // Calculate base maintenance calories
+  let baseCalories = bmr * activityMultiplier;
   
-  // Age-appropriate minimum floors (prevent underfueling during growth)
-  const minCalories = profile.age <= 13 ? 2000 : profile.age <= 15 ? 2200 : profile.age <= 17 ? 2400 : 2000;
-  maintenanceCalories = Math.max(maintenanceCalories, minCalories);
+  // Apply age-specific calorie ranges based on goal
+  let goalCalories: number;
+  let proteinGrams: number;
   
-  // Goal adjustments based on research:
-  // - Muscle gain: +300-500 cal surplus
-  // - Fat loss: NOT recommended for teens, but if selected, very mild deficit with floor
-  // - Maintain: maintenance calories
-  let goalCalories = maintenanceCalories;
-  
-  if (profile.goal === "muscle") {
-    goalCalories = maintenanceCalories + 350; // Moderate surplus for muscle gain
-  } else if (profile.goal === "fatloss") {
-    // Very conservative for youth - focus on body recomposition, not aggressive cuts
-    // Only 10-15% reduction with strict minimums
-    const mildDeficit = maintenanceCalories * 0.1;
-    goalCalories = Math.max(maintenanceCalories - mildDeficit, minCalories);
+  if (profile.age <= 14) {
+    // 13-14 year old ranges
+    if (profile.goal === "maintain") {
+      // Maintain: 2,300-2,600 cal
+      goalCalories = Math.min(Math.max(baseCalories, 2300), 2600);
+      // Protein: 0.5-0.7g/lb (70-95g for ~130lb teen)
+      proteinGrams = Math.round(profile.weight * 0.6);
+    } else if (profile.goal === "muscle") {
+      // Muscle: 2,500-2,900 cal (+200-300 surplus)
+      goalCalories = Math.min(Math.max(baseCalories + 250, 2500), 2900);
+      // Protein: 90-110g range (upper safe range for teens)
+      proteinGrams = Math.round(Math.min(Math.max(profile.weight * 0.75, 90), 110));
+    } else {
+      // Fat loss: 2,000-2,300 cal (gentle deficit)
+      goalCalories = Math.min(Math.max(baseCalories - 250, 2000), 2300);
+      // Protein: 0.6-0.7g/lb to preserve muscle
+      proteinGrams = Math.round(profile.weight * 0.65);
+    }
+  } else if (profile.age <= 16) {
+    // 15-16 year old ranges (slightly higher)
+    if (profile.goal === "maintain") {
+      goalCalories = Math.min(Math.max(baseCalories, 2400), 2800);
+      proteinGrams = Math.round(profile.weight * 0.65);
+    } else if (profile.goal === "muscle") {
+      goalCalories = Math.min(Math.max(baseCalories + 300, 2600), 3100);
+      proteinGrams = Math.round(Math.min(Math.max(profile.weight * 0.8, 100), 130));
+    } else {
+      goalCalories = Math.min(Math.max(baseCalories - 300, 2200), 2500);
+      proteinGrams = Math.round(profile.weight * 0.7);
+    }
+  } else {
+    // 17+ year old ranges
+    if (profile.goal === "maintain") {
+      goalCalories = Math.round(baseCalories);
+      proteinGrams = Math.round(profile.weight * 0.7);
+    } else if (profile.goal === "muscle") {
+      goalCalories = Math.round(baseCalories + 350);
+      proteinGrams = Math.round(profile.weight * 0.85);
+    } else {
+      goalCalories = Math.round(Math.max(baseCalories - 350, 2000));
+      proteinGrams = Math.round(profile.weight * 0.8);
+    }
   }
   
   const calories = Math.round(goalCalories);
-  
-  // Protein: 0.8-1g per pound of body weight, varies by goal
-  // - Muscle gain: 1g per lb (higher for building muscle)
-  // - Maintain: 0.9g per lb
-  // - Fat loss: 1g per lb (preserve muscle while losing fat)
-  let proteinMultiplier = 0.9; // Default for maintain
-  if (profile.goal === "muscle") {
-    proteinMultiplier = 1.0; // Higher protein for muscle building
-  } else if (profile.goal === "fatloss") {
-    proteinMultiplier = 1.0; // High protein to preserve muscle during fat loss
-  }
-  const protein = Math.round(profile.weight * proteinMultiplier);
+  const protein = proteinGrams;
   
   // Fat: 25-30% of calories (essential for growth and hormones)
   const fats = Math.round((calories * 0.28) / 9);
@@ -289,8 +308,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const remainingCalories = calories - caloriesFromProtein - caloriesFromFat;
   const carbs = Math.max(0, Math.round(remainingCalories / 4));
 
-  const recommendedProtein = Math.round(profile.weight * 0.9); // Base recommendation
-  const recommendedCalories = Math.round(maintenanceCalories);
+  const recommendedProtein = Math.round(profile.weight * 0.6);
+  const recommendedCalories = Math.round(bmr * activityMultiplier);
 
   return (
     <UserContext.Provider

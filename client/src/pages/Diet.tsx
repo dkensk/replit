@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Check, Target, Info, Plus, ChefHat, Camera, Loader2, History, Image } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -66,6 +66,65 @@ export default function Diet() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
+
+  // Get today's date
+  const getTodayDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Fetch today's meal logs to restore custom meals
+  const { data: mealLogs = [] } = useQuery<any[]>({
+    queryKey: ["/api/meals", getTodayDate()],
+    queryFn: async () => {
+      const res = await fetch(`/api/meals/${getTodayDate()}`);
+      if (!res.ok) throw new Error("Failed to fetch meal logs");
+      return res.json();
+    },
+  });
+
+  // Restore custom meals from meal logs on load
+  useEffect(() => {
+    if (mealLogs.length > 0) {
+      const restoredCustomMeals: Record<string, MealOption[]> = {
+        breakfast: [],
+        lunch: [],
+        snack: [],
+        dinner: []
+      };
+      
+      mealLogs.forEach((log: any) => {
+        // If this is a custom meal (has nutrition data stored), add it to customMeals
+        if (log.mealId?.startsWith("custom_") && log.mealName && log.calories != null) {
+          const meal: MealOption = {
+            id: log.mealId,
+            name: log.mealName,
+            calories: log.calories,
+            protein: log.protein || 0,
+            carbs: log.carbs || 0,
+            fats: log.fats || 0,
+            recipe: "Custom meal - no recipe instructions."
+          };
+          
+          // Only add if not already in the list
+          if (!restoredCustomMeals[log.mealType].some(m => m.id === log.mealId)) {
+            restoredCustomMeals[log.mealType].push(meal);
+          }
+        }
+      });
+      
+      // Merge with existing custom meals (don't overwrite user's current session additions)
+      setCustomMeals(prev => ({
+        breakfast: [...restoredCustomMeals.breakfast, ...prev.breakfast.filter(m => !restoredCustomMeals.breakfast.some(r => r.id === m.id))],
+        lunch: [...restoredCustomMeals.lunch, ...prev.lunch.filter(m => !restoredCustomMeals.lunch.some(r => r.id === m.id))],
+        snack: [...restoredCustomMeals.snack, ...prev.snack.filter(m => !restoredCustomMeals.snack.some(r => r.id === m.id))],
+        dinner: [...restoredCustomMeals.dinner, ...prev.dinner.filter(m => !restoredCustomMeals.dinner.some(r => r.id === m.id))],
+      }));
+    }
+  }, [mealLogs]);
 
   // Fetch saved custom meals from database
   const { data: savedCustomMeals = [] } = useQuery<SavedCustomMeal[]>({
@@ -672,6 +731,45 @@ export default function Diet() {
   useEffect(() => {
     updateDailyStats(current);
   }, [JSON.stringify(current), updateDailyStats]);
+
+  // Save meal selections with nutrition data when they change
+  const prevSelectedRef = useRef(selectedMeals);
+  useEffect(() => {
+    const mealTypes = ["breakfast", "lunch", "snack", "dinner"];
+    const today = getTodayDate();
+    
+    mealTypes.forEach(mealType => {
+      const prevId = prevSelectedRef.current[mealType];
+      const newId = selectedMeals[mealType];
+      
+      if (prevId !== newId && newId) {
+        // Find the meal in our options
+        const section = meals.find(s => s.id === mealType);
+        const meal = section?.options.find(o => o.id === newId);
+        
+        if (meal) {
+          // Save with nutrition data
+          fetch("/api/meals", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              date: today,
+              mealType,
+              mealId: newId,
+              consumed: consumedMeals[mealType] || false,
+              mealName: meal.name,
+              calories: meal.calories,
+              protein: meal.protein,
+              carbs: meal.carbs,
+              fats: meal.fats,
+            }),
+          }).catch(console.error);
+        }
+      }
+    });
+    
+    prevSelectedRef.current = selectedMeals;
+  }, [selectedMeals, meals, consumedMeals]);
 
   const toggleConsumed = (mealId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent accordion toggle

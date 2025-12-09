@@ -89,14 +89,25 @@ export async function promoteTier(): Promise<Profile> {
   return res.json();
 }
 
-// Wrapper for saving meal log with object param
+// Wrapper for saving meal log with object param (includes optional nutrition data)
 export async function saveMealLog(data: {
   date: string;
   mealType: string;
   mealId: string;
   consumed: boolean;
+  mealName?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fats?: number;
 }): Promise<MealLog> {
-  return upsertMealLog(data.date, data.mealType, data.mealId, data.consumed);
+  const res = await fetch(`${API_BASE}/meals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to save meal log");
+  return res.json();
 }
 
 // Wrapper for toggling meal with object param

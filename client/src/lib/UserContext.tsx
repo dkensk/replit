@@ -176,8 +176,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [promoteMutation]);
 
   const logWorkout = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const dayIndex = new Date().getDay();
+    // Use local date to avoid timezone issues
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
+    
+    const dayIndex = now.getDay();
     const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     const dayName = dayNames[dayIndex];
     const workoutType = profile.schedule[dayName] || "rest";
@@ -186,7 +192,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [profile.schedule, workoutMutation]);
 
   const undoWorkout = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
+    // Use local date to avoid timezone issues
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
     undoWorkoutMutation.mutate(today);
   }, [undoWorkoutMutation]);
 

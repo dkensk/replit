@@ -42,6 +42,14 @@ export default function Home() {
     age: profile.age
   });
 
+  // Helper function to format date as local YYYY-MM-DD string
+  const formatLocalDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Calculate Streak - returns both count and the dates in the streak
   const { streak, streakDates } = useMemo(() => {
     const streakDatesSet = new Set<string>();
@@ -50,8 +58,11 @@ export default function Home() {
     
     if (sortedHistory.length === 0) return { streak: 0, streakDates: streakDatesSet };
 
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const now = new Date();
+    const today = formatLocalDate(now);
+    const yesterdayDate = new Date(now);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = formatLocalDate(yesterdayDate);
 
     // If latest workout is not today or yesterday, streak is broken (0)
     if (sortedHistory[0] !== today && sortedHistory[0] !== yesterday) {
@@ -68,7 +79,7 @@ export default function Home() {
     }
     
     while (true) {
-        const dateStr = checkDate.toISOString().split('T')[0];
+        const dateStr = formatLocalDate(checkDate);
         if (profile.workoutHistory.includes(dateStr)) {
             currentStreak++;
             streakDatesSet.add(dateStr);
@@ -81,7 +92,12 @@ export default function Home() {
   }, [profile.workoutHistory]);
 
   const isTodayCompleted = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    // Use local date to avoid timezone issues
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
     return profile.workoutHistory?.includes(today);
   }, [profile.workoutHistory]);
 
@@ -299,8 +315,20 @@ export default function Home() {
                       disabled={(date) => date > new Date()}
                       className="pointer-events-auto bg-transparent border-0 p-0 w-full max-w-full"
                       modifiers={{
-                        logged: (date) => streakDates.has(format(date, 'yyyy-MM-dd')),
-                        today: (date) => format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+                        logged: (date) => {
+                          // Use local date to avoid timezone issues
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          const dateStr = `${year}-${month}-${day}`;
+                          return profile.workoutHistory?.includes(dateStr) || false;
+                        },
+                        today: (date) => {
+                          const now = new Date();
+                          return date.getFullYear() === now.getFullYear() &&
+                                 date.getMonth() === now.getMonth() &&
+                                 date.getDate() === now.getDate();
+                        }
                       }}
                       modifiersClassNames={{
                         logged: "streak-logged-day",

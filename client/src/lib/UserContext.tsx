@@ -268,8 +268,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   
   const calories = Math.round(goalCalories);
   
-  // Protein: 1.2-1.5 g/kg for teen athletes (0.55-0.68 g/lb)
-  const protein = Math.round(profile.weight * 0.6);
+  // Protein: 0.8-1g per pound of body weight, varies by goal
+  // - Muscle gain: 1g per lb (higher for building muscle)
+  // - Maintain: 0.9g per lb
+  // - Fat loss: 1g per lb (preserve muscle while losing fat)
+  let proteinMultiplier = 0.9; // Default for maintain
+  if (profile.goal === "muscle") {
+    proteinMultiplier = 1.0; // Higher protein for muscle building
+  } else if (profile.goal === "fatloss") {
+    proteinMultiplier = 1.0; // High protein to preserve muscle during fat loss
+  }
+  const protein = Math.round(profile.weight * proteinMultiplier);
   
   // Fat: 25-30% of calories (essential for growth and hormones)
   const fats = Math.round((calories * 0.28) / 9);
@@ -280,7 +289,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const remainingCalories = calories - caloriesFromProtein - caloriesFromFat;
   const carbs = Math.max(0, Math.round(remainingCalories / 4));
 
-  const recommendedProtein = Math.round(profile.weight * 0.6);
+  const recommendedProtein = Math.round(profile.weight * 0.9); // Base recommendation
   const recommendedCalories = Math.round(maintenanceCalories);
 
   return (

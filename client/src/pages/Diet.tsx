@@ -842,11 +842,11 @@ export default function Diet() {
                       {/* Saved Custom Meals - Quick Add */}
                       {getSavedMealsForType(section.id).length > 0 && (
                         <div className="mt-3 pt-3 border-t border-white/10">
-                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center justify-center gap-1">
                             <History className="w-3 h-3" />
                             Recent custom meals:
                           </p>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 justify-center">
                             {getSavedMealsForType(section.id).map((savedMeal) => (
                               <Button
                                 key={savedMeal.id}

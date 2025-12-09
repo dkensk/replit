@@ -357,7 +357,7 @@ export default function Home() {
                   <h3 className="text-lg font-bold text-white">{getScheduledWorkoutForDate(new Date())}</h3>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm font-medium text-muted-foreground">45 min</span>
+                  <span className="text-sm font-medium text-muted-foreground">{profile.workoutDuration} min</span>
                 </div>
               </div>
               <div className="space-y-2">

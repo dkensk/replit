@@ -1,7 +1,80 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, jsonb, serial, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// ============================================
+// LOOKUP/REFERENCE TABLES (3NF)
+// ============================================
+
+export const goals = pgTable("goals", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // muscle, fatloss, maintain
+  label: text("label").notNull(),
+  description: text("description"),
+});
+
+export const positions = pgTable("positions", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // defense, wing, center, goalie
+  label: text("label").notNull(),
+  description: text("description"),
+});
+
+export const competitionLevels = pgTable("competition_levels", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // house, a, aa, aaa, junior
+  label: text("label").notNull(),
+  activityMultiplier: real("activity_multiplier").notNull().default(1.65),
+  description: text("description"),
+});
+
+export const tiers = pgTable("tiers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // Bronze, Silver, Gold, Diamond, Elite
+  minXp: integer("min_xp").notNull().default(0),
+  maxXp: integer("max_xp").notNull().default(100),
+  displayOrder: integer("display_order").notNull().default(0),
+  perks: text("perks"), // JSON string of perks
+});
+
+export const workoutTypes = pgTable("workout_types", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // legs_strength, upper_body, etc.
+  name: text("name").notNull(),
+  focusArea: text("focus_area"), // legs, upper, cardio, recovery
+  description: text("description"),
+  xpReward: integer("xp_reward").notNull().default(15),
+});
+
+export const mealTypes = pgTable("meal_types", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // breakfast, lunch, snack, dinner
+  name: text("name").notNull(),
+  displayOrder: integer("display_order").notNull().default(0),
+});
+
+// ============================================
+// MEAL CATALOG (3NF - Master meal data)
+// ============================================
+
+export const mealCatalog = pgTable("meal_catalog", {
+  id: serial("id").primaryKey(),
+  mealTypeId: integer("meal_type_id").references(() => mealTypes.id),
+  code: text("code").notNull().unique(), // oatmeal, chicken_rice, etc.
+  name: text("name").notNull(),
+  description: text("description"),
+  calories: integer("calories").notNull(),
+  protein: integer("protein").notNull(),
+  carbs: integer("carbs").notNull(),
+  fats: integer("fats").notNull(),
+  recipe: text("recipe"),
+  isActive: boolean("is_active").notNull().default(true),
+});
+
+// ============================================
+// USER TABLES
+// ============================================
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -17,13 +90,10 @@ export const profiles = pgTable("profiles", {
   weight: integer("weight").notNull(), // lbs
   heightFt: integer("height_ft").notNull(),
   heightIn: integer("height_in").notNull(),
-  goal: text("goal").notNull(), // muscle | fatloss | maintain
-  position: text("position").notNull(), // defense | wing | center | goalie
-  level: text("level").notNull(), // house | a | aa | aaa | junior
-  schedule: jsonb("schedule").notNull().$type<Record<string, string>>(), // weekly schedule
+  goalId: integer("goal_id").references(() => goals.id),
+  positionId: integer("position_id").references(() => positions.id),
+  levelId: integer("level_id").references(() => competitionLevels.id),
   workoutDuration: integer("workout_duration").notNull().default(60),
-  xp: integer("xp").notNull().default(0),
-  tier: text("tier").notNull().default("Bronze"), // Bronze | Silver | Gold | Diamond | Elite
   livebarnConnected: boolean("livebarn_connected").notNull().default(false),
   livebarnRink: text("livebarn_rink"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -33,7 +103,8 @@ export const workoutLogs = pgTable("workout_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   date: text("date").notNull(), // YYYY-MM-DD format
-  workoutType: text("workout_type").notNull(),
+  workoutTypeId: integer("workout_type_id").references(() => workoutTypes.id),
+  xpEarned: integer("xp_earned").notNull().default(15),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -41,14 +112,10 @@ export const mealLogs = pgTable("meal_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   date: text("date").notNull(), // YYYY-MM-DD format
-  mealType: text("meal_type").notNull(), // breakfast | lunch | snack | dinner
-  mealId: text("meal_id").notNull(), // oatmeal | chicken_rice | etc.
+  mealTypeId: integer("meal_type_id").references(() => mealTypes.id),
+  mealCatalogId: integer("meal_catalog_id").references(() => mealCatalog.id),
+  customMealId: varchar("custom_meal_id").references(() => customMeals.id),
   consumed: boolean("consumed").notNull().default(false),
-  mealName: text("meal_name"), // Store meal name for custom meals
-  calories: integer("calories"), // Store macros for custom meals
-  protein: integer("protein"),
-  carbs: integer("carbs"),
-  fats: integer("fats"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -60,7 +127,44 @@ export const customMeals = pgTable("custom_meals", {
   protein: integer("protein").notNull(),
   carbs: integer("carbs").notNull(),
   fats: integer("fats").notNull(),
-  mealType: text("meal_type").notNull(), // breakfast | lunch | snack | dinner
+  mealTypeId: integer("meal_type_id").references(() => mealTypes.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ============================================
+// USER WORKOUT SCHEDULE (3NF - Replaces JSONB)
+// ============================================
+
+export const userWorkoutSchedule = pgTable("user_workout_schedule", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  dayOfWeek: integer("day_of_week").notNull(), // 0=Sunday, 1=Monday, etc.
+  workoutTypeId: integer("workout_type_id").references(() => workoutTypes.id),
+  isRestDay: boolean("is_rest_day").notNull().default(false),
+});
+
+// ============================================
+// XP/PROGRESS TRACKING (3NF)
+// ============================================
+
+export const userProgress = pgTable("user_progress", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  totalXp: integer("total_xp").notNull().default(0),
+  tierId: integer("tier_id").references(() => tiers.id),
+  currentStreak: integer("current_streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  lastActivityDate: text("last_activity_date"), // YYYY-MM-DD
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const xpEvents = pgTable("xp_events", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  xpAmount: integer("xp_amount").notNull(),
+  eventType: text("event_type").notNull(), // workout_completed, meal_logged, streak_bonus, etc.
+  sourceId: varchar("source_id"), // ID of the workout/meal that generated this XP
+  description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -96,6 +200,20 @@ export const updateProfileSchema = createInsertSchema(profiles).omit({
   updatedAt: true,
 }).partial();
 
+// Lookup table insert schemas
+export const insertGoalSchema = createInsertSchema(goals).omit({ id: true });
+export const insertPositionSchema = createInsertSchema(positions).omit({ id: true });
+export const insertCompetitionLevelSchema = createInsertSchema(competitionLevels).omit({ id: true });
+export const insertTierSchema = createInsertSchema(tiers).omit({ id: true });
+export const insertWorkoutTypeSchema = createInsertSchema(workoutTypes).omit({ id: true });
+export const insertMealTypeSchema = createInsertSchema(mealTypes).omit({ id: true });
+export const insertMealCatalogSchema = createInsertSchema(mealCatalog).omit({ id: true });
+
+// 3NF tables insert schemas
+export const insertUserWorkoutScheduleSchema = createInsertSchema(userWorkoutSchedule).omit({ id: true });
+export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true, updatedAt: true });
+export const insertXpEventSchema = createInsertSchema(xpEvents).omit({ id: true, createdAt: true });
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -108,3 +226,27 @@ export type MealLog = typeof mealLogs.$inferSelect;
 export type InsertCustomMeal = z.infer<typeof insertCustomMealSchema>;
 export type CustomMeal = typeof customMeals.$inferSelect;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
+
+// Lookup table types
+export type Goal = typeof goals.$inferSelect;
+export type InsertGoal = z.infer<typeof insertGoalSchema>;
+export type Position = typeof positions.$inferSelect;
+export type InsertPosition = z.infer<typeof insertPositionSchema>;
+export type CompetitionLevel = typeof competitionLevels.$inferSelect;
+export type InsertCompetitionLevel = z.infer<typeof insertCompetitionLevelSchema>;
+export type Tier = typeof tiers.$inferSelect;
+export type InsertTier = z.infer<typeof insertTierSchema>;
+export type WorkoutType = typeof workoutTypes.$inferSelect;
+export type InsertWorkoutType = z.infer<typeof insertWorkoutTypeSchema>;
+export type MealType = typeof mealTypes.$inferSelect;
+export type InsertMealType = z.infer<typeof insertMealTypeSchema>;
+export type MealCatalogItem = typeof mealCatalog.$inferSelect;
+export type InsertMealCatalogItem = z.infer<typeof insertMealCatalogSchema>;
+
+// 3NF table types
+export type UserWorkoutSchedule = typeof userWorkoutSchedule.$inferSelect;
+export type InsertUserWorkoutSchedule = z.infer<typeof insertUserWorkoutScheduleSchema>;
+export type UserProgress = typeof userProgress.$inferSelect;
+export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
+export type XpEvent = typeof xpEvents.$inferSelect;
+export type InsertXpEvent = z.infer<typeof insertXpEventSchema>;

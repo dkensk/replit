@@ -10,14 +10,37 @@ import {
   type InsertMealLog,
   type CustomMeal,
   type InsertCustomMeal,
+  type Goal,
+  type Position,
+  type CompetitionLevel,
+  type Tier,
+  type WorkoutType,
+  type MealType,
+  type MealCatalogItem,
+  type UserWorkoutSchedule,
+  type InsertUserWorkoutSchedule,
+  type UserProgress,
+  type InsertUserProgress,
+  type XpEvent,
+  type InsertXpEvent,
   users,
   profiles,
   workoutLogs,
   mealLogs,
-  customMeals
+  customMeals,
+  goals,
+  positions,
+  competitionLevels,
+  tiers,
+  workoutTypes,
+  mealTypes,
+  mealCatalog,
+  userWorkoutSchedule,
+  userProgress,
+  xpEvents
 } from "@shared/schema";
 import { db } from "../db/index";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -39,11 +62,32 @@ export interface IStorage {
   // Meal log methods
   getMealLogsForDate(userId: string, date: string): Promise<MealLog[]>;
   upsertMealLog(log: InsertMealLog): Promise<MealLog>;
-  toggleMealConsumed(userId: string, date: string, mealType: string): Promise<MealLog | undefined>;
+  toggleMealConsumed(userId: string, date: string, mealTypeId: number): Promise<MealLog | undefined>;
   
   // Custom meal methods
   getCustomMeals(userId: string): Promise<CustomMeal[]>;
   createCustomMeal(meal: InsertCustomMeal): Promise<CustomMeal>;
+
+  // Lookup table methods
+  getGoals(): Promise<Goal[]>;
+  getPositions(): Promise<Position[]>;
+  getCompetitionLevels(): Promise<CompetitionLevel[]>;
+  getTiers(): Promise<Tier[]>;
+  getWorkoutTypes(): Promise<WorkoutType[]>;
+  getMealTypes(): Promise<MealType[]>;
+  getMealCatalog(mealTypeCode?: string): Promise<MealCatalogItem[]>;
+
+  // User workout schedule methods
+  getUserSchedule(userId: string): Promise<UserWorkoutSchedule[]>;
+  setUserSchedule(userId: string, schedule: Omit<InsertUserWorkoutSchedule, 'userId'>[]): Promise<UserWorkoutSchedule[]>;
+
+  // XP and progress methods
+  getUserProgress(userId: string): Promise<UserProgress | undefined>;
+  initUserProgress(userId: string): Promise<UserProgress>;
+  addXpEvent(event: InsertXpEvent): Promise<XpEvent>;
+  getXpEvents(userId: string, limit?: number): Promise<XpEvent[]>;
+  updateUserXp(userId: string, xpChange: number): Promise<UserProgress | undefined>;
+  promoteUserTier(userId: string, newTierId: number): Promise<UserProgress | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -117,6 +161,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertMealLog(log: InsertMealLog): Promise<MealLog> {
+    if (!log.mealTypeId) {
+      throw new Error("mealTypeId is required");
+    }
+    
     const existing = await db
       .select()
       .from(mealLogs)
@@ -124,7 +172,7 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(mealLogs.userId, log.userId),
           eq(mealLogs.date, log.date),
-          eq(mealLogs.mealType, log.mealType)
+          eq(mealLogs.mealTypeId, log.mealTypeId)
         )
       );
 
@@ -132,13 +180,9 @@ export class DatabaseStorage implements IStorage {
       const [updated] = await db
         .update(mealLogs)
         .set({ 
-          mealId: log.mealId, 
+          mealCatalogId: log.mealCatalogId,
+          customMealId: log.customMealId,
           consumed: log.consumed,
-          mealName: log.mealName,
-          calories: log.calories,
-          protein: log.protein,
-          carbs: log.carbs,
-          fats: log.fats,
         })
         .where(eq(mealLogs.id, existing[0].id))
         .returning();
@@ -149,7 +193,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async toggleMealConsumed(userId: string, date: string, mealType: string): Promise<MealLog | undefined> {
+  async toggleMealConsumed(userId: string, date: string, mealTypeId: number): Promise<MealLog | undefined> {
     const [existing] = await db
       .select()
       .from(mealLogs)
@@ -157,7 +201,7 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(mealLogs.userId, userId),
           eq(mealLogs.date, date),
-          eq(mealLogs.mealType, mealType)
+          eq(mealLogs.mealTypeId, mealTypeId)
         )
       );
 
@@ -184,6 +228,126 @@ export class DatabaseStorage implements IStorage {
   async createCustomMeal(meal: InsertCustomMeal): Promise<CustomMeal> {
     const [newMeal] = await db.insert(customMeals).values(meal).returning();
     return newMeal;
+  }
+
+  // Lookup table methods
+  async getGoals(): Promise<Goal[]> {
+    return await db.select().from(goals);
+  }
+
+  async getPositions(): Promise<Position[]> {
+    return await db.select().from(positions);
+  }
+
+  async getCompetitionLevels(): Promise<CompetitionLevel[]> {
+    return await db.select().from(competitionLevels);
+  }
+
+  async getTiers(): Promise<Tier[]> {
+    return await db.select().from(tiers).orderBy(asc(tiers.displayOrder));
+  }
+
+  async getWorkoutTypes(): Promise<WorkoutType[]> {
+    return await db.select().from(workoutTypes);
+  }
+
+  async getMealTypes(): Promise<MealType[]> {
+    return await db.select().from(mealTypes).orderBy(asc(mealTypes.displayOrder));
+  }
+
+  async getMealCatalog(mealTypeCode?: string): Promise<MealCatalogItem[]> {
+    if (mealTypeCode) {
+      const mealType = await db.select().from(mealTypes).where(eq(mealTypes.code, mealTypeCode));
+      if (mealType.length > 0) {
+        return await db.select().from(mealCatalog)
+          .where(and(eq(mealCatalog.mealTypeId, mealType[0].id), eq(mealCatalog.isActive, true)));
+      }
+      return [];
+    }
+    return await db.select().from(mealCatalog).where(eq(mealCatalog.isActive, true));
+  }
+
+  // User workout schedule methods
+  async getUserSchedule(userId: string): Promise<UserWorkoutSchedule[]> {
+    return await db.select().from(userWorkoutSchedule)
+      .where(eq(userWorkoutSchedule.userId, userId))
+      .orderBy(asc(userWorkoutSchedule.dayOfWeek));
+  }
+
+  async setUserSchedule(userId: string, schedule: Omit<InsertUserWorkoutSchedule, 'userId'>[]): Promise<UserWorkoutSchedule[]> {
+    await db.delete(userWorkoutSchedule).where(eq(userWorkoutSchedule.userId, userId));
+    if (schedule.length === 0) return [];
+    const values = schedule.map(s => ({ ...s, userId }));
+    return await db.insert(userWorkoutSchedule).values(values).returning();
+  }
+
+  // XP and progress methods
+  async getUserProgress(userId: string): Promise<UserProgress | undefined> {
+    const [progress] = await db.select().from(userProgress).where(eq(userProgress.userId, userId));
+    return progress;
+  }
+
+  async initUserProgress(userId: string): Promise<UserProgress> {
+    const existing = await this.getUserProgress(userId);
+    if (existing) return existing;
+    
+    const [bronzeTier] = await db.select().from(tiers).where(eq(tiers.name, "Bronze"));
+    const [progress] = await db.insert(userProgress).values({
+      userId,
+      totalXp: 0,
+      tierId: bronzeTier?.id,
+      currentStreak: 0,
+      longestStreak: 0,
+    }).returning();
+    return progress;
+  }
+
+  async addXpEvent(event: InsertXpEvent): Promise<XpEvent> {
+    const [xpEvent] = await db.insert(xpEvents).values(event).returning();
+    return xpEvent;
+  }
+
+  async getXpEvents(userId: string, limit: number = 50): Promise<XpEvent[]> {
+    return await db.select().from(xpEvents)
+      .where(eq(xpEvents.userId, userId))
+      .orderBy(desc(xpEvents.createdAt))
+      .limit(limit);
+  }
+
+  async updateUserXp(userId: string, xpChange: number): Promise<UserProgress | undefined> {
+    let progress = await this.getUserProgress(userId);
+    if (!progress) {
+      progress = await this.initUserProgress(userId);
+    }
+    
+    const newXp = Math.max(0, progress.totalXp + xpChange);
+    
+    const allTiers = await this.getTiers();
+    const newTier = allTiers.find(t => newXp >= t.minXp && newXp <= t.maxXp);
+    
+    const [updated] = await db.update(userProgress)
+      .set({ 
+        totalXp: newXp, 
+        tierId: newTier?.id,
+        updatedAt: new Date() 
+      })
+      .where(eq(userProgress.userId, userId))
+      .returning();
+    
+    return updated;
+  }
+
+  async promoteUserTier(userId: string, newTierId: number): Promise<UserProgress | undefined> {
+    const [updated] = await db.update(userProgress)
+      .set({ 
+        totalXp: 0,
+        tierId: newTierId,
+        updatedAt: new Date() 
+      })
+      .where(eq(userProgress.userId, userId))
+      .returning();
+    
+    return updated;
   }
 }
 

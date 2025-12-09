@@ -30,15 +30,14 @@ export async function registerRoutes(
       
       // If no profile exists, create a default one
       if (!profile) {
-        const defaultSchedule = {
-          monday: "legs_strength",
-          tuesday: "upper_body",
-          wednesday: "skills_cardio",
-          thursday: "legs_explosive",
-          friday: "full_body",
-          saturday: "active_recovery",
-          sunday: "rest",
-        };
+        // Get default lookup IDs
+        const goals = await storage.getGoals();
+        const positions = await storage.getPositions();
+        const levels = await storage.getCompetitionLevels();
+        
+        const defaultGoal = goals.find(g => g.code === "muscle");
+        const defaultPosition = positions.find(p => p.code === "defense");
+        const defaultLevel = levels.find(l => l.code === "aa");
 
         profile = await storage.createProfile({
           userId: defaultUserId,
@@ -46,14 +45,36 @@ export async function registerRoutes(
           weight: 175,
           heightFt: 5,
           heightIn: 10,
-          goal: "muscle",
-          position: "defense",
-          level: "aa",
-          schedule: defaultSchedule,
+          goalId: defaultGoal?.id ?? null,
+          positionId: defaultPosition?.id ?? null,
+          levelId: defaultLevel?.id ?? null,
           workoutDuration: 60,
-          xp: 0,
-          tier: "Bronze",
         });
+
+        // Initialize user progress
+        await storage.initUserProgress(defaultUserId);
+
+        // Set default schedule
+        const workoutTypes = await storage.getWorkoutTypes();
+        const defaultSchedule = [
+          { dayOfWeek: 1, workoutTypeCode: "legs_strength" },
+          { dayOfWeek: 2, workoutTypeCode: "upper_body" },
+          { dayOfWeek: 3, workoutTypeCode: "skills_cardio" },
+          { dayOfWeek: 4, workoutTypeCode: "legs_explosive" },
+          { dayOfWeek: 5, workoutTypeCode: "full_body" },
+          { dayOfWeek: 6, workoutTypeCode: "active_recovery" },
+          { dayOfWeek: 0, isRestDay: true },
+        ];
+        
+        const scheduleItems = defaultSchedule.map(item => {
+          if (item.isRestDay) {
+            return { userId: defaultUserId, dayOfWeek: item.dayOfWeek, workoutTypeId: null, isRestDay: true };
+          }
+          const wt = workoutTypes.find(w => w.code === item.workoutTypeCode);
+          return { userId: defaultUserId, dayOfWeek: item.dayOfWeek, workoutTypeId: wt?.id ?? null, isRestDay: false };
+        });
+        
+        await storage.setUserSchedule(defaultUserId, scheduleItems);
       }
 
       res.json(profile);
@@ -114,12 +135,15 @@ export async function registerRoutes(
 
       const log = await storage.logWorkout(data);
 
-      // Add XP to profile
-      const profile = await storage.getProfileByUserId(defaultUserId);
-      if (profile) {
-        const newXp = Math.min(100, profile.xp + 15);
-        await storage.updateProfile(defaultUserId, { xp: newXp });
-      }
+      // Add XP to user progress
+      await storage.addXpEvent({
+        userId: defaultUserId,
+        xpAmount: 15,
+        eventType: "workout_completed",
+        sourceId: log.id,
+        description: "Completed workout",
+      });
+      await storage.updateUserXp(defaultUserId, 15);
 
       res.json(log);
     } catch (error) {
@@ -139,12 +163,15 @@ export async function registerRoutes(
       
       await storage.deleteWorkoutByDate(defaultUserId, date);
       
-      // Remove XP from profile
-      const profile = await storage.getProfileByUserId(defaultUserId);
-      if (profile) {
-        const newXp = Math.max(0, profile.xp - 15);
-        await storage.updateProfile(defaultUserId, { xp: newXp });
-      }
+      // Remove XP from user progress
+      await storage.addXpEvent({
+        userId: defaultUserId,
+        xpAmount: -15,
+        eventType: "workout_undone",
+        sourceId: null,
+        description: "Workout undone",
+      });
+      await storage.updateUserXp(defaultUserId, -15);
       
       res.json({ success: true });
     } catch (error) {
@@ -196,19 +223,39 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Missing date or mealType" });
       }
 
-      const updated = await storage.toggleMealConsumed(defaultUserId, date, mealType);
+      // Resolve mealType code to mealTypeId
+      const mealTypes = await storage.getMealTypes();
+      const mealTypeRecord = mealTypes.find(mt => mt.code === mealType);
+      
+      if (!mealTypeRecord) {
+        return res.status(400).json({ error: "Invalid meal type" });
+      }
+
+      const updated = await storage.toggleMealConsumed(defaultUserId, date, mealTypeRecord.id);
       
       if (!updated) {
         return res.status(404).json({ error: "Meal log not found" });
       }
 
-      // Add XP if meal was marked as consumed
+      // Add XP if meal was marked as consumed, remove if unchecked
       if (updated.consumed) {
-        const profile = await storage.getProfileByUserId(defaultUserId);
-        if (profile) {
-          const newXp = Math.min(100, profile.xp + 5);
-          await storage.updateProfile(defaultUserId, { xp: newXp });
-        }
+        await storage.addXpEvent({
+          userId: defaultUserId,
+          xpAmount: 5,
+          eventType: "meal_consumed",
+          sourceId: updated.id,
+          description: "Meal consumed",
+        });
+        await storage.updateUserXp(defaultUserId, 5);
+      } else {
+        await storage.addXpEvent({
+          userId: defaultUserId,
+          xpAmount: -5,
+          eventType: "meal_unchecked",
+          sourceId: updated.id,
+          description: "Meal unchecked",
+        });
+        await storage.updateUserXp(defaultUserId, -5);
       }
 
       res.json(updated);
@@ -254,26 +301,34 @@ export async function registerRoutes(
   app.post("/api/profile/promote", async (req, res) => {
     try {
       const defaultUserId = "default-user";
-      const profile = await storage.getProfileByUserId(defaultUserId);
-
-      if (!profile) {
-        return res.status(404).json({ error: "Profile not found" });
+      
+      // Get user progress
+      let progress = await storage.getUserProgress(defaultUserId);
+      if (!progress) {
+        progress = await storage.initUserProgress(defaultUserId);
       }
 
-      if (profile.xp < 100) {
+      // Get tiers from database
+      const tiersData = await storage.getTiers();
+      const sortedTiers = tiersData.sort((a, b) => a.displayOrder - b.displayOrder);
+      
+      // Find current tier
+      const currentTier = sortedTiers.find(t => t.id === progress!.tierId) || sortedTiers[0];
+      
+      // Check if XP is enough for promotion (using tier's maxXp)
+      if (progress.totalXp < (currentTier?.maxXp || 100)) {
         return res.status(400).json({ error: "Not enough XP to promote" });
       }
 
-      const tiers = ["Bronze", "Silver", "Gold", "Diamond", "Elite"];
-      const currentIndex = tiers.indexOf(profile.tier);
-      const nextTier = currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : profile.tier;
+      // Find next tier
+      const currentIndex = sortedTiers.findIndex(t => t.id === currentTier?.id);
+      const nextTier = currentIndex < sortedTiers.length - 1 ? sortedTiers[currentIndex + 1] : currentTier;
 
-      const updated = await storage.updateProfile(defaultUserId, {
-        tier: nextTier,
-        xp: 0,
-      });
+      // Update progress: reset XP to 0 and set new tier
+      await storage.promoteUserTier(defaultUserId, nextTier.id);
 
-      res.json(updated);
+      const updatedProgress = await storage.getUserProgress(defaultUserId);
+      res.json(updatedProgress);
     } catch (error) {
       console.error("Error promoting tier:", error);
       res.status(500).json({ error: "Failed to promote tier" });
@@ -341,6 +396,145 @@ Be reasonable with portion sizes. If you cannot identify the food, provide your 
     } catch (error) {
       console.error("Error analyzing food:", error);
       res.status(500).json({ error: "Failed to analyze food image" });
+    }
+  });
+
+  // ============================================
+  // LOOKUP TABLE ROUTES (3NF)
+  // ============================================
+
+  app.get("/api/lookups/goals", async (req, res) => {
+    try {
+      const data = await storage.getGoals();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching goals:", error);
+      res.status(500).json({ error: "Failed to fetch goals" });
+    }
+  });
+
+  app.get("/api/lookups/positions", async (req, res) => {
+    try {
+      const data = await storage.getPositions();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching positions:", error);
+      res.status(500).json({ error: "Failed to fetch positions" });
+    }
+  });
+
+  app.get("/api/lookups/levels", async (req, res) => {
+    try {
+      const data = await storage.getCompetitionLevels();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching competition levels:", error);
+      res.status(500).json({ error: "Failed to fetch levels" });
+    }
+  });
+
+  app.get("/api/lookups/tiers", async (req, res) => {
+    try {
+      const data = await storage.getTiers();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching tiers:", error);
+      res.status(500).json({ error: "Failed to fetch tiers" });
+    }
+  });
+
+  app.get("/api/lookups/workout-types", async (req, res) => {
+    try {
+      const data = await storage.getWorkoutTypes();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching workout types:", error);
+      res.status(500).json({ error: "Failed to fetch workout types" });
+    }
+  });
+
+  app.get("/api/lookups/meal-types", async (req, res) => {
+    try {
+      const data = await storage.getMealTypes();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching meal types:", error);
+      res.status(500).json({ error: "Failed to fetch meal types" });
+    }
+  });
+
+  app.get("/api/meal-catalog", async (req, res) => {
+    try {
+      const mealType = req.query.mealType as string | undefined;
+      const data = await storage.getMealCatalog(mealType);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching meal catalog:", error);
+      res.status(500).json({ error: "Failed to fetch meal catalog" });
+    }
+  });
+
+  // ============================================
+  // XP/PROGRESS ROUTES
+  // ============================================
+
+  app.get("/api/progress", async (req, res) => {
+    try {
+      const defaultUserId = "default-user";
+      let progress = await storage.getUserProgress(defaultUserId);
+      
+      if (!progress) {
+        progress = await storage.initUserProgress(defaultUserId);
+      }
+      
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching progress:", error);
+      res.status(500).json({ error: "Failed to fetch progress" });
+    }
+  });
+
+  app.get("/api/progress/xp-history", async (req, res) => {
+    try {
+      const defaultUserId = "default-user";
+      const limit = parseInt(req.query.limit as string) || 50;
+      const events = await storage.getXpEvents(defaultUserId, limit);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching XP history:", error);
+      res.status(500).json({ error: "Failed to fetch XP history" });
+    }
+  });
+
+  // ============================================
+  // USER SCHEDULE ROUTES
+  // ============================================
+
+  app.get("/api/schedule", async (req, res) => {
+    try {
+      const defaultUserId = "default-user";
+      const schedule = await storage.getUserSchedule(defaultUserId);
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error fetching schedule:", error);
+      res.status(500).json({ error: "Failed to fetch schedule" });
+    }
+  });
+
+  app.put("/api/schedule", async (req, res) => {
+    try {
+      const defaultUserId = "default-user";
+      const { schedule } = req.body;
+      
+      if (!Array.isArray(schedule)) {
+        return res.status(400).json({ error: "Schedule must be an array" });
+      }
+      
+      const result = await storage.setUserSchedule(defaultUserId, schedule);
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating schedule:", error);
+      res.status(500).json({ error: "Failed to update schedule" });
     }
   });
 

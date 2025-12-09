@@ -115,6 +115,55 @@ export async function toggleMeal(data: { date: string; mealType: string }): Prom
   return toggleMealConsumed(data.date, data.mealType);
 }
 
+// Fetch user schedule
+export async function fetchSchedule(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/schedule`);
+  if (!res.ok) throw new Error("Failed to fetch schedule");
+  return res.json();
+}
+
+// Fetch workout types
+export async function fetchWorkoutTypes(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/lookups/workout-types`);
+  if (!res.ok) throw new Error("Failed to fetch workout types");
+  return res.json();
+}
+
+// Fetch goals lookup
+export async function fetchGoals(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/lookups/goals`);
+  if (!res.ok) throw new Error("Failed to fetch goals");
+  return res.json();
+}
+
+// Fetch positions lookup
+export async function fetchPositions(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/lookups/positions`);
+  if (!res.ok) throw new Error("Failed to fetch positions");
+  return res.json();
+}
+
+// Fetch levels lookup
+export async function fetchLevels(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/lookups/levels`);
+  if (!res.ok) throw new Error("Failed to fetch levels");
+  return res.json();
+}
+
+// Fetch tiers lookup
+export async function fetchTiers(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/lookups/tiers`);
+  if (!res.ok) throw new Error("Failed to fetch tiers");
+  return res.json();
+}
+
+// Fetch user progress (xp/tier)
+export async function fetchProgress(): Promise<any> {
+  const res = await fetch(`${API_BASE}/progress`);
+  if (!res.ok) throw new Error("Failed to fetch progress");
+  return res.json();
+}
+
 export async function sendChatMessage(
   messages: { role: string; content: string }[],
   profile: { position: string; level: string; age: number; weight: number } | null

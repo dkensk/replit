@@ -90,6 +90,45 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     queryFn: api.fetchWorkoutLogs,
   });
 
+  // Fetch user schedule from separate table
+  const { data: scheduleData = [] } = useQuery({
+    queryKey: ["schedule"],
+    queryFn: api.fetchSchedule,
+  });
+
+  // Fetch workout types for mapping IDs to codes
+  const { data: workoutTypes = [] } = useQuery({
+    queryKey: ["workoutTypes"],
+    queryFn: api.fetchWorkoutTypes,
+  });
+
+  // Fetch lookup tables for mapping IDs
+  const { data: goals = [] } = useQuery({
+    queryKey: ["goals"],
+    queryFn: api.fetchGoals,
+  });
+
+  const { data: positions = [] } = useQuery({
+    queryKey: ["positions"],
+    queryFn: api.fetchPositions,
+  });
+
+  const { data: levels = [] } = useQuery({
+    queryKey: ["levels"],
+    queryFn: api.fetchLevels,
+  });
+
+  const { data: tiers = [] } = useQuery({
+    queryKey: ["tiers"],
+    queryFn: api.fetchTiers,
+  });
+
+  // Fetch user progress (xp/tier)
+  const { data: userProgress } = useQuery({
+    queryKey: ["progress"],
+    queryFn: api.fetchProgress,
+  });
+
   // Profile update mutation
   const updateMutation = useMutation({
     mutationFn: api.updateProfile,
@@ -236,6 +275,53 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     prevSelectedMeals.current = selectedMeals;
   }, [selectedMeals, initialLoadComplete, getTodayDate, saveMealMutation, consumedMeals]);
 
+  // Build schedule from the separate schedule data
+  const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const buildSchedule = (): WeeklySchedule => {
+    const schedule: WeeklySchedule = {};
+    
+    if (scheduleData.length > 0 && workoutTypes.length > 0) {
+      scheduleData.forEach((item: any) => {
+        const dayName = dayNames[item.dayOfWeek];
+        if (item.isRestDay) {
+          schedule[dayName] = "rest";
+        } else if (item.workoutTypeId) {
+          const wt = workoutTypes.find((w: any) => w.id === item.workoutTypeId);
+          schedule[dayName] = wt?.code || "rest";
+        } else {
+          schedule[dayName] = "rest";
+        }
+      });
+    }
+    
+    return schedule;
+  };
+
+  // Helper functions to map IDs to codes
+  const getGoalCode = (goalId: number | null): "muscle" | "fatloss" | "maintain" => {
+    if (!goalId) return "muscle";
+    const goal = goals.find((g: any) => g.id === goalId);
+    return (goal?.code || "muscle") as any;
+  };
+
+  const getPositionCode = (positionId: number | null): "defense" | "wing" | "center" | "goalie" => {
+    if (!positionId) return "defense";
+    const position = positions.find((p: any) => p.id === positionId);
+    return (position?.code || "defense") as any;
+  };
+
+  const getLevelCode = (levelId: number | null): "house" | "a" | "aa" | "aaa" | "junior" => {
+    if (!levelId) return "aa";
+    const level = levels.find((l: any) => l.id === levelId);
+    return (level?.code || "aa") as any;
+  };
+
+  const getTierName = (tierId: number | null): "Bronze" | "Silver" | "Gold" | "Diamond" | "Elite" => {
+    if (!tierId) return "Bronze";
+    const tier = tiers.find((t: any) => t.id === tierId);
+    return (tier?.name || "Bronze") as any;
+  };
+
   // Convert backend profile to frontend format
   const profile: UserProfile = backendProfile
     ? {
@@ -243,13 +329,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         weight: backendProfile.weight,
         heightFt: backendProfile.heightFt,
         heightIn: backendProfile.heightIn,
-        goal: backendProfile.goal as any,
-        position: backendProfile.position as any,
-        level: backendProfile.level as any,
-        schedule: backendProfile.schedule as WeeklySchedule,
+        goal: getGoalCode(backendProfile.goalId),
+        position: getPositionCode(backendProfile.positionId),
+        level: getLevelCode(backendProfile.levelId),
+        schedule: buildSchedule(),
         workoutDuration: backendProfile.workoutDuration,
-        xp: backendProfile.xp,
-        tier: backendProfile.tier as any,
+        xp: userProgress?.totalXp || 0,
+        tier: getTierName(userProgress?.tierId),
         workoutHistory: workoutLogs.map(log => log.date),
         livebarnConnected: backendProfile.livebarnConnected ?? false,
         livebarnRink: backendProfile.livebarnRink ?? null,
@@ -261,10 +347,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [updateMutation]);
 
   const addXp = useCallback((amount: number) => {
-    if (!backendProfile) return;
-    const newXp = Math.min(100, backendProfile.xp + amount);
-    updateMutation.mutate({ xp: newXp });
-  }, [backendProfile, updateMutation]);
+    // XP is now managed automatically by the server when logging workouts/meals
+    // Just invalidate the progress query to refresh the data
+    queryClient.invalidateQueries({ queryKey: ["progress"] });
+  }, [queryClient]);
 
   const promoteTier = useCallback(() => {
     promoteMutation.mutate();

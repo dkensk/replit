@@ -98,6 +98,8 @@ const EXERCISES: Record<string, Array<{ id: string, name: string, category: stri
     { id: "bench_press", name: "Bench Press", category: "upper_push" },
     { id: "overhead_press", name: "Overhead Press", category: "upper_push" },
     { id: "incline_dumbbell_press", name: "Incline DB Press", category: "upper_push" },
+    { id: "db_press", name: "DB Press", category: "upper_push" },
+    { id: "db_shoulder_press", name: "DB Shoulder Press", category: "upper_push" },
     { id: "dips", name: "Weighted Dips", category: "upper_push" },
     { id: "landmine_press", name: "Landmine Press", category: "upper_push" },
     { id: "pushups", name: "Weighted Pushups", category: "upper_push" },
@@ -109,7 +111,9 @@ const EXERCISES: Record<string, Array<{ id: string, name: string, category: stri
     { id: "push_press", name: "Push Press", category: "upper_push" },
     { id: "cable_fly", name: "Cable Fly", category: "upper_push" },
     { id: "dumbbell_fly", name: "Dumbbell Fly", category: "upper_push" },
-    { id: "machine_chest_press", name: "Machine Chest Press", category: "upper_push" }
+    { id: "machine_chest_press", name: "Machine Chest Press", category: "upper_push" },
+    { id: "incline_bench", name: "Incline Bench Press", category: "upper_push" },
+    { id: "close_grip_pushup", name: "Close Grip Pushups", category: "upper_push" }
   ],
   "upper_pull": [
     { id: "pullups", name: "Pull Ups", category: "upper_pull" },
@@ -220,31 +224,38 @@ const GOAL_WORKOUTS: GoalWorkouts = {
       { id: "pullups", sets: "4", reps: "6-8", rest: "2-3 min", category: "upper_pull" },
       { id: "overhead_press", sets: "4", reps: "6-8", rest: "2-3 min", category: "upper_push" },
       { id: "barbell_row", sets: "4", reps: "8-10", rest: "2 min", category: "upper_pull" },
+      { id: "db_press", sets: "3", reps: "8-10", rest: "2 min", category: "upper_push" },
       { id: "dips", sets: "3", reps: "8-10", rest: "2 min", category: "upper_push" },
-      { id: "face_pulls", sets: "3", reps: "15", rest: "60s", category: "upper_pull" }
+      { id: "face_pulls", sets: "3", reps: "15", rest: "60s", category: "upper_pull" },
+      { id: "lateral_raise", sets: "3", reps: "12-15", rest: "60s", category: "shoulders" }
     ],
     "back_biceps": [
       { id: "pullups", sets: "4", reps: "6-8", rest: "2-3 min", category: "upper_pull" },
       { id: "barbell_row", sets: "5", reps: "5", rest: "2-3 min", category: "upper_pull" },
       { id: "tbar_row", sets: "4", reps: "8-10", rest: "2 min", category: "upper_pull" },
       { id: "lat_pulldown", sets: "4", reps: "10-12", rest: "90s", category: "upper_pull" },
+      { id: "chest_supported_row", sets: "3", reps: "10-12", rest: "90s", category: "upper_pull" },
       { id: "barbell_curl", sets: "4", reps: "8-10", rest: "90s", category: "isolation_bicep" },
-      { id: "hammer_curl", sets: "3", reps: "10-12", rest: "60s", category: "isolation_bicep" }
+      { id: "hammer_curl", sets: "3", reps: "10-12", rest: "60s", category: "isolation_bicep" },
+      { id: "preacher_curl", sets: "3", reps: "10-12", rest: "60s", category: "isolation_bicep" }
     ],
     "chest_triceps": [
       { id: "bench_press", sets: "5", reps: "5", rest: "3-4 min", category: "upper_push" },
       { id: "incline_dumbbell_press", sets: "4", reps: "8-10", rest: "2-3 min", category: "upper_push" },
+      { id: "db_press", sets: "4", reps: "8-10", rest: "2 min", category: "upper_push" },
       { id: "dips", sets: "4", reps: "8-10", rest: "2 min", category: "upper_push" },
       { id: "cable_fly", sets: "3", reps: "12-15", rest: "90s", category: "upper_push" },
       { id: "skull_crusher", sets: "4", reps: "10-12", rest: "90s", category: "isolation_tricep" },
-      { id: "tricep_pushdown", sets: "3", reps: "12-15", rest: "60s", category: "isolation_tricep" }
+      { id: "tricep_pushdown", sets: "3", reps: "12-15", rest: "60s", category: "isolation_tricep" },
+      { id: "overhead_extension", sets: "3", reps: "12-15", rest: "60s", category: "isolation_tricep" }
     ],
     "full_body": [
       { id: "conventional_deadlift", sets: "4", reps: "5", rest: "3-4 min", category: "legs_hinge" },
       { id: "bench_press", sets: "4", reps: "6-8", rest: "2-3 min", category: "upper_push" },
       { id: "barbell_row", sets: "4", reps: "8-10", rest: "2 min", category: "upper_pull" },
       { id: "split_squat", sets: "3", reps: "10/leg", rest: "90s", category: "legs_unilateral" },
-      { id: "overhead_press", sets: "3", reps: "8-10", rest: "2 min", category: "upper_push" },
+      { id: "db_shoulder_press", sets: "3", reps: "8-10", rest: "2 min", category: "upper_push" },
+      { id: "chin_ups", sets: "3", reps: "8-10", rest: "90s", category: "upper_pull" },
       { id: "pallof_press", sets: "3", reps: "10/side", rest: "60s", category: "core" }
     ],
     "skills_cardio": [
@@ -277,29 +288,36 @@ const GOAL_WORKOUTS: GoalWorkouts = {
     "upper_body": [
       { id: "bench_press", sets: "4", reps: "8-10", rest: "2 min", category: "upper_push" },
       { id: "pullups", sets: "3", reps: "AMRAP", rest: "2 min", category: "upper_pull" },
-      { id: "overhead_press", sets: "3", reps: "10-12", rest: "90s", category: "upper_push" },
+      { id: "db_shoulder_press", sets: "3", reps: "10-12", rest: "90s", category: "upper_push" },
       { id: "barbell_row", sets: "3", reps: "10-12", rest: "90s", category: "upper_pull" },
-      { id: "face_pulls", sets: "3", reps: "15", rest: "60s", category: "upper_pull" }
+      { id: "db_press", sets: "3", reps: "10-12", rest: "90s", category: "upper_push" },
+      { id: "face_pulls", sets: "3", reps: "15", rest: "60s", category: "upper_pull" },
+      { id: "lateral_raise", sets: "3", reps: "12-15", rest: "45s", category: "shoulders" }
     ],
     "back_biceps": [
       { id: "pullups", sets: "3", reps: "8-10", rest: "2 min", category: "upper_pull" },
       { id: "barbell_row", sets: "3", reps: "10-12", rest: "90s", category: "upper_pull" },
       { id: "lat_pulldown", sets: "3", reps: "12-15", rest: "60s", category: "upper_pull" },
+      { id: "cable_row", sets: "3", reps: "12-15", rest: "60s", category: "upper_pull" },
       { id: "barbell_curl", sets: "3", reps: "12", rest: "60s", category: "isolation_bicep" },
-      { id: "hammer_curl", sets: "3", reps: "12", rest: "60s", category: "isolation_bicep" }
+      { id: "hammer_curl", sets: "3", reps: "12", rest: "60s", category: "isolation_bicep" },
+      { id: "incline_curl", sets: "2", reps: "12-15", rest: "45s", category: "isolation_bicep" }
     ],
     "chest_triceps": [
       { id: "bench_press", sets: "4", reps: "8-10", rest: "2 min", category: "upper_push" },
       { id: "incline_dumbbell_press", sets: "3", reps: "10-12", rest: "90s", category: "upper_push" },
+      { id: "db_press", sets: "3", reps: "10-12", rest: "90s", category: "upper_push" },
       { id: "dips", sets: "3", reps: "10-12", rest: "90s", category: "upper_push" },
+      { id: "cable_fly", sets: "3", reps: "12-15", rest: "60s", category: "upper_push" },
       { id: "skull_crusher", sets: "3", reps: "12", rest: "60s", category: "isolation_tricep" },
       { id: "tricep_pushdown", sets: "3", reps: "15", rest: "60s", category: "isolation_tricep" }
     ],
     "full_body": [
       { id: "trap_bar", sets: "3", reps: "8", rest: "2 min", category: "legs_hinge" },
-      { id: "landmine_press", sets: "3", reps: "10/arm", rest: "90s", category: "upper_push" },
+      { id: "db_press", sets: "3", reps: "10", rest: "90s", category: "upper_push" },
       { id: "walking_lunges", sets: "3", reps: "10/leg", rest: "90s", category: "legs_unilateral" },
       { id: "single_arm_row", sets: "3", reps: "10/arm", rest: "90s", category: "upper_pull" },
+      { id: "db_shoulder_press", sets: "3", reps: "10", rest: "90s", category: "upper_push" },
       { id: "ab_wheel", sets: "3", reps: "10", rest: "60s", category: "core" }
     ],
     "skills_cardio": [
@@ -333,8 +351,10 @@ const GOAL_WORKOUTS: GoalWorkouts = {
     "upper_body": [
       { id: "pushups", sets: "4", reps: "15-20", rest: "30s", category: "upper_push" },
       { id: "inverted_row", sets: "4", reps: "15", rest: "30s", category: "upper_pull" },
+      { id: "db_press", sets: "3", reps: "15", rest: "30s", category: "upper_push" },
       { id: "pike_pushup", sets: "3", reps: "12", rest: "30s", category: "upper_push" },
       { id: "band_pull_apart", sets: "3", reps: "20", rest: "20s", category: "upper_pull" },
+      { id: "db_shoulder_press", sets: "3", reps: "12", rest: "30s", category: "upper_push" },
       { id: "diamond_pushup", sets: "3", reps: "12", rest: "30s", category: "isolation_tricep" },
       { id: "bicycle_crunch", sets: "3", reps: "20/side", rest: "30s", category: "core" }
     ],
@@ -342,12 +362,14 @@ const GOAL_WORKOUTS: GoalWorkouts = {
       { id: "chin_ups", sets: "4", reps: "AMRAP", rest: "45s", category: "upper_pull" },
       { id: "cable_row", sets: "3", reps: "15", rest: "30s", category: "upper_pull" },
       { id: "lat_pulldown", sets: "3", reps: "15", rest: "30s", category: "upper_pull" },
+      { id: "straight_arm_pulldown", sets: "3", reps: "15", rest: "30s", category: "upper_pull" },
       { id: "face_pulls", sets: "3", reps: "20", rest: "20s", category: "upper_pull" },
       { id: "cable_curl", sets: "3", reps: "15", rest: "30s", category: "isolation_bicep" },
       { id: "hammer_curl", sets: "3", reps: "15", rest: "30s", category: "isolation_bicep" }
     ],
     "chest_triceps": [
       { id: "pushups", sets: "4", reps: "20", rest: "30s", category: "upper_push" },
+      { id: "db_press", sets: "3", reps: "15", rest: "30s", category: "upper_push" },
       { id: "incline_dumbbell_press", sets: "3", reps: "15", rest: "45s", category: "upper_push" },
       { id: "cable_fly", sets: "3", reps: "15", rest: "30s", category: "upper_push" },
       { id: "tricep_dips", sets: "3", reps: "15", rest: "30s", category: "isolation_tricep" },
@@ -356,10 +378,11 @@ const GOAL_WORKOUTS: GoalWorkouts = {
     ],
     "full_body": [
       { id: "kettlebell_swing", sets: "4", reps: "20", rest: "30s", category: "legs_hinge" },
-      { id: "pushups", sets: "3", reps: "15", rest: "30s", category: "upper_push" },
+      { id: "db_press", sets: "3", reps: "15", rest: "30s", category: "upper_push" },
       { id: "goblet_squat", sets: "3", reps: "15", rest: "30s", category: "legs_compound" },
       { id: "inverted_row", sets: "3", reps: "12", rest: "30s", category: "upper_pull" },
       { id: "reverse_lunges", sets: "3", reps: "10/leg", rest: "30s", category: "legs_unilateral" },
+      { id: "db_shoulder_press", sets: "3", reps: "12", rest: "30s", category: "upper_push" },
       { id: "v_ups", sets: "3", reps: "15", rest: "30s", category: "core" }
     ],
     "skills_cardio": [

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Check, Target, Info, Plus, ChefHat, Camera, Loader2, History } from "lucide-react";
+import { AlertCircle, Check, Target, Info, Plus, ChefHat, Camera, Loader2, History, Image } from "lucide-react";
 import foodImage from "@assets/generated_images/healthy_meal_prep_food.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
@@ -902,16 +902,26 @@ export default function Diet() {
                   )}
                 </div>
               ) : (
-                <label 
-                  htmlFor="food-photo" 
-                  className="w-16 h-16 flex-shrink-0 border-2 border-dashed border-primary/40 rounded-lg flex items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors"
-                >
-                  <Camera className="w-6 h-6 text-primary" />
-                </label>
+                <div className="flex gap-2">
+                  <label 
+                    htmlFor="food-photo-camera" 
+                    className="w-14 h-14 flex-shrink-0 border-2 border-dashed border-primary/40 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors gap-0.5"
+                  >
+                    <Camera className="w-5 h-5 text-primary" />
+                    <span className="text-[9px] text-primary">Camera</span>
+                  </label>
+                  <label 
+                    htmlFor="food-photo-gallery" 
+                    className="w-14 h-14 flex-shrink-0 border-2 border-dashed border-primary/40 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors gap-0.5"
+                  >
+                    <Image className="w-5 h-5 text-primary" />
+                    <span className="text-[9px] text-primary">Gallery</span>
+                  </label>
+                </div>
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white">
-                  {isAnalyzing ? "Analyzing photo..." : imagePreview ? "Photo captured" : "Take a photo"}
+                  {isAnalyzing ? "Analyzing photo..." : imagePreview ? "Photo captured" : "Add a photo"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {imagePreview ? (
@@ -928,13 +938,21 @@ export default function Diet() {
                 </p>
               </div>
               <input
-                id="food-photo"
+                id="food-photo-camera"
                 type="file"
                 accept="image/*"
                 capture="environment"
                 className="hidden"
                 onChange={handleImageUpload}
-                data-testid="input-food-photo"
+                data-testid="input-food-photo-camera"
+              />
+              <input
+                id="food-photo-gallery"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+                data-testid="input-food-photo-gallery"
               />
             </div>
 

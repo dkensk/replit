@@ -186,7 +186,18 @@ export async function registerRoutes(
       const defaultUserId = "default-user";
       const { date } = req.params;
       const logs = await storage.getMealLogsForDate(defaultUserId, date);
-      res.json(logs);
+      
+      // Enrich logs with mealType code for frontend compatibility
+      const mealTypes = await storage.getMealTypes();
+      const enrichedLogs = logs.map(log => {
+        const mealType = mealTypes.find(mt => mt.id === log.mealTypeId);
+        return {
+          ...log,
+          mealType: mealType?.code || "unknown",
+        };
+      });
+      
+      res.json(enrichedLogs);
     } catch (error) {
       console.error("Error fetching meal logs:", error);
       res.status(500).json({ error: "Failed to fetch meal logs" });
@@ -197,9 +208,20 @@ export async function registerRoutes(
   app.post("/api/meals", async (req, res) => {
     try {
       const defaultUserId = "default-user";
+      const { mealType, ...rest } = req.body;
+      
+      // Resolve mealType code to mealTypeId
+      const mealTypes = await storage.getMealTypes();
+      const mealTypeRecord = mealTypes.find(mt => mt.code === mealType);
+      
+      if (!mealTypeRecord) {
+        return res.status(400).json({ error: `Invalid meal type: ${mealType}` });
+      }
+
       const data = insertMealLogSchema.parse({
-        ...req.body,
+        ...rest,
         userId: defaultUserId,
+        mealTypeId: mealTypeRecord.id,
       });
 
       const log = await storage.upsertMealLog(data);
@@ -281,9 +303,22 @@ export async function registerRoutes(
   app.post("/api/custom-meals", async (req, res) => {
     try {
       const defaultUserId = "default-user";
+      const { mealType, ...rest } = req.body;
+      
+      // Resolve mealType code to mealTypeId if provided
+      let mealTypeId = null;
+      if (mealType) {
+        const mealTypes = await storage.getMealTypes();
+        const mealTypeRecord = mealTypes.find(mt => mt.code === mealType);
+        if (mealTypeRecord) {
+          mealTypeId = mealTypeRecord.id;
+        }
+      }
+
       const data = insertCustomMealSchema.parse({
-        ...req.body,
+        ...rest,
         userId: defaultUserId,
+        mealTypeId,
       });
 
       const meal = await storage.createCustomMeal(data);

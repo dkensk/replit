@@ -44,6 +44,11 @@ export const mealLogs = pgTable("meal_logs", {
   mealType: text("meal_type").notNull(), // breakfast | lunch | snack | dinner
   mealId: text("meal_id").notNull(), // oatmeal | chicken_rice | etc.
   consumed: boolean("consumed").notNull().default(false),
+  mealName: text("meal_name"), // Store meal name for custom meals
+  calories: integer("calories"), // Store macros for custom meals
+  protein: integer("protein"),
+  carbs: integer("carbs"),
+  fats: integer("fats"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

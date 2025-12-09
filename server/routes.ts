@@ -247,6 +247,70 @@ export async function registerRoutes(
     }
   });
 
+  // Analyze food image with AI vision
+  app.post("/api/analyze-food", async (req, res) => {
+    try {
+      const { imageBase64 } = req.body;
+
+      if (!imageBase64) {
+        return res.status(400).json({ error: "Image data required" });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Analyze this food image and estimate the nutritional content. Provide ONLY a JSON response in this exact format, no other text:
+{
+  "name": "Name of the food/meal",
+  "calories": estimated calories (number),
+  "protein": estimated protein in grams (number),
+  "carbs": estimated carbs in grams (number),
+  "fats": estimated fats in grams (number)
+}
+
+Be reasonable with portion sizes. If you cannot identify the food, provide your best guess. Always return valid JSON.`,
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageBase64.startsWith("data:") 
+                    ? imageBase64 
+                    : `data:image/jpeg;base64,${imageBase64}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 300,
+      });
+
+      const content = response.choices[0]?.message?.content || "";
+      
+      // Parse the JSON response
+      try {
+        // Extract JSON from response (in case there's extra text)
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const nutritionData = JSON.parse(jsonMatch[0]);
+          res.json(nutritionData);
+        } else {
+          res.status(500).json({ error: "Could not parse nutrition data" });
+        }
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError, content);
+        res.status(500).json({ error: "Failed to parse nutrition data" });
+      }
+    } catch (error) {
+      console.error("Error analyzing food:", error);
+      res.status(500).json({ error: "Failed to analyze food image" });
+    }
+  });
+
   // AI Chat endpoint
   app.post("/api/chat", async (req, res) => {
     try {

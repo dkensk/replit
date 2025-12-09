@@ -125,7 +125,40 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  // Local state for meals (can be synced with backend later if needed)
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = useCallback(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  // Fetch today's meal logs from backend
+  const { data: mealLogs = [] } = useQuery({
+    queryKey: ["meals", getTodayDate()],
+    queryFn: () => api.fetchMealLogs(getTodayDate()),
+  });
+
+  // Meal log mutations
+  const saveMealMutation = useMutation({
+    mutationFn: (data: { date: string; mealType: string; mealId: string; consumed: boolean }) =>
+      api.saveMealLog(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meals"] });
+    },
+  });
+
+  const toggleMealMutation = useMutation({
+    mutationFn: (data: { date: string; mealType: string }) =>
+      api.toggleMeal(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meals"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
+  // Initialize meal state from backend data
   const [consumedMeals, setConsumedMeals] = useState<Record<string, boolean>>({
     breakfast: false,
     lunch: false,
@@ -146,6 +179,62 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     carbs: 0,
     fats: 0
   });
+
+  // Track whether we've loaded initial data from backend
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+
+  // Sync state from backend meal logs when they load
+  useEffect(() => {
+    if (mealLogs.length > 0) {
+      const newConsumed: Record<string, boolean> = {
+        breakfast: false,
+        lunch: false,
+        snack: false,
+        dinner: false
+      };
+      const newSelected: Record<string, string> = {
+        breakfast: "oatmeal",
+        lunch: "chicken_rice",
+        snack: "protein_shake",
+        dinner: "salmon"
+      };
+      
+      mealLogs.forEach((log: any) => {
+        newConsumed[log.mealType] = log.consumed;
+        newSelected[log.mealType] = log.mealId;
+      });
+      
+      setConsumedMeals(newConsumed);
+      setSelectedMeals(newSelected);
+    }
+    setInitialLoadComplete(true);
+  }, [mealLogs]);
+
+  // Save meal selection when user changes it (after initial load)
+  const prevSelectedMeals = React.useRef(selectedMeals);
+  useEffect(() => {
+    if (!initialLoadComplete) return;
+    
+    const today = getTodayDate();
+    const mealTypes = ["breakfast", "lunch", "snack", "dinner"];
+    
+    mealTypes.forEach((mealType) => {
+      const prevMealId = prevSelectedMeals.current[mealType];
+      const newMealId = selectedMeals[mealType];
+      
+      // Only save if the meal selection actually changed
+      if (prevMealId !== newMealId && newMealId) {
+        saveMealMutation.mutate({
+          date: today,
+          mealType,
+          mealId: newMealId,
+          consumed: consumedMeals[mealType] || false
+        });
+      }
+    });
+    
+    prevSelectedMeals.current = selectedMeals;
+  }, [selectedMeals, initialLoadComplete, getTodayDate, saveMealMutation, consumedMeals]);
 
   // Convert backend profile to frontend format
   const profile: UserProfile = backendProfile
@@ -207,17 +296,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     undoWorkoutMutation.mutate(today);
   }, [undoWorkoutMutation]);
 
-  const toggleConsumedMeal = useCallback((mealId: string) => {
-    setConsumedMeals(prev => {
-      const newState = !prev[mealId];
-      if (newState && backendProfile) {
-        // Add 5 XP when marking a meal as consumed
-        const newXp = Math.min(100, backendProfile.xp + 5);
-        updateMutation.mutate({ xp: newXp });
+  const toggleConsumedMeal = useCallback((mealType: string) => {
+    const today = getTodayDate();
+    const currentMealId = selectedMeals[mealType] || mealType;
+    const currentConsumed = consumedMeals[mealType] || false;
+    
+    // First ensure the meal log exists, then toggle
+    saveMealMutation.mutate(
+      { date: today, mealType, mealId: currentMealId, consumed: currentConsumed },
+      {
+        onSuccess: () => {
+          // Now toggle the consumed status
+          toggleMealMutation.mutate({ date: today, mealType });
+        }
       }
-      return { ...prev, [mealId]: newState };
-    });
-  }, [backendProfile, updateMutation]);
+    );
+    
+    // Optimistically update local state
+    setConsumedMeals(prev => ({ ...prev, [mealType]: !prev[mealType] }));
+  }, [getTodayDate, selectedMeals, consumedMeals, saveMealMutation, toggleMealMutation]);
 
   const updateDailyStats = useCallback((stats: { protein: number; calories: number; carbs: number; fats: number }) => {
     setConsumedMacros(stats);

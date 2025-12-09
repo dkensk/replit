@@ -89,6 +89,21 @@ export async function promoteTier(): Promise<Profile> {
   return res.json();
 }
 
+// Wrapper for saving meal log with object param
+export async function saveMealLog(data: {
+  date: string;
+  mealType: string;
+  mealId: string;
+  consumed: boolean;
+}): Promise<MealLog> {
+  return upsertMealLog(data.date, data.mealType, data.mealId, data.consumed);
+}
+
+// Wrapper for toggling meal with object param
+export async function toggleMeal(data: { date: string; mealType: string }): Promise<MealLog> {
+  return toggleMealConsumed(data.date, data.mealType);
+}
+
 export async function sendChatMessage(
   messages: { role: string; content: string }[],
   profile: { position: string; level: string; age: number; weight: number } | null

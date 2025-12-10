@@ -939,25 +939,47 @@ export default function Diet() {
                       
                       {/* Saved Custom Meals - Quick Add */}
                       {getSavedMealsForType(section.id).length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-white/10">
-                          <p className="text-xs text-muted-foreground mb-2 flex items-center justify-center gap-1">
-                            <History className="w-3 h-3" />
-                            Recent custom meals:
-                          </p>
-                          <div className="flex flex-wrap gap-2 justify-center">
-                            {getSavedMealsForType(section.id).map((savedMeal) => (
-                              <Button
-                                key={savedMeal.id}
-                                variant="outline"
-                                size="sm"
-                                className="text-xs h-7 px-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={() => handleQuickAddSavedMeal(savedMeal, section.id)}
-                                disabled={isChecked}
-                                data-testid={`button-quick-add-${savedMeal.id}`}
-                              >
-                                {savedMeal.name}
-                              </Button>
-                            ))}
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                          <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-4 border border-primary/20">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                <History className="w-4 h-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-white">Your Saved Meals</p>
+                                <p className="text-xs text-muted-foreground">Quickly add a previous meal</p>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              {getSavedMealsForType(section.id).map((savedMeal) => (
+                                <div
+                                  key={savedMeal.id}
+                                  onClick={() => !isChecked && handleQuickAddSavedMeal(savedMeal, section.id)}
+                                  className={cn(
+                                    "p-3 rounded-lg bg-secondary/60 border border-white/5 transition-all flex justify-between items-center group",
+                                    !isChecked && "cursor-pointer hover:bg-primary/10 hover:border-primary/30",
+                                    isChecked && "opacity-50 cursor-not-allowed"
+                                  )}
+                                  data-testid={`button-quick-add-${savedMeal.id}`}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm text-white truncate group-hover:text-primary transition-colors">
+                                      {savedMeal.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      <span className="text-primary font-semibold">{savedMeal.protein}g protein</span>
+                                      <span className="mx-1">•</span>
+                                      <span>{savedMeal.calories} cal</span>
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 ml-2">
+                                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                                      <Plus className="w-4 h-4 text-primary" />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       )}

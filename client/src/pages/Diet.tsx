@@ -698,8 +698,8 @@ export default function Diet() {
 
   // Quickly add a saved custom meal to the current section
   const handleQuickAddSavedMeal = (savedMeal: SavedCustomMeal, sectionId: string) => {
-    // Use the saved meal's actual ID prefixed with "saved_" to identify it
-    const mealId = `saved_${savedMeal.id}`;
+    // Use a unique ID for this meal instance
+    const mealId = `saved_${savedMeal.id}_${Date.now()}`;
     const meal: MealOption = {
       id: mealId,
       name: savedMeal.name,
@@ -710,37 +710,17 @@ export default function Diet() {
       recipe: "Custom meal - no recipe instructions."
     };
     
-    // Save to backend with nutrition data and customMealId reference
-    saveMealMutation.mutate({
-      date: getTodayDate(),
-      mealType: sectionId,
-      mealId: mealId,
-      consumed: false,
-      mealName: savedMeal.name,
-      calories: savedMeal.calories,
-      protein: savedMeal.protein,
-      carbs: savedMeal.carbs,
-      fats: savedMeal.fats,
-      customMealId: savedMeal.id,
-    }, {
-      onSuccess: () => {
-        // Check if already in custom meals to avoid duplicates
-        setCustomMeals(prev => {
-          const existing = prev[sectionId].find(m => m.id === mealId);
-          if (existing) return prev;
-          return {
-            ...prev,
-            [sectionId]: [...prev[sectionId], meal]
-          };
-        });
-        
-        // Auto-select the meal after save completes to avoid race condition
-        setSelectedMeals(prev => ({
-          ...prev,
-          [sectionId]: mealId
-        }));
-      }
-    });
+    // Add to custom meals UI immediately
+    setCustomMeals(prev => ({
+      ...prev,
+      [sectionId]: [...prev[sectionId], meal]
+    }));
+    
+    // Auto-select the meal
+    setSelectedMeals(prev => ({
+      ...prev,
+      [sectionId]: mealId
+    }));
   };
 
   const calculateTotalConsumed = () => {

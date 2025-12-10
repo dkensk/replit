@@ -208,7 +208,7 @@ export async function registerRoutes(
   app.post("/api/meals", async (req, res) => {
     try {
       const defaultUserId = "default-user";
-      const { mealType, ...rest } = req.body;
+      const { mealType, mealId, mealName, calories, protein, carbs, fats, customMealId, ...rest } = req.body;
       
       // Resolve mealType code to mealTypeId
       const mealTypes = await storage.getMealTypes();
@@ -222,6 +222,7 @@ export async function registerRoutes(
         ...rest,
         userId: defaultUserId,
         mealTypeId: mealTypeRecord.id,
+        customMealId: customMealId || null,
       });
 
       const log = await storage.upsertMealLog(data);

@@ -154,7 +154,7 @@ export default function Diet() {
 
   // Mutation to save meal log
   const saveMealMutation = useMutation({
-    mutationFn: async (data: { date: string; mealType: string; mealId: string; consumed: boolean; mealName?: string; calories?: number; protein?: number; carbs?: number; fats?: number }) => {
+    mutationFn: async (data: { date: string; mealType: string; mealId: string; consumed: boolean; mealName?: string; calories?: number; protein?: number; carbs?: number; fats?: number; customMealId?: string }) => {
       const res = await fetch("/api/meals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -698,7 +698,8 @@ export default function Diet() {
 
   // Quickly add a saved custom meal to the current section
   const handleQuickAddSavedMeal = (savedMeal: SavedCustomMeal, sectionId: string) => {
-    const mealId = `custom_${Date.now()}`;
+    // Use the saved meal's actual ID prefixed with "saved_" to identify it
+    const mealId = `saved_${savedMeal.id}`;
     const meal: MealOption = {
       id: mealId,
       name: savedMeal.name,
@@ -709,7 +710,7 @@ export default function Diet() {
       recipe: "Custom meal - no recipe instructions."
     };
     
-    // Save to backend with nutrition data
+    // Save to backend with nutrition data and customMealId reference
     saveMealMutation.mutate({
       date: getTodayDate(),
       mealType: sectionId,
@@ -720,12 +721,18 @@ export default function Diet() {
       protein: savedMeal.protein,
       carbs: savedMeal.carbs,
       fats: savedMeal.fats,
+      customMealId: savedMeal.id,
     });
     
-    setCustomMeals(prev => ({
-      ...prev,
-      [sectionId]: [...prev[sectionId], meal]
-    }));
+    // Check if already in custom meals to avoid duplicates
+    setCustomMeals(prev => {
+      const existing = prev[sectionId].find(m => m.id === mealId);
+      if (existing) return prev;
+      return {
+        ...prev,
+        [sectionId]: [...prev[sectionId], meal]
+      };
+    });
     
     // Auto-select the meal
     setSelectedMeals(prev => ({

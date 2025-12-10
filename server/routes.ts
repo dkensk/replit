@@ -292,7 +292,18 @@ export async function registerRoutes(
     try {
       const defaultUserId = "default-user";
       const meals = await storage.getCustomMeals(defaultUserId);
-      res.json(meals);
+      
+      // Enrich with mealType code for frontend compatibility
+      const mealTypes = await storage.getMealTypes();
+      const enrichedMeals = meals.map(meal => {
+        const mealType = mealTypes.find(mt => mt.id === meal.mealTypeId);
+        return {
+          ...meal,
+          mealType: mealType?.code || null,
+        };
+      });
+      
+      res.json(enrichedMeals);
     } catch (error) {
       console.error("Error fetching custom meals:", error);
       res.status(500).json({ error: "Failed to fetch custom meals" });

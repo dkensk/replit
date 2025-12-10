@@ -722,23 +722,25 @@ export default function Diet() {
       carbs: savedMeal.carbs,
       fats: savedMeal.fats,
       customMealId: savedMeal.id,
+    }, {
+      onSuccess: () => {
+        // Check if already in custom meals to avoid duplicates
+        setCustomMeals(prev => {
+          const existing = prev[sectionId].find(m => m.id === mealId);
+          if (existing) return prev;
+          return {
+            ...prev,
+            [sectionId]: [...prev[sectionId], meal]
+          };
+        });
+        
+        // Auto-select the meal after save completes to avoid race condition
+        setSelectedMeals(prev => ({
+          ...prev,
+          [sectionId]: mealId
+        }));
+      }
     });
-    
-    // Check if already in custom meals to avoid duplicates
-    setCustomMeals(prev => {
-      const existing = prev[sectionId].find(m => m.id === mealId);
-      if (existing) return prev;
-      return {
-        ...prev,
-        [sectionId]: [...prev[sectionId], meal]
-      };
-    });
-    
-    // Auto-select the meal
-    setSelectedMeals(prev => ({
-      ...prev,
-      [sectionId]: mealId
-    }));
   };
 
   const calculateTotalConsumed = () => {

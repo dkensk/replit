@@ -262,7 +262,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const newMealId = selectedMeals[mealType];
       
       // Only save if the meal selection actually changed
-      if (prevMealId !== newMealId && newMealId) {
+      // Skip if mealId starts with "saved_" or "custom_" - those are saved by Diet.tsx directly
+      if (prevMealId !== newMealId && newMealId && !newMealId.startsWith("saved_") && !newMealId.startsWith("custom_")) {
         saveMealMutation.mutate({
           date: today,
           mealType,

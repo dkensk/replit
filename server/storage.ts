@@ -174,9 +174,18 @@ export class DatabaseStorage implements IStorage {
           eq(mealLogs.date, log.date),
           eq(mealLogs.mealTypeId, log.mealTypeId)
         )
-      );
+      )
+      .orderBy(asc(mealLogs.createdAt));
 
     if (existing.length > 0) {
+      // Delete any duplicates (keep only the first one)
+      if (existing.length > 1) {
+        const idsToDelete = existing.slice(1).map(e => e.id);
+        for (const id of idsToDelete) {
+          await db.delete(mealLogs).where(eq(mealLogs.id, id));
+        }
+      }
+      
       const [updated] = await db
         .update(mealLogs)
         .set({ 

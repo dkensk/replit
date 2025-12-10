@@ -152,6 +152,22 @@ export default function Diet() {
     },
   });
 
+  // Mutation to save meal log
+  const saveMealMutation = useMutation({
+    mutationFn: async (data: { date: string; mealType: string; mealId: string; consumed: boolean; mealName?: string; calories?: number; protein?: number; carbs?: number; fats?: number }) => {
+      const res = await fetch("/api/meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to save meal log");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/meals"] });
+    },
+  });
+
   // Get saved custom meals for a specific meal type (most recent first, limit to 3)
   const getSavedMealsForType = (mealType: string) => {
     return [...savedCustomMeals]
@@ -692,6 +708,19 @@ export default function Diet() {
       fats: savedMeal.fats,
       recipe: "Custom meal - no recipe instructions."
     };
+    
+    // Save to backend with nutrition data
+    saveMealMutation.mutate({
+      date: getTodayDate(),
+      mealType: sectionId,
+      mealId: mealId,
+      consumed: false,
+      mealName: savedMeal.name,
+      calories: savedMeal.calories,
+      protein: savedMeal.protein,
+      carbs: savedMeal.carbs,
+      fats: savedMeal.fats,
+    });
     
     setCustomMeals(prev => ({
       ...prev,

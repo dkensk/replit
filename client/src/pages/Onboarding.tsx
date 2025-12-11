@@ -61,7 +61,7 @@ export default function Onboarding() {
       <div className="relative z-10 space-y-8">
         <div className="space-y-2">
           <h1 className="text-4xl font-heading font-bold text-white uppercase italic">
-            Puck<span className="text-primary">Pro</span>
+            Edge<span className="text-primary">Hockey</span>
           </h1>
           <p className="text-muted-foreground text-lg">Let's set up your player profile.</p>
         </div>

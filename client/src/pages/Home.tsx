@@ -162,7 +162,7 @@ export default function Home() {
           className="w-full h-full object-cover opacity-80"
         />
         <div className="absolute bottom-4 left-6 z-20">
-          <p className="text-sm font-medium text-primary uppercase tracking-wider mb-1">Welcome Back</p>
+          <p className="text-sm font-medium text-primary uppercase tracking-wider mb-1">Welcome back{profile.firstName ? `, ${profile.firstName}` : ""}</p>
           <h1 className="text-3xl font-heading font-bold text-white italic">READY TO <br/>DOMINATE?</h1>
         </div>
       </div>

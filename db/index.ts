@@ -3,7 +3,7 @@ import pg from "pg";
 
 const connectionString = process.env.DATABASE_URL!;
 
-const pool = new pg.Pool({
+export const pool = new pg.Pool({
   connectionString,
 });
 

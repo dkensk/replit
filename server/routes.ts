@@ -10,6 +10,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
+import { setupAuth } from "./auth";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -20,61 +21,20 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Get or create profile for the current session
+  setupAuth(app);
+
+  // Get profile for the current session
   app.get("/api/profile", async (req, res) => {
     try {
-      // For now, we'll use a default user ID (can add auth later)
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       
-      let profile = await storage.getProfileByUserId(defaultUserId);
+      const profile = await storage.getProfileByUserId(userId);
       
-      // If no profile exists, create a default one
       if (!profile) {
-        // Get default lookup IDs
-        const goals = await storage.getGoals();
-        const positions = await storage.getPositions();
-        const levels = await storage.getCompetitionLevels();
-        
-        const defaultGoal = goals.find(g => g.code === "muscle");
-        const defaultPosition = positions.find(p => p.code === "defense");
-        const defaultLevel = levels.find(l => l.code === "aa");
-
-        profile = await storage.createProfile({
-          userId: defaultUserId,
-          age: 16,
-          weight: 175,
-          heightFt: 5,
-          heightIn: 10,
-          goalId: defaultGoal?.id ?? null,
-          positionId: defaultPosition?.id ?? null,
-          levelId: defaultLevel?.id ?? null,
-          workoutDuration: 60,
-        });
-
-        // Initialize user progress
-        await storage.initUserProgress(defaultUserId);
-
-        // Set default schedule
-        const workoutTypes = await storage.getWorkoutTypes();
-        const defaultSchedule = [
-          { dayOfWeek: 1, workoutTypeCode: "legs_strength" },
-          { dayOfWeek: 2, workoutTypeCode: "upper_body" },
-          { dayOfWeek: 3, workoutTypeCode: "skills_cardio" },
-          { dayOfWeek: 4, workoutTypeCode: "legs_explosive" },
-          { dayOfWeek: 5, workoutTypeCode: "full_body" },
-          { dayOfWeek: 6, workoutTypeCode: "active_recovery" },
-          { dayOfWeek: 0, isRestDay: true },
-        ];
-        
-        const scheduleItems = defaultSchedule.map(item => {
-          if (item.isRestDay) {
-            return { userId: defaultUserId, dayOfWeek: item.dayOfWeek, workoutTypeId: null, isRestDay: true };
-          }
-          const wt = workoutTypes.find(w => w.code === item.workoutTypeCode);
-          return { userId: defaultUserId, dayOfWeek: item.dayOfWeek, workoutTypeId: wt?.id ?? null, isRestDay: false };
-        });
-        
-        await storage.setUserSchedule(defaultUserId, scheduleItems);
+        return res.status(404).json({ error: "Profile not found" });
       }
 
       res.json(profile);
@@ -87,10 +47,13 @@ export async function registerRoutes(
   // Update profile
   app.patch("/api/profile", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const updates = updateProfileSchema.parse(req.body);
       
-      const updated = await storage.updateProfile(defaultUserId, updates);
+      const updated = await storage.updateProfile(userId, updates);
       
       if (!updated) {
         return res.status(404).json({ error: "Profile not found" });
@@ -109,8 +72,11 @@ export async function registerRoutes(
   // Get workout history
   app.get("/api/workouts", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
-      const logs = await storage.getWorkoutLogs(defaultUserId);
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const logs = await storage.getWorkoutLogs(userId);
       res.json(logs);
     } catch (error) {
       console.error("Error fetching workouts:", error);
@@ -121,14 +87,17 @@ export async function registerRoutes(
   // Log a workout
   app.post("/api/workouts", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const data = insertWorkoutLogSchema.parse({
         ...req.body,
-        userId: defaultUserId,
+        userId: userId,
       });
 
       // Check if workout already logged for this date
-      const existing = await storage.getWorkoutLogByDate(defaultUserId, data.date);
+      const existing = await storage.getWorkoutLogByDate(userId, data.date);
       if (existing) {
         return res.status(400).json({ error: "Workout already logged for this date" });
       }
@@ -137,13 +106,13 @@ export async function registerRoutes(
 
       // Add XP to user progress
       await storage.addXpEvent({
-        userId: defaultUserId,
+        userId: userId,
         xpAmount: 15,
         eventType: "workout_completed",
         sourceId: log.id,
         description: "Completed workout",
       });
-      await storage.updateUserXp(defaultUserId, 15);
+      await storage.updateUserXp(userId, 15);
 
       res.json(log);
     } catch (error) {
@@ -158,20 +127,23 @@ export async function registerRoutes(
   // Delete/undo a workout
   app.delete("/api/workouts/:date", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const { date } = req.params;
       
-      await storage.deleteWorkoutByDate(defaultUserId, date);
+      await storage.deleteWorkoutByDate(userId, date);
       
       // Remove XP from user progress
       await storage.addXpEvent({
-        userId: defaultUserId,
+        userId: userId,
         xpAmount: -15,
         eventType: "workout_undone",
         sourceId: null,
         description: "Workout undone",
       });
-      await storage.updateUserXp(defaultUserId, -15);
+      await storage.updateUserXp(userId, -15);
       
       res.json({ success: true });
     } catch (error) {
@@ -183,9 +155,12 @@ export async function registerRoutes(
   // Get meal logs for a date
   app.get("/api/meals/:date", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const { date } = req.params;
-      const logs = await storage.getMealLogsForDate(defaultUserId, date);
+      const logs = await storage.getMealLogsForDate(userId, date);
       
       // Enrich logs with mealType code for frontend compatibility
       const mealTypes = await storage.getMealTypes();
@@ -207,7 +182,10 @@ export async function registerRoutes(
   // Upsert meal selection
   app.post("/api/meals", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const { mealType, mealId, mealName, calories, protein, carbs, fats, customMealId, ...rest } = req.body;
       
       // Resolve mealType code to mealTypeId
@@ -220,7 +198,7 @@ export async function registerRoutes(
 
       const data = insertMealLogSchema.parse({
         ...rest,
-        userId: defaultUserId,
+        userId: userId,
         mealTypeId: mealTypeRecord.id,
         customMealId: customMealId || null,
       });
@@ -239,7 +217,10 @@ export async function registerRoutes(
   // Toggle meal consumed status
   app.patch("/api/meals/toggle", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const { date, mealType } = req.body;
 
       if (!date || !mealType) {
@@ -254,7 +235,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid meal type" });
       }
 
-      const updated = await storage.toggleMealConsumed(defaultUserId, date, mealTypeRecord.id);
+      const updated = await storage.toggleMealConsumed(userId, date, mealTypeRecord.id);
       
       if (!updated) {
         return res.status(404).json({ error: "Meal log not found" });
@@ -263,22 +244,22 @@ export async function registerRoutes(
       // Add XP if meal was marked as consumed, remove if unchecked
       if (updated.consumed) {
         await storage.addXpEvent({
-          userId: defaultUserId,
+          userId: userId,
           xpAmount: 5,
           eventType: "meal_consumed",
           sourceId: updated.id,
           description: "Meal consumed",
         });
-        await storage.updateUserXp(defaultUserId, 5);
+        await storage.updateUserXp(userId, 5);
       } else {
         await storage.addXpEvent({
-          userId: defaultUserId,
+          userId: userId,
           xpAmount: -5,
           eventType: "meal_unchecked",
           sourceId: updated.id,
           description: "Meal unchecked",
         });
-        await storage.updateUserXp(defaultUserId, -5);
+        await storage.updateUserXp(userId, -5);
       }
 
       res.json(updated);
@@ -291,8 +272,11 @@ export async function registerRoutes(
   // Get saved custom meals
   app.get("/api/custom-meals", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
-      const meals = await storage.getCustomMeals(defaultUserId);
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const meals = await storage.getCustomMeals(userId);
       
       // Enrich with mealType code for frontend compatibility
       const mealTypes = await storage.getMealTypes();
@@ -314,7 +298,10 @@ export async function registerRoutes(
   // Save a custom meal
   app.post("/api/custom-meals", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const { mealType, ...rest } = req.body;
       
       // Resolve mealType code to mealTypeId if provided
@@ -329,7 +316,7 @@ export async function registerRoutes(
 
       const data = insertCustomMealSchema.parse({
         ...rest,
-        userId: defaultUserId,
+        userId: userId,
         mealTypeId,
       });
 
@@ -347,12 +334,15 @@ export async function registerRoutes(
   // Promote tier
   app.post("/api/profile/promote", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       
       // Get user progress
-      let progress = await storage.getUserProgress(defaultUserId);
+      let progress = await storage.getUserProgress(userId);
       if (!progress) {
-        progress = await storage.initUserProgress(defaultUserId);
+        progress = await storage.initUserProgress(userId);
       }
 
       // Get tiers from database
@@ -372,9 +362,9 @@ export async function registerRoutes(
       const nextTier = currentIndex < sortedTiers.length - 1 ? sortedTiers[currentIndex + 1] : currentTier;
 
       // Update progress: reset XP to 0 and set new tier
-      await storage.promoteUserTier(defaultUserId, nextTier.id);
+      await storage.promoteUserTier(userId, nextTier.id);
 
-      const updatedProgress = await storage.getUserProgress(defaultUserId);
+      const updatedProgress = await storage.getUserProgress(userId);
       res.json(updatedProgress);
     } catch (error) {
       console.error("Error promoting tier:", error);
@@ -385,6 +375,9 @@ export async function registerRoutes(
   // Analyze food image with AI vision
   app.post("/api/analyze-food", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
       const { imageBase64 } = req.body;
 
       if (!imageBase64) {
@@ -527,11 +520,14 @@ Be reasonable with portion sizes. If you cannot identify the food, provide your 
 
   app.get("/api/progress", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
-      let progress = await storage.getUserProgress(defaultUserId);
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      let progress = await storage.getUserProgress(userId);
       
       if (!progress) {
-        progress = await storage.initUserProgress(defaultUserId);
+        progress = await storage.initUserProgress(userId);
       }
       
       res.json(progress);
@@ -543,9 +539,12 @@ Be reasonable with portion sizes. If you cannot identify the food, provide your 
 
   app.get("/api/progress/xp-history", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const limit = parseInt(req.query.limit as string) || 50;
-      const events = await storage.getXpEvents(defaultUserId, limit);
+      const events = await storage.getXpEvents(userId, limit);
       res.json(events);
     } catch (error) {
       console.error("Error fetching XP history:", error);
@@ -559,8 +558,11 @@ Be reasonable with portion sizes. If you cannot identify the food, provide your 
 
   app.get("/api/schedule", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
-      const schedule = await storage.getUserSchedule(defaultUserId);
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const schedule = await storage.getUserSchedule(userId);
       res.json(schedule);
     } catch (error) {
       console.error("Error fetching schedule:", error);
@@ -570,14 +572,17 @@ Be reasonable with portion sizes. If you cannot identify the food, provide your 
 
   app.put("/api/schedule", async (req, res) => {
     try {
-      const defaultUserId = "default-user";
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
       const { schedule } = req.body;
       
       if (!Array.isArray(schedule)) {
         return res.status(400).json({ error: "Schedule must be an array" });
       }
       
-      const result = await storage.setUserSchedule(defaultUserId, schedule);
+      const result = await storage.setUserSchedule(userId, schedule);
       res.json(result);
     } catch (error) {
       console.error("Error updating schedule:", error);
@@ -588,6 +593,9 @@ Be reasonable with portion sizes. If you cannot identify the food, provide your 
   // AI Chat endpoint
   app.post("/api/chat", async (req, res) => {
     try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
       const { messages, profile } = req.body;
 
       if (!messages || !Array.isArray(messages)) {

@@ -12,16 +12,20 @@ import Skills from "@/pages/Skills";
 import Review from "@/pages/Review";
 import AI from "@/pages/AI";
 import Profile from "@/pages/Profile";
+import AuthPage from "@/pages/AuthPage";
 import { UserProvider, useUser } from "./lib/UserContext";
+import { AuthProvider, useAuth } from "./hooks/use-auth";
+import { ProtectedRoute } from "./lib/protected-route";
+import { Loader2 } from "lucide-react";
 
-function AuthenticatedRoutes() {
+function OnboardingCheck({ children }: { children: React.ReactNode }) {
   const { profile, isLoading } = useUser();
   const [location] = useLocation();
   
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-primary text-xl">Loading...</div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -34,17 +38,52 @@ function AuthenticatedRoutes() {
     return <Redirect to="/" />;
   }
   
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  return (
+    <UserProvider>
+      <OnboardingCheck>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/onboarding" component={Onboarding} />
+          <Route path="/workouts" component={Workouts} />
+          <Route path="/diet" component={Diet} />
+          <Route path="/skills" component={Skills} />
+          <Route path="/review" component={Review} />
+          <Route path="/ai" component={AI} />
+          <Route path="/profile" component={Profile} />
+          <Route component={NotFound} />
+        </Switch>
+      </OnboardingCheck>
+    </UserProvider>
+  );
+}
+
+function Router() {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/workouts" component={Workouts} />
-      <Route path="/diet" component={Diet} />
-      <Route path="/skills" component={Skills} />
-      <Route path="/review" component={Review} />
-      <Route path="/ai" component={AI} />
-      <Route path="/profile" component={Profile} />
-      <Route component={NotFound} />
+      <Route path="/auth" component={AuthPage} />
+      {!user ? (
+        <Route>
+          <Redirect to="/auth" />
+        </Route>
+      ) : (
+        <Route>
+          <AppRoutes />
+        </Route>
+      )}
     </Switch>
   );
 }
@@ -53,10 +92,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <UserProvider>
+        <AuthProvider>
           <Toaster />
-          <AuthenticatedRoutes />
-        </UserProvider>
+          <Router />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

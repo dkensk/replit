@@ -39,10 +39,15 @@ import {
   userProgress,
   xpEvents
 } from "@shared/schema";
-import { db } from "../db/index";
+import { db, pool } from "../db/index";
 import { eq, and, desc, asc, gte, lte } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
 
 export interface IStorage {
+  // Session store
+  sessionStore: session.Store;
+
   // User methods
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -90,7 +95,18 @@ export interface IStorage {
   promoteUserTier(userId: string, newTierId: number): Promise<UserProgress | undefined>;
 }
 
+const PostgresSessionStore = connectPg(session);
+
 export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
+    });
+  }
+
   // User methods
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

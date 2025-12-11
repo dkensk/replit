@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Save, Trophy, Zap, Target, TrendingUp, Award } from "lucide-react";
+import { User, Save, Trophy, Zap, Target, TrendingUp, Award, LogOut } from "lucide-react";
 import { useUser } from "@/lib/UserContext";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 export default function Profile() {
   const { profile, updateProfile, xp } = useUser();
+  const { user, logoutMutation } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -327,6 +329,28 @@ export default function Profile() {
                   <p data-testid="text-goal" className="text-white font-medium">{goalLabels[profile.goal]}</p>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-white/10">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Signed in as</p>
+                <p className="text-white font-medium">{user?.username}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                data-testid="button-logout"
+                className="text-red-400 border-red-400/30 hover:bg-red-500/10 hover:text-red-300"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </CardContent>
         </Card>

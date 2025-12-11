@@ -228,9 +228,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Track whether we've loaded initial data from backend
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  // Sync state from backend meal logs when they load
+  // Sync state from backend meal logs when they load (only on initial load)
   useEffect(() => {
-    if (mealLogs.length > 0) {
+    if (!initialLoadComplete && mealLogs.length > 0) {
       const newConsumed: Record<string, boolean> = {
         breakfast: false,
         lunch: false,
@@ -246,14 +246,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       
       mealLogs.forEach((log: any) => {
         newConsumed[log.mealType] = log.consumed;
-        newSelected[log.mealType] = log.mealId;
+        // Only use mealId from database if it's a valid meal ID (not the mealType itself)
+        if (log.mealId && log.mealId !== log.mealType) {
+          newSelected[log.mealType] = log.mealId;
+        }
       });
       
       setConsumedMeals(newConsumed);
       setSelectedMeals(newSelected);
+      setInitialLoadComplete(true);
+    } else if (!initialLoadComplete && mealLogs.length === 0) {
+      setInitialLoadComplete(true);
     }
-    setInitialLoadComplete(true);
-  }, [mealLogs]);
+  }, [mealLogs, initialLoadComplete]);
 
   // Save meal selection when user changes it (after initial load)
   const prevSelectedMeals = React.useRef(selectedMeals);
@@ -402,23 +407,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const toggleConsumedMeal = useCallback((mealType: string) => {
     const today = getTodayDate();
-    const currentMealId = selectedMeals[mealType] || mealType;
-    const currentConsumed = consumedMeals[mealType] || false;
+    // Use selected meal ID, with sensible defaults that match baseMeals
+    const defaultMeals: Record<string, string> = {
+      breakfast: "oatmeal",
+      lunch: "chicken_rice",
+      snack: "protein_shake",
+      dinner: "salmon"
+    };
+    const currentMealId = selectedMeals[mealType] || defaultMeals[mealType] || "oatmeal";
+    const newConsumed = !consumedMeals[mealType];
     
-    // First ensure the meal log exists, then toggle
-    saveMealMutation.mutate(
-      { date: today, mealType, mealId: currentMealId, consumed: currentConsumed },
-      {
-        onSuccess: () => {
-          // Now toggle the consumed status
-          toggleMealMutation.mutate({ date: today, mealType });
-        }
-      }
-    );
+    // Optimistically update local state first
+    setConsumedMeals(prev => ({ ...prev, [mealType]: newConsumed }));
     
-    // Optimistically update local state
-    setConsumedMeals(prev => ({ ...prev, [mealType]: !prev[mealType] }));
-  }, [getTodayDate, selectedMeals, consumedMeals, saveMealMutation, toggleMealMutation]);
+    // Save with the new consumed state directly
+    saveMealMutation.mutate({
+      date: today,
+      mealType,
+      mealId: currentMealId,
+      consumed: newConsumed
+    });
+  }, [getTodayDate, selectedMeals, consumedMeals, saveMealMutation]);
 
   const updateDailyStats = useCallback((stats: { protein: number; calories: number; carbs: number; fats: number }) => {
     setConsumedMacros(stats);

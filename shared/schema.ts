@@ -86,16 +86,18 @@ export const users = pgTable("users", {
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  age: integer("age").notNull(),
-  weight: integer("weight").notNull(), // lbs
-  heightFt: integer("height_ft").notNull(),
-  heightIn: integer("height_in").notNull(),
+  firstName: text("first_name"),
+  age: integer("age").notNull().default(13),
+  weight: integer("weight").notNull().default(100), // lbs
+  heightFt: integer("height_ft").notNull().default(5),
+  heightIn: integer("height_in").notNull().default(0),
   goalId: integer("goal_id").references(() => goals.id),
   positionId: integer("position_id").references(() => positions.id),
   levelId: integer("level_id").references(() => competitionLevels.id),
   workoutDuration: integer("workout_duration").notNull().default(60),
   livebarnConnected: boolean("livebarn_connected").notNull().default(false),
   livebarnRink: text("livebarn_rink"),
+  onboardingComplete: boolean("onboarding_complete").notNull().default(false),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

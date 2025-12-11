@@ -8,6 +8,7 @@ type WeeklySchedule = {
 };
 
 type UserProfile = {
+  firstName: string | null;
   age: number;
   weight: number;
   heightFt: number;
@@ -22,11 +23,14 @@ type UserProfile = {
   workoutHistory: string[];
   livebarnConnected: boolean;
   livebarnRink: string | null;
+  onboardingComplete: boolean;
 };
 
 type UserContextType = {
   profile: UserProfile;
-  updateProfile: (updates: Partial<UserProfile>) => void;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  refetchProfile: () => Promise<void>;
+  xp: number;
   macros: {
     protein: number;
     carbs: number;
@@ -57,6 +61,7 @@ type UserContextType = {
 };
 
 const defaultProfile: UserProfile = {
+  firstName: null,
   age: 16,
   weight: 175,
   heightFt: 5,
@@ -70,7 +75,8 @@ const defaultProfile: UserProfile = {
   tier: "Bronze",
   workoutHistory: [],
   livebarnConnected: false,
-  livebarnRink: null
+  livebarnRink: null,
+  onboardingComplete: false
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -326,6 +332,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Convert backend profile to frontend format
   const profile: UserProfile = backendProfile
     ? {
+        firstName: (backendProfile as any).firstName ?? null,
         age: backendProfile.age,
         weight: backendProfile.weight,
         heightFt: backendProfile.heightFt,
@@ -340,12 +347,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         workoutHistory: workoutLogs.map(log => log.date),
         livebarnConnected: backendProfile.livebarnConnected ?? false,
         livebarnRink: backendProfile.livebarnRink ?? null,
+        onboardingComplete: (backendProfile as any).onboardingComplete ?? false,
       }
     : defaultProfile;
 
-  const updateProfile = useCallback((updates: Partial<UserProfile>) => {
-    updateMutation.mutate(updates as any);
+  const updateProfile = useCallback(async (updates: Partial<UserProfile>): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      updateMutation.mutate(updates as any, {
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error)
+      });
+    });
   }, [updateMutation]);
+
+  const refetchProfile = useCallback(async (): Promise<void> => {
+    await queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
+  }, [queryClient]);
 
   const addXp = useCallback((amount: number) => {
     // XP is now managed automatically by the server when logging workouts/meals
@@ -493,6 +510,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       value={{
         profile,
         updateProfile,
+        refetchProfile,
+        xp: profile.xp,
         macros: { protein, carbs, fats, calories },
         recommendedMacros: { protein: recommendedProtein, calories: recommendedCalories },
         consumedMeals,

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Dumbbell, Utensils, Trophy, MessageSquare, Home, Video } from "lucide-react";
+import { Dumbbell, Utensils, Trophy, MessageSquare, Home, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function BottomNav() {
@@ -10,8 +10,8 @@ export default function BottomNav() {
     { href: "/workouts", icon: Dumbbell, label: "Train" },
     { href: "/diet", icon: Utensils, label: "Diet" },
     { href: "/skills", icon: Trophy, label: "Skills" },
-    { href: "/review", icon: Video, label: "Review" },
-    { href: "/ai", icon: MessageSquare, label: "Coach AI" },
+    { href: "/ai", icon: MessageSquare, label: "AI" },
+    { href: "/profile", icon: User, label: "Profile" },
   ];
 
   return (

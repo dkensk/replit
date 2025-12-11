@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,9 +11,29 @@ import Diet from "@/pages/Diet";
 import Skills from "@/pages/Skills";
 import Review from "@/pages/Review";
 import AI from "@/pages/AI";
-import { UserProvider } from "./lib/UserContext";
+import Profile from "@/pages/Profile";
+import { UserProvider, useUser } from "./lib/UserContext";
 
-function Router() {
+function AuthenticatedRoutes() {
+  const { profile, isLoading } = useUser();
+  const [location] = useLocation();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-primary text-xl">Loading...</div>
+      </div>
+    );
+  }
+  
+  if (!profile.onboardingComplete && location !== "/onboarding") {
+    return <Redirect to="/onboarding" />;
+  }
+  
+  if (profile.onboardingComplete && location === "/onboarding") {
+    return <Redirect to="/" />;
+  }
+  
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -23,6 +43,7 @@ function Router() {
       <Route path="/skills" component={Skills} />
       <Route path="/review" component={Review} />
       <Route path="/ai" component={AI} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -34,7 +55,7 @@ function App() {
       <TooltipProvider>
         <UserProvider>
           <Toaster />
-          <Router />
+          <AuthenticatedRoutes />
         </UserProvider>
       </TooltipProvider>
     </QueryClientProvider>

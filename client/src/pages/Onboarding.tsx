@@ -86,7 +86,7 @@ export default function Onboarding() {
                 <Input 
                   data-testid="input-age"
                   type="number" 
-                  placeholder="13" 
+                  placeholder="Your age" 
                   className="bg-secondary border-transparent"
                   value={formData.age}
                   onChange={(e) => setFormData({ ...formData, age: e.target.value })}
@@ -97,7 +97,7 @@ export default function Onboarding() {
                 <Input 
                   data-testid="input-weight"
                   type="number" 
-                  placeholder="130" 
+                  placeholder="Weight in lbs" 
                   className="bg-secondary border-transparent"
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}

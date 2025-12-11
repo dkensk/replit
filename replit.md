@@ -1,8 +1,8 @@
-# PuckPro - Elite Hockey Training Platform
+# Edge Hockey - Elite Training Platform
 
 ## Overview
 
-PuckPro is a comprehensive hockey training application designed for players at all levels (house, A, AA, AAA, junior). The platform provides AI-powered personalized workout plans, nutrition tracking, skills development drills, game review capabilities, and an AI coaching assistant. Users can track their progress through an XP/tier system (Bronze → Silver → Gold → Diamond → Elite) while managing their training schedule, diet, and skill development.
+Edge Hockey is a comprehensive hockey training application designed for players at all levels (house, A, AA, AAA, junior). The platform provides AI-powered personalized workout plans, nutrition tracking, skills development drills, game review capabilities, and an AI coaching assistant. Users can track their progress through an XP/tier system (Bronze → Silver → Gold → Diamond → Elite) while managing their training schedule, diet, and skill development.
 
 The application is built as a full-stack TypeScript project with a React frontend and Express backend, utilizing PostgreSQL for data persistence and a modern component-based UI architecture.
 

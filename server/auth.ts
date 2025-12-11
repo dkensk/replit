@@ -151,6 +151,60 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+
+  app.patch("/api/user/username", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { username } = req.body;
+    if (!username || username.trim().length < 3) {
+      return res.status(400).json({ error: "Username must be at least 3 characters" });
+    }
+
+    const existingUser = await storage.getUserByUsername(username);
+    if (existingUser && existingUser.id !== req.user.id) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
+
+    const updatedUser = await storage.updateUser(req.user.id, { username: username.trim() });
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(updatedUser);
+  });
+
+  app.patch("/api/user/password", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "New password must be at least 6 characters" });
+    }
+
+    const user = await storage.getUser(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const isValidPassword = await comparePasswords(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(400).json({ error: "Current password is incorrect" });
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+    const updatedUser = await storage.updateUser(req.user.id, { password: hashedPassword });
+    
+    res.json({ message: "Password updated successfully" });
+  });
 }
 
 export function requireAuth(req: any, res: any, next: any) {

@@ -5,16 +5,78 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Save, Trophy, Zap, Target, TrendingUp, Award, LogOut } from "lucide-react";
+import { User, Save, Trophy, Zap, Target, TrendingUp, Award, LogOut, Key, Pencil } from "lucide-react";
 import { useUser } from "@/lib/UserContext";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Profile() {
   const { profile, updateProfile, xp } = useUser();
   const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  
+  const updateUsernameMutation = useMutation({
+    mutationFn: async (username: string) => {
+      const res = await apiRequest("PATCH", "/api/user/username", { username });
+      return await res.json();
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(["/api/user"], updatedUser);
+      setIsEditingUsername(false);
+      setNewUsername("");
+      toast({ title: "Username updated successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to update username", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const res = await apiRequest("PATCH", "/api/user/password", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      setIsChangingPassword(false);
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      toast({ title: "Password updated successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to update password", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleUsernameSubmit = () => {
+    if (newUsername.trim().length >= 3) {
+      updateUsernameMutation.mutate(newUsername.trim());
+    }
+  };
+
+  const handlePasswordSubmit = () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    updatePasswordMutation.mutate({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
+    });
+  };
   
   const [formData, setFormData] = useState({
     firstName: profile.firstName || "",
@@ -334,19 +396,128 @@ export default function Profile() {
         </Card>
 
         <Card className="bg-card border-white/10">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Signed in as</p>
-                <p className="text-white font-medium">{user?.username}</p>
-              </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Key className="w-5 h-5 text-primary" />
+              Account Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Username</Label>
+              {isEditingUsername ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    placeholder="Enter new username"
+                    data-testid="input-new-username"
+                    className="bg-secondary border-transparent"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleUsernameSubmit}
+                    disabled={updateUsernameMutation.isPending || newUsername.trim().length < 3}
+                    data-testid="button-save-username"
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setIsEditingUsername(false); setNewUsername(""); }}
+                    data-testid="button-cancel-username"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-white font-medium" data-testid="text-username">{user?.username}</p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setIsEditingUsername(true); setNewUsername(user?.username || ""); }}
+                    data-testid="button-edit-username"
+                  >
+                    <Pencil className="w-4 h-4 mr-1" />
+                    Change
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Password</Label>
+              {isChangingPassword ? (
+                <div className="space-y-2">
+                  <Input
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    placeholder="Current password"
+                    data-testid="input-current-password"
+                    className="bg-secondary border-transparent"
+                  />
+                  <Input
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    placeholder="New password (min 6 characters)"
+                    data-testid="input-new-password"
+                    className="bg-secondary border-transparent"
+                  />
+                  <Input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    placeholder="Confirm new password"
+                    data-testid="input-confirm-password"
+                    className="bg-secondary border-transparent"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handlePasswordSubmit}
+                      disabled={updatePasswordMutation.isPending}
+                      data-testid="button-save-password"
+                    >
+                      Update Password
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { setIsChangingPassword(false); setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" }); }}
+                      data-testid="button-cancel-password"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-white font-medium">••••••••</p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsChangingPassword(true)}
+                    data-testid="button-change-password"
+                  >
+                    <Key className="w-4 h-4 mr-1" />
+                    Change
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-white/10">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => logoutMutation.mutate()}
                 disabled={logoutMutation.isPending}
                 data-testid="button-logout"
-                className="text-red-400 border-red-400/30 hover:bg-red-500/10 hover:text-red-300"
+                className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10 hover:text-red-300"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out

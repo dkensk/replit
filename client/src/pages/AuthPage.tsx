@@ -66,6 +66,8 @@ export default function AuthPage() {
                     <Label htmlFor="login-username">Username</Label>
                     <Input
                       id="login-username"
+                      name="username"
+                      autoComplete="username"
                       data-testid="input-login-username"
                       type="text"
                       placeholder="Enter your username"
@@ -79,6 +81,8 @@ export default function AuthPage() {
                     <Label htmlFor="login-password">Password</Label>
                     <Input
                       id="login-password"
+                      name="password"
+                      autoComplete="current-password"
                       data-testid="input-login-password"
                       type="password"
                       placeholder="Enter your password"
@@ -108,6 +112,8 @@ export default function AuthPage() {
                     <Label htmlFor="register-username">Username</Label>
                     <Input
                       id="register-username"
+                      name="username"
+                      autoComplete="username"
                       data-testid="input-register-username"
                       type="text"
                       placeholder="Choose a username"
@@ -121,6 +127,8 @@ export default function AuthPage() {
                     <Label htmlFor="register-password">Password</Label>
                     <Input
                       id="register-password"
+                      name="password"
+                      autoComplete="new-password"
                       data-testid="input-register-password"
                       type="password"
                       placeholder="Create a password (min 6 characters)"
@@ -135,6 +143,8 @@ export default function AuthPage() {
                     <Label htmlFor="register-confirm">Confirm Password</Label>
                     <Input
                       id="register-confirm"
+                      name="confirm-password"
+                      autoComplete="new-password"
                       data-testid="input-register-confirm"
                       type="password"
                       placeholder="Confirm your password"

@@ -131,7 +131,8 @@ export async function updateSchedule(
   
   const scheduleArray = dayNames.map((dayName, index) => {
     const workoutCode = scheduleObj[dayName] || "rest";
-    const isRestDay = workoutCode === "rest" || workoutCode === "active_recovery";
+    // Only "rest" is a true rest day - "recovery" is an active recovery workout
+    const isRestDay = workoutCode === "rest";
     const workoutType = workoutTypes.find((wt: any) => wt.code === workoutCode);
     
     return {

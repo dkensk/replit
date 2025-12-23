@@ -11,14 +11,12 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const WORKOUT_TYPES = [
-  { id: "legs_strength", label: "Legs - Strength" },
-  { id: "legs_explosive", label: "Legs - Explosiveness" },
-  { id: "upper_body", label: "Upper Body Power" },
-  { id: "back_biceps", label: "Back & Biceps" },
-  { id: "chest_triceps", label: "Chest & Triceps" },
-  { id: "full_body", label: "Full Body Athletic" },
-  { id: "skills_cardio", label: "Skills & Cardio" },
-  { id: "active_recovery", label: "Active Recovery" },
+  { id: "legs_strength", label: "Legs (Strength)" },
+  { id: "legs_speed", label: "Legs (Speed)" },
+  { id: "upper_push", label: "Upper Body (Push)" },
+  { id: "upper_pull", label: "Upper Body (Pull)" },
+  { id: "cardio", label: "Cardio" },
+  { id: "recovery", label: "Recovery" },
   { id: "rest", label: "Rest Day" },
 ];
 
@@ -404,38 +402,39 @@ const getWorkoutForGoal = (goal: string, workoutType: string): WorkoutExercise[]
 };
 
 // Generate recommended schedule based on user stats
+// Uses actual database workout codes: legs_strength, legs_speed, upper_push, upper_pull, cardio, recovery, rest
 const getRecommendedSchedule = (
   position: string,
   level: string,
   goal: string
 ): Record<string, string> => {
-  // Base schedules by goal
+  // Base schedules by goal using correct database codes
   const goalSchedules: Record<string, Record<string, string>> = {
     muscle: {
       monday: "legs_strength",
-      tuesday: "chest_triceps",
-      wednesday: "active_recovery",
-      thursday: "back_biceps",
-      friday: "legs_explosive",
-      saturday: "upper_body",
+      tuesday: "upper_push",
+      wednesday: "recovery",
+      thursday: "upper_pull",
+      friday: "legs_speed",
+      saturday: "cardio",
       sunday: "rest"
     },
     fatloss: {
-      monday: "full_body",
-      tuesday: "skills_cardio",
-      wednesday: "legs_explosive",
-      thursday: "active_recovery",
-      friday: "full_body",
-      saturday: "skills_cardio",
+      monday: "cardio",
+      tuesday: "upper_push",
+      wednesday: "legs_speed",
+      thursday: "recovery",
+      friday: "cardio",
+      saturday: "upper_pull",
       sunday: "rest"
     },
     maintain: {
       monday: "legs_strength",
-      tuesday: "upper_body",
-      wednesday: "skills_cardio",
-      thursday: "legs_explosive",
-      friday: "full_body",
-      saturday: "active_recovery",
+      tuesday: "upper_push",
+      wednesday: "cardio",
+      thursday: "legs_speed",
+      friday: "upper_pull",
+      saturday: "recovery",
       sunday: "rest"
     }
   };
@@ -445,28 +444,28 @@ const getRecommendedSchedule = (
 
   // Adjust for position
   if (position === "goalie") {
-    // Goalies need more explosiveness and lateral movement, less pure strength
-    schedule.monday = "legs_explosive";
-    schedule.thursday = "full_body";
-    schedule.friday = "skills_cardio";
+    // Goalies need more explosiveness and lateral movement
+    schedule.monday = "legs_speed";
+    schedule.thursday = "cardio";
+    schedule.friday = "legs_strength";
   } else if (position === "defense") {
     // Defensemen need strong legs and upper body for physical play
-    schedule.tuesday = "upper_body";
+    schedule.tuesday = "upper_push";
     schedule.friday = "legs_strength";
   } else if (position === "center") {
     // Centers need endurance and all-around fitness
-    schedule.wednesday = "skills_cardio";
-    schedule.saturday = "full_body";
+    schedule.wednesday = "cardio";
+    schedule.saturday = "legs_speed";
   }
 
   // Adjust for competition level - higher levels need more intensity, less rest
   if (level === "aaa" || level === "junior") {
     // Elite players: 6 training days
-    schedule.saturday = goal === "muscle" ? "full_body" : "skills_cardio";
-    schedule.wednesday = "legs_explosive";
+    schedule.saturday = goal === "muscle" ? "upper_pull" : "cardio";
+    schedule.wednesday = "legs_speed";
   } else if (level === "house") {
     // Recreational: more recovery days
-    schedule.wednesday = "active_recovery";
+    schedule.wednesday = "recovery";
     schedule.saturday = "rest";
   }
 
@@ -501,12 +500,24 @@ export default function Workouts() {
   const [customWorkout, setCustomWorkout] = useState<Record<number, string>>({});
 
   const handleScheduleChange = (day: string, type: string) => {
-    updateProfile({
-      schedule: {
-        ...profile.schedule,
-        [day]: type
-      }
-    });
+    // Create a complete schedule with defaults for any missing days
+    const defaultSchedule: Record<string, string> = {
+      monday: "rest",
+      tuesday: "rest",
+      wednesday: "rest",
+      thursday: "rest",
+      friday: "rest",
+      saturday: "rest",
+      sunday: "rest"
+    };
+    
+    const fullSchedule = {
+      ...defaultSchedule,
+      ...profile.schedule,
+      [day]: type
+    };
+    
+    updateProfile({ schedule: fullSchedule });
   };
 
   const currentDay = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1]; // Simple mapping, 0=Sun -> 6
@@ -593,7 +604,7 @@ export default function Workouts() {
                 }}
               >
                 <RefreshCw className="w-3 h-3 mr-1.5" />
-                Reset
+                Reset to Recommended
               </Button>
             </div>
              

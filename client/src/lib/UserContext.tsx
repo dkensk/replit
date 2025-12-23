@@ -143,6 +143,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
+  // Schedule update mutation
+  const scheduleMutation = useMutation({
+    mutationFn: (scheduleObj: Record<string, string>) => 
+      api.updateSchedule(scheduleObj, workoutTypes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedule"] });
+    },
+  });
+
   // Workout log mutation
   const workoutMutation = useMutation({
     mutationFn: ({ date, workoutType }: { date: string; workoutType: string }) =>
@@ -357,13 +366,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     : defaultProfile;
 
   const updateProfile = useCallback(async (updates: Partial<UserProfile>): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      updateMutation.mutate(updates as any, {
-        onSuccess: () => resolve(),
-        onError: (error) => reject(error)
+    const { schedule, ...profileUpdates } = updates;
+    
+    // If schedule is included, update it separately
+    if (schedule) {
+      scheduleMutation.mutate(schedule);
+    }
+    
+    // If there are other profile updates, send them to profile API
+    if (Object.keys(profileUpdates).length > 0) {
+      return new Promise((resolve, reject) => {
+        updateMutation.mutate(profileUpdates as any, {
+          onSuccess: () => resolve(),
+          onError: (error) => reject(error)
+        });
       });
-    });
-  }, [updateMutation]);
+    }
+    
+    return Promise.resolve();
+  }, [updateMutation, scheduleMutation]);
 
   const refetchProfile = useCallback(async (): Promise<void> => {
     await queryClient.invalidateQueries({ queryKey: ["/api/profile"] });

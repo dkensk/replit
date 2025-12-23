@@ -122,6 +122,34 @@ export async function fetchSchedule(): Promise<any[]> {
   return res.json();
 }
 
+// Update user schedule - converts object format to array format
+export async function updateSchedule(
+  scheduleObj: Record<string, string>,
+  workoutTypes: any[]
+): Promise<any[]> {
+  const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  
+  const scheduleArray = dayNames.map((dayName, index) => {
+    const workoutCode = scheduleObj[dayName] || "rest";
+    const isRestDay = workoutCode === "rest" || workoutCode === "active_recovery";
+    const workoutType = workoutTypes.find((wt: any) => wt.code === workoutCode);
+    
+    return {
+      dayOfWeek: index,
+      workoutTypeId: workoutType?.id || null,
+      isRestDay
+    };
+  });
+  
+  const res = await fetch(`${API_BASE}/schedule`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ schedule: scheduleArray }),
+  });
+  if (!res.ok) throw new Error("Failed to update schedule");
+  return res.json();
+}
+
 // Fetch workout types
 export async function fetchWorkoutTypes(): Promise<any[]> {
   const res = await fetch(`${API_BASE}/lookups/workout-types`);

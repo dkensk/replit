@@ -796,18 +796,22 @@ export default function Diet() {
 
   return (
     <Layout>
-      <div className="relative h-48 w-full overflow-hidden rounded-b-3xl shadow-xl mb-6">
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
-        <img src={foodImage} alt="Food" className="w-full h-full object-cover opacity-60" />
-        <div className="absolute bottom-4 left-6 z-20 w-[90%]">
-          <div className="flex justify-between items-end mb-2">
-            <h1 className="text-3xl font-heading font-bold text-white uppercase">Nutrition</h1>
-            <div className="bg-black/30 backdrop-blur-md rounded-lg p-1 border border-white/10">
+      <div className="relative h-56 w-full overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent z-10" />
+        <img src={foodImage} alt="Food" className="w-full h-full object-cover" />
+        <div className="absolute bottom-6 left-6 right-6 z-20">
+          <div className="flex justify-between items-end mb-3">
+            <div>
+              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">Meal Planning</p>
+              <h1 className="text-4xl font-heading font-bold text-white leading-tight">NUTRITION</h1>
+            </div>
+            <div className="bg-black/40 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10">
               <Select 
                 value={profile.goal} 
                 onValueChange={(val: any) => updateProfile({ goal: val })}
               >
-                <SelectTrigger className="h-8 border-none bg-transparent text-white w-[130px] focus:ring-0">
+                <SelectTrigger className="h-7 border-none bg-transparent text-white text-sm w-[120px] focus:ring-0 p-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -819,131 +823,152 @@ export default function Diet() {
             </div>
           </div>
           
-          <div className="flex gap-4 text-xs font-medium text-white/80 bg-black/20 p-2 rounded-lg backdrop-blur-sm inline-flex">
-            <div className="flex items-center gap-1">
-              <Target className="w-3 h-3 text-primary" />
+          <div className="flex gap-4 text-xs font-medium text-white/90">
+            <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
+              <Target className="w-3.5 h-3.5 text-primary" />
               <span>Target: {macros.calories} kcal</span>
             </div>
-             <div className="flex items-center gap-1">
-              <Info className="w-3 h-3 text-muted-foreground" />
+            <div className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-full backdrop-blur-sm">
+              <Info className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-muted-foreground">Rec: {recommendedMacros.calories}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-4 pb-20 space-y-6">
-        {/* Macros */}
-        <div className="grid grid-cols-2 gap-3">
-            <Card className="bg-secondary/30 border-white/5 text-center">
-              <CardContent className="p-3">
-                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">Protein Consumed</span>
-                <div className="flex justify-center items-end gap-2">
-                   <span className="text-2xl font-heading font-bold text-white">{current.protein}g</span>
-                   <span className="text-[10px] text-muted-foreground mb-1">/ {macros.protein}g goal</span>
-                </div>
-                <Progress value={(current.protein / macros.protein) * 100} className="h-1 mt-2 bg-blue-500/20" />
+      <div className="px-5 py-6 space-y-6">
+        {/* Macros Progress Section */}
+        <section>
+          <h2 className="text-lg font-heading font-semibold text-white tracking-wide mb-3">Today's Progress</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-card/60 border-white/5 backdrop-blur-sm">
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center min-h-[100px]">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Protein</span>
+                <span className="text-2xl font-bold font-heading text-white" data-testid="text-protein-consumed">{current.protein}g</span>
+                <span className="text-[10px] text-muted-foreground mb-2">/ {macros.protein}g goal</span>
+                <Progress value={(current.protein / macros.protein) * 100} className="h-2 bg-secondary/50 w-full" />
               </CardContent>
             </Card>
-            <Card className="bg-secondary/30 border-white/5 text-center">
-              <CardContent className="p-3">
-                <span className="text-xs uppercase text-muted-foreground font-bold block mb-1">Calories Consumed</span>
-                <div className="flex justify-center items-end gap-2">
-                   <span className="text-2xl font-heading font-bold text-white">{current.calories}</span>
-                   <span className="text-[10px] text-muted-foreground mb-1">/ {macros.calories} goal</span>
-                </div>
-                <Progress value={(current.calories / macros.calories) * 100} className="h-1 mt-2 bg-primary/20" />
+            <Card className="bg-card/60 border-white/5 backdrop-blur-sm">
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center min-h-[100px]">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Calories</span>
+                <span className="text-2xl font-bold font-heading text-primary" data-testid="text-calories-consumed">{current.calories}</span>
+                <span className="text-[10px] text-muted-foreground mb-2">/ {macros.calories} goal</span>
+                <Progress value={(current.calories / macros.calories) * 100} className="h-2 bg-secondary/50 w-full" />
               </CardContent>
             </Card>
-        </div>
+          </div>
+        </section>
 
         {/* Meals Selection Accordion */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-heading font-bold text-white">Today's Menu</h2>
-          <Accordion type="single" collapsible className="w-full space-y-2">
+        <section>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-heading font-semibold text-white tracking-wide">Today's Menu</h2>
+          </div>
+          <Accordion type="single" collapsible className="w-full space-y-3">
             {meals.map((section) => {
               const selectedOption = section.options.find(opt => opt.id === selectedMeals[section.id]);
               const isChecked = consumedMeals[section.id];
               
               return (
                 <AccordionItem key={section.id} value={section.id} className={cn(
-                  "border-none rounded-xl overflow-hidden border border-white/5 transition-colors",
-                  isChecked ? "bg-primary/5 border-primary/20" : "bg-card"
+                  "rounded-xl overflow-hidden transition-all duration-200",
+                  isChecked 
+                    ? "bg-green-500/5 border border-green-500/20" 
+                    : "bg-card border border-white/5"
                 )}>
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-white/5 group">
-                    <div className="flex items-center w-full gap-3">
-                       <div 
-                         className={cn(
-                           "h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors z-20",
-                           isChecked ? "bg-primary border-primary" : "border-muted-foreground group-hover:border-white"
-                         )}
-                         onClick={(e) => toggleConsumed(section.id, e)}
-                       >
-                         {isChecked && <Check className="w-3.5 h-3.5 text-black font-bold" />}
-                       </div>
+                  <AccordionTrigger className="px-4 py-4 hover:no-underline hover:bg-white/5 group" data-testid={`accordion-${section.id}`}>
+                    <div className="flex items-center w-full gap-4">
+                      <div 
+                        className={cn(
+                          "h-7 w-7 rounded-full border-2 flex items-center justify-center transition-all duration-200 z-20 flex-shrink-0",
+                          isChecked 
+                            ? "bg-green-500 border-green-500 shadow-lg shadow-green-500/25" 
+                            : "border-muted-foreground/50 group-hover:border-primary group-hover:bg-primary/10"
+                        )}
+                        onClick={(e) => toggleConsumed(section.id, e)}
+                        data-testid={`checkbox-${section.id}`}
+                      >
+                        {isChecked && <Check className="w-4 h-4 text-white font-bold" />}
+                      </div>
                        
-                       <div className="flex flex-col items-start text-left w-full">
-                        <div className="flex justify-between w-full pr-4">
+                      <div className="flex flex-col items-start text-left flex-1 min-w-0">
+                        <div className="flex justify-between w-full pr-2">
                           <span className={cn(
-                            "text-xs font-bold uppercase tracking-wider transition-colors",
-                            isChecked ? "text-primary" : "text-muted-foreground"
+                            "text-[10px] font-bold uppercase tracking-widest transition-colors",
+                            isChecked ? "text-green-400" : "text-muted-foreground"
                           )}>{section.title}</span>
-                          <span className="text-xs text-muted-foreground">{selectedOption?.calories} kcal</span>
+                          <span className="text-xs text-muted-foreground font-medium">{selectedOption?.calories} kcal</span>
                         </div>
                         <span className={cn(
-                          "text-lg font-bold mt-1 transition-all",
+                          "text-base font-bold mt-0.5 transition-all truncate max-w-full",
                           isChecked ? "text-white/50 line-through" : "text-white"
                         )}>{selectedOption?.name}</span>
                       </div>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4 pt-0 pl-14">
-                    {/* Selected Meal Recipe - Only show if not checked (or maybe always show?) - Showing always is better for utility */}
+                  <AccordionContent className="px-4 pb-5 pt-1 pl-[60px]">
                     {selectedOption?.recipe && (
-                      <div className="bg-secondary/30 rounded-lg p-3 mb-4 border border-white/5">
-                        <div className="flex items-center gap-2 mb-2">
-                           <ChefHat className="w-4 h-4 text-primary" />
-                           <span className="text-xs font-bold text-white uppercase">Preparation</span>
+                      <div className="bg-secondary/40 rounded-xl p-4 mb-5 border border-white/5">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                            <ChefHat className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <span className="text-sm font-bold text-white">Preparation</span>
+                            <p className="text-[10px] text-muted-foreground">Quick recipe guide</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">
+                        <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed pl-10">
                           {selectedOption.recipe}
                         </p>
                       </div>
                     )}
 
-                    <div className="space-y-2 mt-2">
-                      <p className="text-xs text-muted-foreground uppercase mb-2 font-bold">Swap Meal:</p>
-                      {section.options.map((option) => (
-                        <div 
-                          key={option.id}
-                          onClick={() => !isChecked && setSelectedMeals(prev => ({ ...prev, [section.id]: option.id }))}
-                          className={cn(
-                            "p-3 rounded-lg border transition-all flex justify-between items-center",
-                            selectedMeals[section.id] === option.id 
-                              ? "bg-primary/10 border-primary" 
-                              : "bg-secondary/50 border-transparent",
-                            !isChecked && "cursor-pointer hover:bg-secondary",
-                            isChecked && "opacity-50 cursor-not-allowed"
-                          )}
-                        >
-                          <div>
-                            <p className={cn("font-bold text-sm", selectedMeals[section.id] === option.id ? "text-primary" : "text-white")}>
-                              {option.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              <span className="text-primary font-bold">{option.protein}g Protein</span> • {option.carbs}g Carbs • {option.fats}g Fat
-                            </p>
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">Swap Meal</p>
+                      <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                        {section.options.map((option) => (
+                          <div 
+                            key={option.id}
+                            onClick={() => !isChecked && setSelectedMeals(prev => ({ ...prev, [section.id]: option.id }))}
+                            className={cn(
+                              "p-3 rounded-xl border transition-all flex justify-between items-center gap-3",
+                              selectedMeals[section.id] === option.id 
+                                ? "bg-primary/10 border-primary/50 shadow-sm" 
+                                : "bg-secondary/40 border-white/5 hover:border-white/10",
+                              !isChecked && "cursor-pointer",
+                              isChecked && "opacity-50 cursor-not-allowed"
+                            )}
+                            data-testid={`meal-option-${option.id}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className={cn(
+                                "font-semibold text-sm truncate",
+                                selectedMeals[section.id] === option.id ? "text-primary" : "text-white"
+                              )}>
+                                {option.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                <span className="text-primary font-semibold">{option.protein}g P</span>
+                                <span className="mx-1.5">•</span>
+                                <span>{option.carbs}g C</span>
+                                <span className="mx-1.5">•</span>
+                                <span>{option.fats}g F</span>
+                              </p>
+                            </div>
+                            {selectedMeals[section.id] === option.id && (
+                              <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                                <Check className="w-3.5 h-3.5 text-white" />
+                              </div>
+                            )}
                           </div>
-                          {selectedMeals[section.id] === option.id && (
-                            <Check className="w-4 h-4 text-primary" />
-                          )}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                       
-                      {/* Add Custom Meal Button */}
                       <Button 
-                        variant="ghost" 
-                        className="w-full justify-start text-primary hover:text-primary hover:bg-primary/10 mt-2"
+                        variant="outline" 
+                        className="w-full mt-4 border-dashed border-primary/40 text-primary hover:text-primary hover:bg-primary/10 hover:border-primary h-11"
                         onClick={() => {
                           setCurrentSectionId(section.id);
                           setIsCustomDialogOpen(true);
@@ -952,20 +977,20 @@ export default function Diet() {
                         data-testid={`button-add-custom-${section.id}`}
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add Custom Meal...
+                        Add Custom Meal
                       </Button>
                       
                       {/* Saved Custom Meals - Quick Add */}
                       {getSavedMealsForType(section.id).length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                          <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-4 border border-primary/20">
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                        <div className="mt-5 pt-5 border-t border-white/10">
+                          <div className="bg-secondary/30 rounded-xl p-4 border border-white/5">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
                                 <History className="w-4 h-4 text-primary" />
                               </div>
                               <div>
-                                <p className="text-sm font-bold text-white">Your Saved Meals</p>
-                                <p className="text-xs text-muted-foreground">Quickly add a previous meal</p>
+                                <p className="text-sm font-semibold text-white">Recent Custom Meals</p>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Quick add</p>
                               </div>
                             </div>
                             <div className="space-y-2">
@@ -974,26 +999,24 @@ export default function Diet() {
                                   key={savedMeal.id}
                                   onClick={() => !isChecked && handleQuickAddSavedMeal(savedMeal, section.id)}
                                   className={cn(
-                                    "p-3 rounded-lg bg-secondary/60 border border-white/5 transition-all flex justify-between items-center group",
+                                    "p-3 rounded-xl bg-card/80 border border-white/5 transition-all flex justify-between items-center group",
                                     !isChecked && "cursor-pointer hover:bg-primary/10 hover:border-primary/30",
                                     isChecked && "opacity-50 cursor-not-allowed"
                                   )}
                                   data-testid={`button-quick-add-${savedMeal.id}`}
                                 >
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-sm text-white truncate group-hover:text-primary transition-colors">
+                                    <p className="font-semibold text-sm text-white truncate group-hover:text-primary transition-colors">
                                       {savedMeal.name}
                                     </p>
                                     <p className="text-xs text-muted-foreground mt-0.5">
-                                      <span className="text-primary font-semibold">{savedMeal.protein}g protein</span>
-                                      <span className="mx-1">•</span>
+                                      <span className="text-primary font-semibold">{savedMeal.protein}g P</span>
+                                      <span className="mx-1.5">•</span>
                                       <span>{savedMeal.calories} cal</span>
                                     </p>
                                   </div>
-                                  <div className="flex items-center gap-2 ml-2">
-                                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                                      <Plus className="w-4 h-4 text-primary" />
-                                    </div>
+                                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all flex-shrink-0">
+                                    <Plus className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
                                   </div>
                                 </div>
                               ))}
@@ -1007,7 +1030,7 @@ export default function Diet() {
               );
             })}
           </Accordion>
-        </div>
+        </section>
       </div>
 
       {/* Custom Meal Dialog */}
@@ -1018,53 +1041,54 @@ export default function Diet() {
           setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
         }
       }}>
-        <DialogContent className="bg-card border-white/10 text-white max-w-sm p-5">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-lg">Add Custom Meal</DialogTitle>
+        <DialogContent className="bg-card/95 backdrop-blur-xl border-white/10 text-white max-w-sm mx-4 rounded-2xl">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-xl font-heading font-bold text-center">Add Custom Meal</DialogTitle>
+            <p className="text-sm text-muted-foreground text-center">Take a photo or enter details manually</p>
           </DialogHeader>
           
-          <div className="space-y-4">
-            {/* Photo Upload - Compact */}
-            <div className="flex items-center gap-3">
+          <div className="space-y-5">
+            {/* Photo Upload */}
+            <div className="flex items-center gap-4 p-4 bg-secondary/30 rounded-xl border border-white/5">
               {imagePreview ? (
-                <div className="relative w-16 h-16 flex-shrink-0">
+                <div className="relative w-20 h-20 flex-shrink-0">
                   <img 
                     src={imagePreview} 
                     alt="Food" 
-                    className="w-16 h-16 object-cover rounded-lg border border-white/10"
+                    className="w-20 h-20 object-cover rounded-xl border border-white/10"
                   />
                   {isAnalyzing && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-lg">
-                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-xl">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <label 
                     htmlFor="food-photo-camera" 
-                    className="w-14 h-14 flex-shrink-0 border-2 border-dashed border-primary/40 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors gap-0.5"
+                    className="w-16 h-16 flex-shrink-0 border-2 border-dashed border-primary/50 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 hover:border-primary transition-all gap-1"
                   >
                     <Camera className="w-5 h-5 text-primary" />
-                    <span className="text-[9px] text-primary">Camera</span>
+                    <span className="text-[10px] text-primary font-medium">Camera</span>
                   </label>
                   <label 
                     htmlFor="food-photo-gallery" 
-                    className="w-14 h-14 flex-shrink-0 border-2 border-dashed border-primary/40 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors gap-0.5"
+                    className="w-16 h-16 flex-shrink-0 border-2 border-dashed border-primary/50 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 hover:border-primary transition-all gap-1"
                   >
                     <Image className="w-5 h-5 text-primary" />
-                    <span className="text-[9px] text-primary">Gallery</span>
+                    <span className="text-[10px] text-primary font-medium">Gallery</span>
                   </label>
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white">
-                  {isAnalyzing ? "Analyzing photo..." : imagePreview ? "Photo captured" : "Add a photo"}
+                <p className="text-sm font-semibold text-white">
+                  {isAnalyzing ? "Analyzing photo..." : imagePreview ? "Photo captured!" : "Snap a photo"}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {imagePreview ? (
                     <button 
-                      className="text-primary hover:underline"
+                      className="text-primary hover:underline font-medium"
                       onClick={() => {
                         setImagePreview(null);
                         setNewMeal({ name: "", calories: "", protein: "", carbs: "", fats: "" });
@@ -1094,62 +1118,65 @@ export default function Diet() {
               />
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <div className="flex-1 border-t border-white/10"></div>
-              <span>or enter manually</span>
+              <span className="uppercase tracking-wider font-medium">or enter manually</span>
               <div className="flex-1 border-t border-white/10"></div>
             </div>
 
             {/* Meal Name */}
-            <Input 
-              placeholder="Meal name (e.g., Turkey Sandwich)" 
-              className="bg-secondary/50 border-white/10 h-10"
-              value={newMeal.name}
-              onChange={(e) => setNewMeal({...newMeal, name: e.target.value})}
-              data-testid="input-meal-name"
-            />
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Meal Name</Label>
+              <Input 
+                placeholder="e.g., Turkey Sandwich" 
+                className="bg-secondary/50 border-white/10 h-11 rounded-xl"
+                value={newMeal.name}
+                onChange={(e) => setNewMeal({...newMeal, name: e.target.value})}
+                data-testid="input-meal-name"
+              />
+            </div>
             
-            {/* Nutrition Grid - Compact 4-column */}
-            <div className="grid grid-cols-4 gap-2">
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground uppercase">Cal</Label>
+            {/* Nutrition Grid */}
+            <div className="grid grid-cols-4 gap-3">
+              <div className="space-y-2">
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium text-center block">Calories</Label>
                 <Input 
                   type="number" 
                   placeholder="0" 
-                  className="bg-secondary/50 border-white/10 h-9 text-sm px-2"
+                  className="bg-secondary/50 border-white/10 h-11 text-sm text-center rounded-xl"
                   value={newMeal.calories}
                   onChange={(e) => setNewMeal({...newMeal, calories: e.target.value})}
                   data-testid="input-meal-calories"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground uppercase">Protein</Label>
+              <div className="space-y-2">
+                <Label className="text-[10px] text-primary uppercase tracking-wider font-medium text-center block">Protein</Label>
                 <Input 
                   type="number" 
                   placeholder="0" 
-                  className="bg-secondary/50 border-white/10 h-9 text-sm px-2"
+                  className="bg-primary/10 border-primary/30 h-11 text-sm text-center rounded-xl"
                   value={newMeal.protein}
                   onChange={(e) => setNewMeal({...newMeal, protein: e.target.value})}
                   data-testid="input-meal-protein"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground uppercase">Carbs</Label>
+              <div className="space-y-2">
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium text-center block">Carbs</Label>
                 <Input 
                   type="number" 
                   placeholder="0" 
-                  className="bg-secondary/50 border-white/10 h-9 text-sm px-2"
+                  className="bg-secondary/50 border-white/10 h-11 text-sm text-center rounded-xl"
                   value={newMeal.carbs}
                   onChange={(e) => setNewMeal({...newMeal, carbs: e.target.value})}
                   data-testid="input-meal-carbs"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground uppercase">Fats</Label>
+              <div className="space-y-2">
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium text-center block">Fats</Label>
                 <Input 
                   type="number" 
                   placeholder="0" 
-                  className="bg-secondary/50 border-white/10 h-9 text-sm px-2"
+                  className="bg-secondary/50 border-white/10 h-11 text-sm text-center rounded-xl"
                   value={newMeal.fats}
                   onChange={(e) => setNewMeal({...newMeal, fats: e.target.value})}
                   data-testid="input-meal-fats"
@@ -1158,9 +1185,23 @@ export default function Diet() {
             </div>
           </div>
 
-          <DialogFooter className="pt-4 gap-2 sm:gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsCustomDialogOpen(false)} data-testid="button-cancel-meal" className="flex-1">Cancel</Button>
-            <Button size="sm" onClick={handleAddCustomMeal} disabled={!newMeal.name || isAnalyzing} data-testid="button-add-meal" className="flex-1">Add Meal</Button>
+          <DialogFooter className="pt-5 gap-3 sm:gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCustomDialogOpen(false)} 
+              data-testid="button-cancel-meal" 
+              className="flex-1 h-11 rounded-xl border-white/20 hover:bg-white/5"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddCustomMeal} 
+              disabled={!newMeal.name || isAnalyzing} 
+              data-testid="button-add-meal" 
+              className="flex-1 h-11 rounded-xl font-semibold"
+            >
+              Add Meal
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

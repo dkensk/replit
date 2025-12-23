@@ -13,10 +13,17 @@ import { cn } from "@/lib/utils";
 const WORKOUT_TYPES = [
   { id: "legs_strength", label: "Legs (Strength)" },
   { id: "legs_speed", label: "Legs (Speed)" },
+  { id: "legs_explosive", label: "Legs (Explosive)" },
   { id: "upper_push", label: "Upper Body (Push)" },
   { id: "upper_pull", label: "Upper Body (Pull)" },
+  { id: "upper_body", label: "Upper Body Power" },
+  { id: "chest_triceps", label: "Chest & Triceps" },
+  { id: "back_biceps", label: "Back & Biceps" },
+  { id: "full_body", label: "Full Body Athletic" },
   { id: "cardio", label: "Cardio" },
+  { id: "skills_cardio", label: "Skills & Cardio" },
   { id: "recovery", label: "Recovery" },
+  { id: "active_recovery", label: "Active Recovery" },
   { id: "rest", label: "Rest Day" },
 ];
 
@@ -402,39 +409,38 @@ const getWorkoutForGoal = (goal: string, workoutType: string): WorkoutExercise[]
 };
 
 // Generate recommended schedule based on user stats
-// Uses actual database workout codes: legs_strength, legs_speed, upper_push, upper_pull, cardio, recovery, rest
 const getRecommendedSchedule = (
   position: string,
   level: string,
   goal: string
 ): Record<string, string> => {
-  // Base schedules by goal using correct database codes
+  // Base schedules by goal with full workout variety
   const goalSchedules: Record<string, Record<string, string>> = {
     muscle: {
       monday: "legs_strength",
-      tuesday: "upper_push",
-      wednesday: "recovery",
-      thursday: "upper_pull",
-      friday: "legs_speed",
-      saturday: "cardio",
+      tuesday: "chest_triceps",
+      wednesday: "active_recovery",
+      thursday: "back_biceps",
+      friday: "legs_explosive",
+      saturday: "upper_body",
       sunday: "rest"
     },
     fatloss: {
-      monday: "cardio",
-      tuesday: "upper_push",
-      wednesday: "legs_speed",
-      thursday: "recovery",
-      friday: "cardio",
-      saturday: "upper_pull",
+      monday: "full_body",
+      tuesday: "skills_cardio",
+      wednesday: "legs_explosive",
+      thursday: "active_recovery",
+      friday: "full_body",
+      saturday: "skills_cardio",
       sunday: "rest"
     },
     maintain: {
       monday: "legs_strength",
-      tuesday: "upper_push",
-      wednesday: "cardio",
-      thursday: "legs_speed",
-      friday: "upper_pull",
-      saturday: "recovery",
+      tuesday: "upper_body",
+      wednesday: "skills_cardio",
+      thursday: "legs_explosive",
+      friday: "full_body",
+      saturday: "active_recovery",
       sunday: "rest"
     }
   };
@@ -445,27 +451,27 @@ const getRecommendedSchedule = (
   // Adjust for position
   if (position === "goalie") {
     // Goalies need more explosiveness and lateral movement
-    schedule.monday = "legs_speed";
-    schedule.thursday = "cardio";
-    schedule.friday = "legs_strength";
+    schedule.monday = "legs_explosive";
+    schedule.thursday = "full_body";
+    schedule.friday = "skills_cardio";
   } else if (position === "defense") {
     // Defensemen need strong legs and upper body for physical play
-    schedule.tuesday = "upper_push";
+    schedule.tuesday = "upper_body";
     schedule.friday = "legs_strength";
   } else if (position === "center") {
     // Centers need endurance and all-around fitness
-    schedule.wednesday = "cardio";
-    schedule.saturday = "legs_speed";
+    schedule.wednesday = "skills_cardio";
+    schedule.saturday = "full_body";
   }
 
   // Adjust for competition level - higher levels need more intensity, less rest
   if (level === "aaa" || level === "junior") {
     // Elite players: 6 training days
-    schedule.saturday = goal === "muscle" ? "upper_pull" : "cardio";
-    schedule.wednesday = "legs_speed";
+    schedule.saturday = goal === "muscle" ? "full_body" : "skills_cardio";
+    schedule.wednesday = "legs_explosive";
   } else if (level === "house") {
     // Recreational: more recovery days
-    schedule.wednesday = "recovery";
+    schedule.wednesday = "active_recovery";
     schedule.saturday = "rest";
   }
 

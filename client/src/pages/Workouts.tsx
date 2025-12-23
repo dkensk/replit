@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell, Activity, Move } from "lucide-react";
+import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell, Activity, Move, Timer, Flame } from "lucide-react";
 import gymImage from "@assets/generated_images/athletic_gym_training_equipment.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
@@ -449,21 +449,22 @@ export default function Workouts() {
 
   return (
     <Layout>
-      <div className="relative h-48 w-full overflow-hidden rounded-b-3xl shadow-xl mb-6">
-         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent z-10" />
-        <img src={gymImage} alt="Gym" className="w-full h-full object-cover opacity-70" />
-        <div className="absolute bottom-4 left-6 z-20 w-[90%] pr-6">
+      <div className="relative h-52 w-full overflow-hidden rounded-b-3xl mb-6">
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
+        <img src={gymImage} alt="Gym" className="w-full h-full object-cover" />
+        <div className="absolute bottom-6 left-6 right-6 z-20">
           <div className="flex justify-between items-end">
             <div>
-              <h1 className="text-3xl font-heading font-bold text-white uppercase">Training Plan</h1>
-              <p className="text-primary font-medium">Phase 1: Foundation</p>
+              <h1 className="text-3xl font-heading font-bold text-white uppercase tracking-wide">Training Plan</h1>
+              <p className="text-primary font-medium text-sm mt-1">Phase 1: Foundation</p>
             </div>
-             <div className="bg-black/30 backdrop-blur-md rounded-lg p-1 border border-white/10">
+            <div className="glass-panel rounded-xl px-3 py-2">
               <Select 
                 value={profile.workoutDuration.toString()} 
                 onValueChange={(val) => updateProfile({ workoutDuration: parseInt(val) })}
               >
-                <SelectTrigger className="h-8 border-none bg-transparent text-white w-[100px] focus:ring-0 text-xs">
+                <SelectTrigger className="h-8 border-none bg-transparent text-white w-[100px] focus:ring-0 text-xs font-medium" data-testid="select-duration">
+                  <Clock className="w-3.5 h-3.5 mr-1.5 text-primary" />
                   <SelectValue placeholder="Duration" />
                 </SelectTrigger>
                 <SelectContent>
@@ -478,18 +479,41 @@ export default function Workouts() {
         </div>
       </div>
 
-      <div className="px-4 pb-20">
+      <div className="px-4 pb-24">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-secondary/50 mb-6">
-            <TabsTrigger value="schedule">Weekly Split</TabsTrigger>
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="stretching">Stretching</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-card/80 backdrop-blur-sm border border-white/5 p-1 rounded-xl mb-6 h-12">
+            <TabsTrigger 
+              value="schedule" 
+              className="rounded-lg font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              data-testid="tab-schedule"
+            >
+              Weekly Split
+            </TabsTrigger>
+            <TabsTrigger 
+              value="today" 
+              className="rounded-lg font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              data-testid="tab-today"
+            >
+              Today
+            </TabsTrigger>
+            <TabsTrigger 
+              value="stretching" 
+              className="rounded-lg font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              data-testid="tab-stretching"
+            >
+              Stretching
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="schedule" className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-             <div className="flex justify-between items-center mb-2">
-               <h2 className="text-lg font-bold text-white">Your 7-Day Split</h2>
-               <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => {
+          <TabsContent value="schedule" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-white">Your 7-Day Split</h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium"
+                data-testid="button-reset-schedule"
+                onClick={() => {
                   updateProfile({
                     schedule: {
                       monday: "legs_strength",
@@ -501,173 +525,252 @@ export default function Workouts() {
                       sunday: "rest",
                     }
                   });
-               }}>Reset to Recommended</Button>
-             </div>
+                }}
+              >
+                <RefreshCw className="w-3 h-3 mr-1.5" />
+                Reset
+              </Button>
+            </div>
              
-             <div className="space-y-3">
-               {DAYS.map((day) => (
-                 <Card key={day} className="bg-card border-white/5">
-                   <CardContent className="p-3 flex items-center justify-between">
-                     <span className="text-sm font-bold text-muted-foreground uppercase w-24">{day}</span>
-                     <Select 
-                       value={profile.schedule[day] || "rest"} 
-                       onValueChange={(val) => handleScheduleChange(day, val)}
-                     >
-                       <SelectTrigger className="w-[180px] h-8 text-xs bg-secondary border-transparent text-white">
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent>
-                         {WORKOUT_TYPES.map((type) => (
-                           <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
-                         ))}
-                       </SelectContent>
-                     </Select>
-                   </CardContent>
-                 </Card>
-               ))}
-             </div>
+            <div className="space-y-2">
+              {DAYS.map((day, index) => {
+                const isToday = day === currentDay;
+                return (
+                  <Card 
+                    key={day} 
+                    className={cn(
+                      "border transition-all duration-200",
+                      isToday 
+                        ? "bg-primary/5 border-primary/30 ring-1 ring-primary/20" 
+                        : "bg-card/60 border-white/5 hover:border-white/10"
+                    )}
+                  >
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {isToday && (
+                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        )}
+                        <span className={cn(
+                          "text-sm font-bold uppercase w-20",
+                          isToday ? "text-primary" : "text-muted-foreground"
+                        )}>
+                          {day}
+                        </span>
+                      </div>
+                      <Select 
+                        value={profile.schedule[day] || "rest"} 
+                        onValueChange={(val) => handleScheduleChange(day, val)}
+                      >
+                        <SelectTrigger 
+                          className="w-[180px] h-9 text-xs bg-secondary/50 border-white/5 text-white font-medium hover:bg-secondary/70 transition-colors"
+                          data-testid={`select-day-${day}`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {WORKOUT_TYPES.map((type) => (
+                            <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </TabsContent>
 
-          <TabsContent value="today" className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-lg font-bold text-white">{WORKOUT_TYPES.find(w => w.id === currentWorkoutType)?.label || "Rest Day"}</h2>
-              <span className="text-sm text-muted-foreground flex items-center"><Clock className="w-4 h-4 mr-1"/> {profile.workoutDuration} min</span>
+          <TabsContent value="today" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white">{WORKOUT_TYPES.find(w => w.id === currentWorkoutType)?.label || "Rest Day"}</h2>
+                <p className="text-sm text-muted-foreground capitalize">{currentDay}'s Workout</p>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 px-3 py-1.5 rounded-lg">
+                <Timer className="w-4 h-4 text-primary" />
+                <span className="font-medium">{profile.workoutDuration} min</span>
+              </div>
             </div>
 
-            {/* Warmup */}
-            {currentWorkoutType !== "rest" && (
-              <Card className="bg-secondary/30 border-white/5 mb-4">
+            {currentWorkoutType !== "rest" && currentWorkoutType !== "active_recovery" && (
+              <Card className="glass-panel rounded-xl overflow-hidden">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-primary">Warmup</h3>
-                    <span className="text-xs text-muted-foreground">10 mins</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <Flame className="w-4 h-4 text-primary" />
+                      </div>
+                      <h3 className="font-bold text-white">Warmup</h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground font-medium bg-secondary/50 px-2 py-1 rounded">10 min</span>
                   </div>
                   <ul className="space-y-2 text-sm text-gray-300">
-                    <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-green-500/50"/> 5 min Light Cardio (Bike/Jog)</li>
-                    <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-green-500/50"/> Dynamic Stretching (Leg Swings, etc.)</li>
-                    <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-green-500/50"/> Activation (Glute Bridges, Band Pullaparts)</li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary/60 flex-shrink-0" />
+                      <span>5 min Light Cardio (Bike/Jog)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary/60 flex-shrink-0" />
+                      <span>Dynamic Stretching (Leg Swings, etc.)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary/60 flex-shrink-0" />
+                      <span>Activation (Glute Bridges, Band Pullaparts)</span>
+                    </li>
                   </ul>
                 </CardContent>
               </Card>
             )}
 
-            {/* Exercises */}
             {currentWorkoutType === "rest" || currentWorkoutType === "active_recovery" ? (
-              <Card className="bg-card border-white/5">
-                <CardContent className="p-8 text-center text-muted-foreground flex flex-col items-center">
-                  <div className="bg-secondary p-4 rounded-full mb-4">
-                    <Dumbbell className="w-8 h-8 opacity-20" />
+              <Card className="glass-panel rounded-xl">
+                <CardContent className="p-8 text-center flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-2xl bg-secondary/50 flex items-center justify-center mb-4">
+                    <Dumbbell className="w-8 h-8 text-muted-foreground/40" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Rest & Recover</h3>
-                  <p className="max-w-xs mx-auto">Take today off to let your muscles rebuild. Light walking or mobility work is optional but encouraged.</p>
+                  <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                    Take today off to let your muscles rebuild. Light walking or mobility work is optional but encouraged.
+                  </p>
                 </CardContent>
               </Card>
             ) : (
-              baseWorkout.slice(0, Math.ceil(profile.workoutDuration / 12)).map((ex, i) => { // Adjusted scaling logic
-                const currentExerciseId = customWorkout[i] || ex.id;
-                const currentExerciseName = getExerciseName(currentExerciseId, ex.category);
-                
-                return (
-                  <Dialog key={i}>
-                    <DialogTrigger asChild>
-                      <Card className="bg-card border-white/5 hover:border-primary/30 transition-colors cursor-pointer group mb-3">
-                        <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground font-bold group-hover:text-primary transition-colors">
-                              {i + 1}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-bold text-white text-lg group-hover:text-primary transition-colors">{currentExerciseName}</h4>
-                                <RefreshCw className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="space-y-3">
+                {baseWorkout.slice(0, Math.ceil(profile.workoutDuration / 12)).map((ex, i) => {
+                  const currentExerciseId = customWorkout[i] || ex.id;
+                  const currentExerciseName = getExerciseName(currentExerciseId, ex.category);
+                  
+                  return (
+                    <Dialog key={i}>
+                      <DialogTrigger asChild>
+                        <Card 
+                          className="bg-card/60 border-white/5 hover:border-primary/30 hover:bg-card/80 transition-all duration-200 cursor-pointer group"
+                          data-testid={`card-exercise-${i}`}
+                        >
+                          <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="h-11 w-11 rounded-xl bg-secondary/70 flex items-center justify-center text-muted-foreground font-bold text-lg group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                                {i + 1}
                               </div>
-                              <p className="text-sm text-muted-foreground">{ex.sets} Sets × {ex.reps} • Rest: {ex.rest}</p>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-bold text-white group-hover:text-primary transition-colors">{currentExerciseName}</h4>
+                                  <RefreshCw className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                                  <span className="font-medium">{ex.sets} Sets × {ex.reps}</span>
+                                  <span className="text-white/20">•</span>
+                                  <span>Rest: {ex.rest}</span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <Button size="icon" variant="ghost" className="text-primary opacity-50 group-hover:opacity-100">
-                            <PlayCircle className="w-6 h-6" />
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </DialogTrigger>
-                    <DialogContent className="bg-card border-white/10 text-white max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Substitute Exercise</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid gap-2 py-4">
-                        {EXERCISES[ex.category]?.map((alt) => (
-                          <Button 
-                            key={alt.id}
-                            variant="ghost" 
-                            className={cn(
-                              "justify-start h-auto py-3 px-4",
-                              currentExerciseId === alt.id ? "bg-primary/20 text-primary border border-primary/50" : "hover:bg-white/5"
-                            )}
-                            onClick={() => {
-                              setCustomWorkout(prev => ({ ...prev, [i]: alt.id }));
-                              // Close dialog logic handled by DialogPrimitive typically, or we can control open state
-                            }}
-                          >
-                            <div className="text-left">
-                              <div className="font-bold">{alt.name}</div>
-                              {currentExerciseId === alt.id && <span className="text-[10px] uppercase font-bold text-primary">Selected</span>}
-                            </div>
-                          </Button>
-                        ))}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                );
-              })
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="w-10 h-10 rounded-xl text-primary/50 group-hover:text-primary group-hover:bg-primary/10 transition-all"
+                            >
+                              <PlayCircle className="w-6 h-6" />
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </DialogTrigger>
+                      <DialogContent className="bg-card border-white/10 text-white max-h-[80vh] overflow-y-auto rounded-2xl">
+                        <DialogHeader className="pb-4 border-b border-white/5">
+                          <DialogTitle className="text-lg">Substitute Exercise</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-2 py-4">
+                          {EXERCISES[ex.category]?.map((alt) => (
+                            <Button 
+                              key={alt.id}
+                              variant="ghost" 
+                              className={cn(
+                                "justify-start h-auto py-3 px-4 rounded-xl transition-all",
+                                currentExerciseId === alt.id 
+                                  ? "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20" 
+                                  : "hover:bg-white/5 border border-transparent"
+                              )}
+                              onClick={() => {
+                                setCustomWorkout(prev => ({ ...prev, [i]: alt.id }));
+                              }}
+                              data-testid={`button-exercise-${alt.id}`}
+                            >
+                              <div className="text-left">
+                                <div className="font-bold">{alt.name}</div>
+                                {currentExerciseId === alt.id && (
+                                  <span className="text-[10px] uppercase font-bold text-primary mt-0.5 block">Selected</span>
+                                )}
+                              </div>
+                            </Button>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  );
+                })}
+              </div>
             )}
           </TabsContent>
 
-          <TabsContent value="stretching" className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-             {/* Pre-Game Section */}
-             <div>
-               <div className="flex items-center gap-2 mb-3">
-                 <Activity className="w-5 h-5 text-primary" />
-                 <h2 className="text-lg font-bold text-white">Pre-Game (Dynamic)</h2>
-               </div>
-               <p className="text-xs text-muted-foreground mb-4">Perform these while moving to warm up muscles and joints before skating.</p>
+          <TabsContent value="stretching" className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Pre-Game (Dynamic)</h2>
+                  <p className="text-xs text-muted-foreground">Perform while moving to warm up before skating</p>
+                </div>
+              </div>
                
-               <div className="grid grid-cols-1 gap-3">
-                 {STRETCHES.pre_game.map((stretch, i) => (
-                   <Card key={i} className="bg-card border-white/5">
-                     <CardContent className="p-4">
-                       <div className="flex justify-between items-start mb-2">
-                         <h3 className="font-bold text-white">{stretch.name}</h3>
-                         <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">{stretch.duration}</span>
-                       </div>
-                       <p className="text-sm text-gray-400">{stretch.instructions}</p>
-                     </CardContent>
-                   </Card>
-                 ))}
-               </div>
-             </div>
+              <div className="space-y-3">
+                {STRETCHES.pre_game.map((stretch, i) => (
+                  <Card key={i} className="bg-card/60 border-white/5 hover:border-white/10 transition-all" data-testid={`card-stretch-pre-${i}`}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-white mb-1">{stretch.name}</h3>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{stretch.instructions}</p>
+                        </div>
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg whitespace-nowrap flex-shrink-0">
+                          {stretch.duration}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
 
-             {/* Post-Game Section */}
-             <div>
-               <div className="flex items-center gap-2 mb-3 mt-6">
-                 <Move className="w-5 h-5 text-blue-400" />
-                 <h2 className="text-lg font-bold text-white">Post-Game (Static)</h2>
-               </div>
-               <p className="text-xs text-muted-foreground mb-4">Hold these stretches to improve flexibility and aid recovery after games.</p>
+            <div className="pt-2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Move className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Post-Game (Static)</h2>
+                  <p className="text-xs text-muted-foreground">Hold stretches to improve flexibility & recovery</p>
+                </div>
+              </div>
                
-               <div className="grid grid-cols-1 gap-3">
-                 {STRETCHES.post_game.map((stretch, i) => (
-                   <Card key={i} className="bg-card border-white/5">
-                     <CardContent className="p-4">
-                       <div className="flex justify-between items-start mb-2">
-                         <h3 className="font-bold text-white">{stretch.name}</h3>
-                         <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-1 rounded">{stretch.duration}</span>
-                       </div>
-                       <p className="text-sm text-gray-400">{stretch.instructions}</p>
-                     </CardContent>
-                   </Card>
-                 ))}
-               </div>
-             </div>
+              <div className="space-y-3">
+                {STRETCHES.post_game.map((stretch, i) => (
+                  <Card key={i} className="bg-card/60 border-white/5 hover:border-white/10 transition-all" data-testid={`card-stretch-post-${i}`}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-white mb-1">{stretch.name}</h3>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{stretch.instructions}</p>
+                        </div>
+                        <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2.5 py-1 rounded-lg whitespace-nowrap flex-shrink-0">
+                          {stretch.duration}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

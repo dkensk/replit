@@ -649,7 +649,7 @@ export default function Workouts() {
                         >
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-60 overflow-y-auto">
                           {WORKOUT_TYPES.map((type) => (
                             <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
                           ))}

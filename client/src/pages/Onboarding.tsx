@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, User, Activity, Target } from "lucide-react";
 import { useUser } from "@/lib/UserContext";
 
 export default function Onboarding() {
@@ -54,27 +54,56 @@ export default function Onboarding() {
     }
   };
 
+  const steps = [
+    { icon: User, label: "Profile", active: true },
+    { icon: Activity, label: "Stats", active: true },
+    { icon: Target, label: "Goals", active: true }
+  ];
+
   return (
     <div className="min-h-screen bg-background p-6 flex flex-col justify-center max-w-md mx-auto relative overflow-hidden">
       <div className="absolute top-[-20%] right-[-20%] w-[300px] h-[300px] bg-primary/20 rounded-full blur-[80px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[200px] h-[200px] bg-primary/10 rounded-full blur-[60px]" />
       
-      <div className="relative z-10 space-y-8">
-        <div className="space-y-2">
+      <div className="relative z-10 space-y-6">
+        <div className="space-y-2 text-center">
           <h1 className="text-4xl font-heading font-bold text-white uppercase italic">
             Edge<span className="text-primary">Hockey</span>
           </h1>
-          <p className="text-muted-foreground text-lg">Let's set up your player profile.</p>
+          <p className="text-muted-foreground text-base">Let's set up your player profile.</p>
         </div>
 
-        <div className="space-y-6 animate-in slide-in-from-right-10 fade-in duration-300">
-          <div className="space-y-4">
+        <div className="flex items-center justify-center gap-3 py-2">
+          {steps.map((step, index) => (
+            <div key={step.label} className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                step.active 
+                  ? "bg-primary/20 border border-primary/40" 
+                  : "bg-secondary border border-white/10"
+              }`}>
+                <step.icon className={`w-4 h-4 ${step.active ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              {index < steps.length - 1 && (
+                <div className={`w-8 h-0.5 ${step.active ? "bg-primary/40" : "bg-white/10"}`} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-5 animate-in slide-in-from-right-10 fade-in duration-300">
+          <div className="bg-card/60 border border-white/5 backdrop-blur-sm rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <User className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-white/80 uppercase tracking-wide">Basic Info</span>
+            </div>
+            
             <div className="space-y-2">
-              <Label>First Name *</Label>
+              <Label className="text-sm text-muted-foreground">First Name *</Label>
               <Input 
                 data-testid="input-first-name"
                 type="text" 
                 placeholder="Your name" 
-                className="bg-secondary border-transparent"
+                className="h-11 bg-secondary border-white/5 rounded-xl"
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               />
@@ -82,23 +111,23 @@ export default function Onboarding() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Age</Label>
+                <Label className="text-sm text-muted-foreground">Age</Label>
                 <Input 
                   data-testid="input-age"
                   type="number" 
                   placeholder="Your age" 
-                  className="bg-secondary border-transparent"
+                  className="h-11 bg-secondary border-white/5 rounded-xl"
                   value={formData.age}
                   onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Weight (lbs) *</Label>
+                <Label className="text-sm text-muted-foreground">Weight (lbs) *</Label>
                 <Input 
                   data-testid="input-weight"
                   type="number" 
-                  placeholder="Weight in lbs" 
-                  className="bg-secondary border-transparent"
+                  placeholder="Weight" 
+                  className="h-11 bg-secondary border-white/5 rounded-xl"
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                 />
@@ -106,13 +135,13 @@ export default function Onboarding() {
             </div>
             
             <div className="space-y-2">
-              <Label>Height *</Label>
+              <Label className="text-sm text-muted-foreground">Height *</Label>
               <div className="grid grid-cols-2 gap-4">
                 <Input 
                   data-testid="input-height-ft"
                   type="number" 
                   placeholder="Feet" 
-                  className="bg-secondary border-transparent"
+                  className="h-11 bg-secondary border-white/5 rounded-xl"
                   value={formData.heightFt}
                   onChange={(e) => setFormData({ ...formData, heightFt: e.target.value })}
                 />
@@ -120,17 +149,24 @@ export default function Onboarding() {
                   data-testid="input-height-in"
                   type="number" 
                   placeholder="Inches" 
-                  className="bg-secondary border-transparent"
+                  className="h-11 bg-secondary border-white/5 rounded-xl"
                   value={formData.heightIn}
                   onChange={(e) => setFormData({ ...formData, heightIn: e.target.value })}
                 />
               </div>
             </div>
+          </div>
+          
+          <div className="bg-card/60 border border-white/5 backdrop-blur-sm rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-white/80 uppercase tracking-wide">Hockey Details</span>
+            </div>
             
             <div className="space-y-2">
-              <Label>Position</Label>
+              <Label className="text-sm text-muted-foreground">Position</Label>
               <Select value={formData.position} onValueChange={(v) => setFormData({ ...formData, position: v })}>
-                <SelectTrigger data-testid="select-position" className="bg-secondary border-transparent">
+                <SelectTrigger data-testid="select-position" className="h-11 bg-secondary border-white/5 rounded-xl">
                   <SelectValue placeholder="Select position" />
                 </SelectTrigger>
                 <SelectContent>
@@ -143,9 +179,9 @@ export default function Onboarding() {
             </div>
             
             <div className="space-y-2">
-              <Label>Level</Label>
+              <Label className="text-sm text-muted-foreground">Level</Label>
               <Select value={formData.level} onValueChange={(v) => setFormData({ ...formData, level: v })}>
-                <SelectTrigger data-testid="select-level" className="bg-secondary border-transparent">
+                <SelectTrigger data-testid="select-level" className="h-11 bg-secondary border-white/5 rounded-xl">
                   <SelectValue placeholder="Select level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -157,11 +193,18 @@ export default function Onboarding() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <div className="bg-card/60 border border-white/5 backdrop-blur-sm rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-white/80 uppercase tracking-wide">Training Goal</span>
+            </div>
             
             <div className="space-y-2">
-              <Label>Goal</Label>
+              <Label className="text-sm text-muted-foreground">Goal</Label>
               <Select value={formData.goal} onValueChange={(v) => setFormData({ ...formData, goal: v })}>
-                <SelectTrigger data-testid="select-goal" className="bg-secondary border-transparent">
+                <SelectTrigger data-testid="select-goal" className="h-11 bg-secondary border-white/5 rounded-xl">
                   <SelectValue placeholder="Select goal" />
                 </SelectTrigger>
                 <SelectContent>
@@ -175,7 +218,7 @@ export default function Onboarding() {
           
           <Button 
             data-testid="button-start-training"
-            className="w-full bg-primary text-primary-foreground font-bold hover:bg-primary/90 h-12 text-lg shadow-[0_0_20px_rgba(0,240,255,0.3)]" 
+            className="w-full bg-primary text-primary-foreground font-bold hover:bg-primary/90 h-11 rounded-xl text-base shadow-[0_0_20px_rgba(0,240,255,0.3)]" 
             onClick={handleSubmit}
             disabled={isSubmitting || !formData.firstName || !formData.weight || !formData.heightFt}
           >

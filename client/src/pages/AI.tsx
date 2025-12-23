@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import BottomNav from "@/components/layout/BottomNav";
-import { Send, Bot } from "lucide-react";
+import { Send, Bot, Sparkles } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useUser } from "@/lib/UserContext";
 import { sendChatMessage } from "@/lib/api";
@@ -52,27 +52,32 @@ export default function AI() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Header */}
-      <div className="p-4 bg-card/80 backdrop-blur-md border-b border-white/5 z-10 flex-shrink-0">
-        <div className="flex items-center gap-3 max-w-md mx-auto">
-          <div className="relative">
-            <div className="p-2 bg-primary/20 rounded-full text-primary neon-glow animate-pulse-slow">
-              <Bot className="w-6 h-6" />
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
+      
+      <header className="relative z-10 flex-shrink-0 px-5 pt-6 pb-4 border-b border-white/5 bg-background/80 backdrop-blur-xl">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center neon-glow">
+                <Bot className="w-6 h-6 text-primary" />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-background" />
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-green-500 w-3 h-3 rounded-full border-2 border-background"></div>
-          </div>
-          <div>
-            <h1 className="font-heading font-bold text-white text-xl flex items-center gap-2" data-testid="text-coach-title">
-              Coach AI <Badge variant="outline" className="text-[10px] border-primary/50 text-primary h-5">GPT-4</Badge>
-            </h1>
-            <p className="text-xs text-muted-foreground">Powered by OpenAI</p>
+            <div className="flex-1">
+              <h1 className="font-heading font-bold text-white text-xl tracking-wide" data-testid="text-coach-title">
+                COACH AI
+              </h1>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Sparkles className="w-3 h-3 text-primary/70" />
+                <span className="text-xs text-muted-foreground">Powered by GPT-4</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto bg-black/20">
-        <div className="max-w-md mx-auto p-4 min-h-full flex flex-col justify-end">
+      <div className="relative flex-1 overflow-y-auto">
+        <div className="max-w-md mx-auto px-5 py-6 min-h-full flex flex-col justify-end">
           <div className="space-y-4">
             {messages.map((msg, i) => (
               <div
@@ -80,11 +85,16 @@ export default function AI() {
                 data-testid={`message-${msg.role}-${i}`}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
               >
+                {msg.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
+                    <Bot className="w-4 h-4 text-primary" />
+                  </div>
+                )}
                 <div
-                  className={`max-w-[85%] p-4 rounded-2xl text-sm shadow-sm ${
+                  className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-tr-none'
-                      : 'bg-card text-white rounded-tl-none border border-white/10'
+                      ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+                      : 'bg-card/80 text-white rounded-2xl rounded-tl-md border border-white/10'
                   }`}
                 >
                   {msg.content}
@@ -93,60 +103,71 @@ export default function AI() {
             ))}
             {isTyping && (
               <div className="flex justify-start animate-in fade-in duration-300" data-testid="typing-indicator">
-                <div className="bg-card text-white rounded-2xl rounded-tl-none border border-white/10 p-4 flex gap-1 items-center h-12">
-                  <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce"></div>
+                <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center mr-2 flex-shrink-0">
+                  <Bot className="w-4 h-4 text-primary" />
+                </div>
+                <div className="bg-card/80 text-white rounded-2xl rounded-tl-md border border-white/10 px-4 py-3 flex gap-1.5 items-center">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
                 </div>
               </div>
             )}
           </div>
-          <div ref={scrollRef} />
+          <div ref={scrollRef} className="h-4" />
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="flex-shrink-0 p-4 bg-background border-t border-white/5 pb-24">
-        <div className="max-w-md mx-auto">
-          <div className="flex gap-2">
-            <Input 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about workouts, diet, or skills..." 
-              className="bg-secondary border-white/10 focus-visible:ring-primary text-white"
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              data-testid="input-chat"
-            />
-            <Button 
-              size="icon" 
-              onClick={handleSend} 
-              disabled={!input.trim() || isTyping} 
-              className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
-              data-testid="button-send"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-          <div className="flex justify-center mt-2 gap-2">
+      <div className="relative z-10 flex-shrink-0 px-5 pt-4 pb-24 bg-gradient-to-t from-background via-background to-transparent">
+        <div className="max-w-md mx-auto space-y-3">
+          <Card className="bg-card/60 border-white/10 p-2 backdrop-blur-sm">
+            <div className="flex gap-2 items-center">
+              <Input 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask about workouts, diet, or skills..." 
+                className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder:text-muted-foreground/60 h-11"
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                data-testid="input-chat"
+              />
+              <Button 
+                size="icon" 
+                onClick={handleSend} 
+                disabled={!input.trim() || isTyping} 
+                className="w-10 h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40"
+                data-testid="button-send"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </Card>
+          
+          <div className="flex justify-center gap-2 flex-wrap">
             <button 
               onClick={() => setInput("Give me a drill for better hands")} 
-              className="text-[10px] text-muted-foreground hover:text-primary transition-colors border border-white/5 rounded-full px-2 py-1"
+              className="text-xs text-muted-foreground hover:text-white hover:bg-white/5 transition-all border border-white/10 rounded-full px-3 py-1.5"
               data-testid="button-suggestion-1"
             >
-              "Better hands drill"
+              Better hands drill
             </button>
             <button 
               onClick={() => setInput("What should I eat before a game?")} 
-              className="text-[10px] text-muted-foreground hover:text-primary transition-colors border border-white/5 rounded-full px-2 py-1"
+              className="text-xs text-muted-foreground hover:text-white hover:bg-white/5 transition-all border border-white/10 rounded-full px-3 py-1.5"
               data-testid="button-suggestion-2"
             >
-              "Pre-game meal?"
+              Pre-game meal?
+            </button>
+            <button 
+              onClick={() => setInput("How can I improve my skating speed?")} 
+              className="text-xs text-muted-foreground hover:text-white hover:bg-white/5 transition-all border border-white/10 rounded-full px-3 py-1.5"
+              data-testid="button-suggestion-3"
+            >
+              Faster skating
             </button>
           </div>
         </div>
       </div>
 
-      {/* Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <BottomNav />
       </div>

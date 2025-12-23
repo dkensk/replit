@@ -22,8 +22,9 @@ export default function BottomNav() {
           return (
             <Link key={item.href} href={item.href}>
               <div
+                data-testid={`nav-${item.label.toLowerCase()}`}
                 className={cn(
-                  "flex flex-col items-center justify-center w-14 h-full gap-1 transition-all duration-200 cursor-pointer", // Reduced width from 16 to 14
+                  "flex flex-col items-center justify-center w-14 h-full gap-1 transition-all duration-200 cursor-pointer",
                   isActive ? "text-primary scale-105" : "text-muted-foreground hover:text-white"
                 )}
               >

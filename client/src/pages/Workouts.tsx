@@ -403,6 +403,76 @@ const getWorkoutForGoal = (goal: string, workoutType: string): WorkoutExercise[]
   return GOAL_WORKOUTS[goalKey]?.[workoutType] || GOAL_WORKOUTS["maintain"][workoutType] || [];
 };
 
+// Generate recommended schedule based on user stats
+const getRecommendedSchedule = (
+  position: string,
+  level: string,
+  goal: string
+): Record<string, string> => {
+  // Base schedules by goal
+  const goalSchedules: Record<string, Record<string, string>> = {
+    muscle: {
+      monday: "legs_strength",
+      tuesday: "chest_triceps",
+      wednesday: "active_recovery",
+      thursday: "back_biceps",
+      friday: "legs_explosive",
+      saturday: "upper_body",
+      sunday: "rest"
+    },
+    fatloss: {
+      monday: "full_body",
+      tuesday: "skills_cardio",
+      wednesday: "legs_explosive",
+      thursday: "active_recovery",
+      friday: "full_body",
+      saturday: "skills_cardio",
+      sunday: "rest"
+    },
+    maintain: {
+      monday: "legs_strength",
+      tuesday: "upper_body",
+      wednesday: "skills_cardio",
+      thursday: "legs_explosive",
+      friday: "full_body",
+      saturday: "active_recovery",
+      sunday: "rest"
+    }
+  };
+
+  // Get base schedule
+  let schedule = { ...goalSchedules[goal] || goalSchedules.maintain };
+
+  // Adjust for position
+  if (position === "goalie") {
+    // Goalies need more explosiveness and lateral movement, less pure strength
+    schedule.monday = "legs_explosive";
+    schedule.thursday = "full_body";
+    schedule.friday = "skills_cardio";
+  } else if (position === "defense") {
+    // Defensemen need strong legs and upper body for physical play
+    schedule.tuesday = "upper_body";
+    schedule.friday = "legs_strength";
+  } else if (position === "center") {
+    // Centers need endurance and all-around fitness
+    schedule.wednesday = "skills_cardio";
+    schedule.saturday = "full_body";
+  }
+
+  // Adjust for competition level - higher levels need more intensity, less rest
+  if (level === "aaa" || level === "junior") {
+    // Elite players: 6 training days
+    schedule.saturday = goal === "muscle" ? "full_body" : "skills_cardio";
+    schedule.wednesday = "legs_explosive";
+  } else if (level === "house") {
+    // Recreational: more recovery days
+    schedule.wednesday = "active_recovery";
+    schedule.saturday = "rest";
+  }
+
+  return schedule;
+};
+
 const STRETCHES = {
   pre_game: [
     { name: "Leg Swings", duration: "10 reps/side", type: "Dynamic", instructions: "Swing leg forward and back, then side to side to open hips." },
@@ -514,17 +584,12 @@ export default function Workouts() {
                 className="text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium"
                 data-testid="button-reset-schedule"
                 onClick={() => {
-                  updateProfile({
-                    schedule: {
-                      monday: "legs_strength",
-                      tuesday: "upper_body",
-                      wednesday: "skills_cardio",
-                      thursday: "legs_explosive",
-                      friday: "full_body",
-                      saturday: "active_recovery",
-                      sunday: "rest",
-                    }
-                  });
+                  const recommended = getRecommendedSchedule(
+                    profile.position || "defense",
+                    profile.level || "aa",
+                    profile.goal || "maintain"
+                  );
+                  updateProfile({ schedule: recommended });
                 }}
               >
                 <RefreshCw className="w-3 h-3 mr-1.5" />

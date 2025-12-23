@@ -15,6 +15,11 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
+function sanitizeUser(user: SelectUser) {
+  const { password, ...safeUser } = user;
+  return safeUser;
+}
+
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -119,7 +124,7 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(user);
+        res.status(201).json(sanitizeUser(user));
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -135,7 +140,7 @@ export function setupAuth(app: Express) {
       }
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(200).json(user);
+        res.status(200).json(sanitizeUser(user));
       });
     })(req, res, next);
   });
@@ -149,7 +154,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    res.json(sanitizeUser(req.user));
   });
 
   app.patch("/api/user/username", async (req, res) => {
@@ -172,7 +177,7 @@ export function setupAuth(app: Express) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json(updatedUser);
+    res.json(sanitizeUser(updatedUser));
   });
 
   app.patch("/api/user/password", async (req, res) => {

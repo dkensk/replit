@@ -3,14 +3,71 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import BottomNav from "@/components/layout/BottomNav";
 import { Send, Bot, Sparkles } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useUser } from "@/lib/UserContext";
 import { sendChatMessage } from "@/lib/api";
 
+// Position-specific suggested questions
+const POSITION_SUGGESTIONS: Record<string, string[]> = {
+  defense: [
+    "How can I improve my gap control?",
+    "Best exercises for backward skating power?",
+    "Tips for first pass breakouts?",
+    "How do I improve my hip mobility for pivots?"
+  ],
+  wing: [
+    "How can I win more board battles?",
+    "Best drills for net-front presence?",
+    "Tips for better forechecking?",
+    "How do I improve my shot release?"
+  ],
+  center: [
+    "How do I win more faceoffs?",
+    "Best exercises for quick pivots?",
+    "Tips for better defensive play?",
+    "How can I improve my playmaking?"
+  ],
+  goalie: [
+    "How can I improve my butterfly recovery?",
+    "Best stretches for goalie flexibility?",
+    "Tips for tracking pucks through traffic?",
+    "How do I improve my rebound control?"
+  ]
+};
+
+const GENERAL_SUGGESTIONS = [
+  "What should I eat before a game?",
+  "How can I improve my skating speed?",
+  "Best off-ice workout for hockey?",
+  "How do I build confidence after a bad game?"
+];
+
 export default function AI() {
   const { profile } = useUser();
+  
+  // Get position-specific suggestions with null guards
+  const suggestions = useMemo(() => {
+    const position = profile?.position || '';
+    const positionQuestions = POSITION_SUGGESTIONS[position] || GENERAL_SUGGESTIONS;
+    // Return 3 random position-specific questions
+    const shuffled = [...positionQuestions].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  }, [profile?.position]);
+  
+  // Build greeting message with null guards
+  const getGreeting = () => {
+    if (!profile || !profile.position) {
+      return "Hey! I'm Coach AI, your personal hockey training assistant. I'm here to help with workouts, skills, nutrition, and the mental game. What would you like to work on?";
+    }
+    let msg = `Hey! I'm Coach AI, your personal hockey training assistant. I see you're a ${profile.position}`;
+    if (profile.level) msg += ` playing at the ${profile.level} level`;
+    if (profile.age) msg += ` and ${profile.age} years old`;
+    msg += ". I'm here to help with workouts, skills, nutrition, and the mental game. What would you like to work on?";
+    return msg;
+  };
+  
   const [messages, setMessages] = useState([
-    { role: "assistant", content: `Hi! I'm Coach AI. I know you're a ${profile.position} playing at the ${profile.level} level. Ask me about your training, nutrition, or skill development!` }
+    { role: "assistant", content: getGreeting() }
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -143,27 +200,16 @@ export default function AI() {
           </Card>
           
           <div className="flex justify-center gap-2 flex-wrap">
-            <button 
-              onClick={() => setInput("Give me a drill for better hands")} 
-              className="text-xs text-muted-foreground hover:text-white hover:bg-white/5 transition-all border border-white/10 rounded-full px-3 py-1.5"
-              data-testid="button-suggestion-1"
-            >
-              Better hands drill
-            </button>
-            <button 
-              onClick={() => setInput("What should I eat before a game?")} 
-              className="text-xs text-muted-foreground hover:text-white hover:bg-white/5 transition-all border border-white/10 rounded-full px-3 py-1.5"
-              data-testid="button-suggestion-2"
-            >
-              Pre-game meal?
-            </button>
-            <button 
-              onClick={() => setInput("How can I improve my skating speed?")} 
-              className="text-xs text-muted-foreground hover:text-white hover:bg-white/5 transition-all border border-white/10 rounded-full px-3 py-1.5"
-              data-testid="button-suggestion-3"
-            >
-              Faster skating
-            </button>
+            {suggestions.map((suggestion, i) => (
+              <button 
+                key={i}
+                onClick={() => setInput(suggestion)} 
+                className="text-xs text-muted-foreground hover:text-white hover:bg-white/5 transition-all border border-white/10 rounded-full px-3 py-1.5"
+                data-testid={`button-suggestion-${i + 1}`}
+              >
+                {suggestion.length > 30 ? suggestion.slice(0, 28) + '...' : suggestion}
+              </button>
+            ))}
           </div>
         </div>
       </div>

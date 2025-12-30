@@ -216,7 +216,7 @@ export default function Home() {
                       <Input 
                         type="number" 
                         value={formData.heightIn}
-                        onChange={(e) => setFormData({...formData, heightIn: parseInt(e.target.value) || 0})}
+                        onChange={(e) => setFormData({...formData, heightIn: Math.min(11, Math.max(0, parseInt(e.target.value) || 0))})}
                         className="bg-background/60 border-white/10 h-10"
                         data-testid="input-height-in"
                       />

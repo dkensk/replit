@@ -10,6 +10,8 @@ import {
   type InsertMealLog,
   type CustomMeal,
   type InsertCustomMeal,
+  type CustomWorkoutType,
+  type InsertCustomWorkoutType,
   type Goal,
   type Position,
   type CompetitionLevel,
@@ -28,6 +30,7 @@ import {
   workoutLogs,
   mealLogs,
   customMeals,
+  customWorkoutTypes,
   goals,
   positions,
   competitionLevels,
@@ -73,6 +76,11 @@ export interface IStorage {
   // Custom meal methods
   getCustomMeals(userId: string): Promise<CustomMeal[]>;
   createCustomMeal(meal: InsertCustomMeal): Promise<CustomMeal>;
+
+  // Custom workout type methods
+  getCustomWorkoutTypes(userId: string): Promise<CustomWorkoutType[]>;
+  createCustomWorkoutType(workout: InsertCustomWorkoutType): Promise<CustomWorkoutType>;
+  deleteCustomWorkoutType(id: string, userId: string): Promise<boolean>;
 
   // Lookup table methods
   getGoals(): Promise<Goal[]>;
@@ -259,6 +267,22 @@ export class DatabaseStorage implements IStorage {
   async createCustomMeal(meal: InsertCustomMeal): Promise<CustomMeal> {
     const [newMeal] = await db.insert(customMeals).values(meal).returning();
     return newMeal;
+  }
+
+  // Custom workout type methods
+  async getCustomWorkoutTypes(userId: string): Promise<CustomWorkoutType[]> {
+    return await db.select().from(customWorkoutTypes).where(eq(customWorkoutTypes.userId, userId));
+  }
+
+  async createCustomWorkoutType(workout: InsertCustomWorkoutType): Promise<CustomWorkoutType> {
+    const [newWorkout] = await db.insert(customWorkoutTypes).values(workout).returning();
+    return newWorkout;
+  }
+
+  async deleteCustomWorkoutType(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(customWorkoutTypes)
+      .where(and(eq(customWorkoutTypes.id, id), eq(customWorkoutTypes.userId, userId)));
+    return true;
   }
 
   // Lookup table methods

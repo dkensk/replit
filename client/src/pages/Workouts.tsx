@@ -3,12 +3,39 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell, Activity, Move, Timer, Flame } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell, Activity, Move, Timer, Flame, Plus, Trash2 } from "lucide-react";
 import gymImage from "@assets/generated_images/athletic_gym_training_equipment.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+interface CustomWorkoutType {
+  id: string;
+  userId: string;
+  name: string;
+  code: string;
+  categories: string[];
+  xpReward: number;
+}
+
+const EXERCISE_CATEGORIES = [
+  { id: "legs_compound", label: "Legs (Compound)" },
+  { id: "legs_hinge", label: "Legs (Hinge)" },
+  { id: "legs_unilateral", label: "Legs (Unilateral)" },
+  { id: "legs_explosive", label: "Legs (Explosive)" },
+  { id: "calves", label: "Calves" },
+  { id: "upper_push", label: "Upper Push" },
+  { id: "upper_pull", label: "Upper Pull" },
+  { id: "shoulders", label: "Shoulders" },
+  { id: "isolation_bicep", label: "Biceps" },
+  { id: "isolation_tricep", label: "Triceps" },
+  { id: "core", label: "Core" },
+];
 
 const WORKOUT_TYPES = [
   { id: "legs_strength", label: "Legs (Strength)" },
@@ -19,6 +46,7 @@ const WORKOUT_TYPES = [
   { id: "upper_body", label: "Upper Body Power" },
   { id: "chest_triceps", label: "Chest & Triceps" },
   { id: "back_biceps", label: "Back & Biceps" },
+  { id: "shoulders_traps", label: "Shoulders & Traps" },
   { id: "full_body", label: "Full Body Athletic" },
   { id: "cardio", label: "Cardio" },
   { id: "skills_cardio", label: "Skills & Cardio" },
@@ -254,6 +282,16 @@ const GOAL_WORKOUTS: GoalWorkouts = {
       { id: "tricep_pushdown", sets: "3", reps: "12-15", rest: "60s", category: "isolation_tricep" },
       { id: "overhead_extension", sets: "3", reps: "12-15", rest: "60s", category: "isolation_tricep" }
     ],
+    "shoulders_traps": [
+      { id: "overhead_press", sets: "5", reps: "5", rest: "3-4 min", category: "upper_push" },
+      { id: "db_shoulder_press", sets: "4", reps: "8-10", rest: "2-3 min", category: "upper_push" },
+      { id: "lateral_raise", sets: "4", reps: "12-15", rest: "60s", category: "shoulders" },
+      { id: "face_pulls", sets: "4", reps: "15", rest: "60s", category: "upper_pull" },
+      { id: "shrugs", sets: "4", reps: "10-12", rest: "90s", category: "shoulders" },
+      { id: "upright_row", sets: "3", reps: "10-12", rest: "90s", category: "shoulders" },
+      { id: "front_raise", sets: "3", reps: "12-15", rest: "60s", category: "shoulders" },
+      { id: "rear_delt_fly", sets: "3", reps: "15", rest: "60s", category: "upper_pull" }
+    ],
     "full_body": [
       { id: "conventional_deadlift", sets: "4", reps: "5", rest: "3-4 min", category: "legs_hinge" },
       { id: "bench_press", sets: "4", reps: "6-8", rest: "2-3 min", category: "upper_push" },
@@ -316,6 +354,15 @@ const GOAL_WORKOUTS: GoalWorkouts = {
       { id: "cable_fly", sets: "3", reps: "12-15", rest: "60s", category: "upper_push" },
       { id: "skull_crusher", sets: "3", reps: "12", rest: "60s", category: "isolation_tricep" },
       { id: "tricep_pushdown", sets: "3", reps: "15", rest: "60s", category: "isolation_tricep" }
+    ],
+    "shoulders_traps": [
+      { id: "overhead_press", sets: "4", reps: "8-10", rest: "2 min", category: "upper_push" },
+      { id: "db_shoulder_press", sets: "3", reps: "10-12", rest: "90s", category: "upper_push" },
+      { id: "lateral_raise", sets: "3", reps: "12-15", rest: "60s", category: "shoulders" },
+      { id: "face_pulls", sets: "3", reps: "15", rest: "60s", category: "upper_pull" },
+      { id: "shrugs", sets: "3", reps: "12-15", rest: "60s", category: "shoulders" },
+      { id: "upright_row", sets: "3", reps: "12", rest: "60s", category: "shoulders" },
+      { id: "rear_delt_fly", sets: "3", reps: "15", rest: "45s", category: "upper_pull" }
     ],
     "full_body": [
       { id: "trap_bar", sets: "3", reps: "8", rest: "2 min", category: "legs_hinge" },
@@ -380,6 +427,15 @@ const GOAL_WORKOUTS: GoalWorkouts = {
       { id: "tricep_dips", sets: "3", reps: "15", rest: "30s", category: "isolation_tricep" },
       { id: "rope_pushdown", sets: "3", reps: "20", rest: "30s", category: "isolation_tricep" },
       { id: "mountain_climber", sets: "3", reps: "30s", rest: "30s", category: "core" }
+    ],
+    "shoulders_traps": [
+      { id: "db_shoulder_press", sets: "4", reps: "15", rest: "30s", category: "upper_push" },
+      { id: "lateral_raise", sets: "4", reps: "15", rest: "30s", category: "shoulders" },
+      { id: "face_pulls", sets: "4", reps: "20", rest: "20s", category: "upper_pull" },
+      { id: "shrugs", sets: "3", reps: "15", rest: "30s", category: "shoulders" },
+      { id: "upright_row", sets: "3", reps: "15", rest: "30s", category: "shoulders" },
+      { id: "rear_delt_fly", sets: "3", reps: "20", rest: "20s", category: "upper_pull" },
+      { id: "pike_pushup", sets: "3", reps: "12", rest: "30s", category: "upper_push" }
     ],
     "full_body": [
       { id: "kettlebell_swing", sets: "4", reps: "20", rest: "30s", category: "legs_hinge" },
@@ -500,10 +556,67 @@ const STRETCHES = {
 export default function Workouts() {
   const { profile, updateProfile } = useUser();
   const [activeTab, setActiveTab] = useState("schedule");
+  const queryClient = useQueryClient();
   
   // Local state for current workout session customization
   // Maps index -> exerciseId
   const [customWorkout, setCustomWorkout] = useState<Record<number, string>>({});
+  
+  // Custom workout builder state
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newWorkoutName, setNewWorkoutName] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  
+  // Fetch custom workout types
+  const { data: customWorkoutTypes = [] } = useQuery<CustomWorkoutType[]>({
+    queryKey: ["/api/custom-workouts"],
+    queryFn: async () => {
+      const res = await fetch("/api/custom-workouts", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+  
+  // Create custom workout mutation
+  const createCustomWorkout = useMutation({
+    mutationFn: async (data: { name: string; categories: string[] }) => {
+      const res = await fetch("/api/custom-workouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error("Failed to create custom workout");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-workouts"] });
+      setShowCreateDialog(false);
+      setNewWorkoutName("");
+      setSelectedCategories([]);
+    }
+  });
+  
+  // Delete custom workout mutation
+  const deleteCustomWorkout = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/custom-workouts/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Failed to delete custom workout");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-workouts"] });
+    }
+  });
+  
+  // Combine built-in and custom workout types
+  const allWorkoutTypes = [
+    ...WORKOUT_TYPES,
+    ...customWorkoutTypes.map(cw => ({ id: cw.code, label: cw.name, isCustom: true, customId: cw.id }))
+  ];
 
   const handleScheduleChange = (day: string, type: string) => {
     // Create a complete schedule with defaults for any missing days
@@ -595,23 +708,35 @@ export default function Workouts() {
           <TabsContent value="schedule" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-white">Your 7-Day Split</h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium"
-                data-testid="button-reset-schedule"
-                onClick={() => {
-                  const recommended = getRecommendedSchedule(
-                    profile.position || "defense",
-                    profile.level || "aa",
-                    profile.goal || "maintain"
-                  );
-                  updateProfile({ schedule: recommended });
-                }}
-              >
-                <RefreshCw className="w-3 h-3 mr-1.5" />
-                Reset to Recommended
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium"
+                  data-testid="button-create-custom-workout"
+                  onClick={() => setShowCreateDialog(true)}
+                >
+                  <Plus className="w-3 h-3 mr-1.5" />
+                  Custom Workout
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 font-medium"
+                  data-testid="button-reset-schedule"
+                  onClick={() => {
+                    const recommended = getRecommendedSchedule(
+                      profile.position || "defense",
+                      profile.level || "aa",
+                      profile.goal || "maintain"
+                    );
+                    updateProfile({ schedule: recommended });
+                  }}
+                >
+                  <RefreshCw className="w-3 h-3 mr-1.5" />
+                  Reset
+                </Button>
+              </div>
             </div>
              
             <div className="space-y-2">
@@ -650,8 +775,11 @@ export default function Workouts() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="max-h-60 overflow-y-auto">
-                          {WORKOUT_TYPES.map((type) => (
-                            <SelectItem key={type.id} value={type.id}>{type.label}</SelectItem>
+                          {allWorkoutTypes.map((type: any) => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.label}
+                              {type.isCustom && " *"}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -856,6 +984,102 @@ export default function Workouts() {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-md bg-card border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white">Create Custom Workout</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Combine exercise categories to build your own workout type.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="workout-name" className="text-sm text-white">Workout Name</Label>
+              <Input
+                id="workout-name"
+                placeholder="e.g. Triceps & Back"
+                value={newWorkoutName}
+                onChange={(e) => setNewWorkoutName(e.target.value)}
+                className="bg-secondary/50 border-white/10 text-white"
+                data-testid="input-custom-workout-name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm text-white">Exercise Categories</Label>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+                {EXERCISE_CATEGORIES.map((cat) => (
+                  <div key={cat.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={cat.id}
+                      checked={selectedCategories.includes(cat.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedCategories([...selectedCategories, cat.id]);
+                        } else {
+                          setSelectedCategories(selectedCategories.filter(c => c !== cat.id));
+                        }
+                      }}
+                      data-testid={`checkbox-category-${cat.id}`}
+                    />
+                    <label
+                      htmlFor={cat.id}
+                      className="text-sm text-muted-foreground cursor-pointer hover:text-white transition-colors"
+                    >
+                      {cat.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {customWorkoutTypes.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <Label className="text-sm text-white">Your Custom Workouts</Label>
+                <div className="space-y-1">
+                  {customWorkoutTypes.map((cw) => (
+                    <div key={cw.id} className="flex items-center justify-between p-2 bg-secondary/30 rounded-lg">
+                      <span className="text-sm text-white">{cw.name}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-red-400"
+                        onClick={() => deleteCustomWorkout.mutate(cw.id)}
+                        data-testid={`button-delete-custom-${cw.id}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCreateDialog(false);
+                setNewWorkoutName("");
+                setSelectedCategories([]);
+              }}
+              className="border-white/10"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createCustomWorkout.mutate({ name: newWorkoutName, categories: selectedCategories })}
+              disabled={!newWorkoutName.trim() || selectedCategories.length === 0 || createCustomWorkout.isPending}
+              data-testid="button-save-custom-workout"
+            >
+              {createCustomWorkout.isPending ? "Saving..." : "Create Workout"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

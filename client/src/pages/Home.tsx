@@ -5,12 +5,14 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Zap, Flame, Settings2, Trophy, Crown, ArrowUpCircle, Calendar as CalendarIcon, CheckCircle2, Undo2 } from "lucide-react";
+import { Zap, Flame, Settings2, Trophy, Crown, ArrowUpCircle, Calendar as CalendarIcon, CheckCircle2, Undo2, Target, Plus, Minus } from "lucide-react";
 import heroImage from "@assets/generated_images/cinematic_hockey_arena_ice_surface.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, parseISO, startOfToday } from "date-fns";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchPuckShots, updatePuckShots } from "@/lib/api";
 
 const WORKOUT_LABELS: Record<string, string> = {
   legs_strength: "Legs - Strength",
@@ -30,6 +32,7 @@ export default function Home() {
   const { profile, updateProfile, macros, consumedMacros, addXp, promoteTier, logWorkout, undoWorkout } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const queryClient = useQueryClient();
   
   const [formData, setFormData] = useState({
     weight: profile.weight,
@@ -98,6 +101,32 @@ export default function Home() {
       age: profile.age
     });
   }, [profile]);
+
+  // Puck shot counter
+  const todayStr = formatLocalDate(new Date());
+  
+  const { data: puckShotsData } = useQuery({
+    queryKey: ["/api/puck-shots", todayStr],
+    queryFn: () => fetchPuckShots(todayStr),
+  });
+  
+  const puckShotsMutation = useMutation({
+    mutationFn: (count: number) => updatePuckShots(todayStr, count),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/puck-shots", todayStr] });
+    },
+  });
+  
+  const puckCount = puckShotsData?.count || 0;
+  
+  const handlePuckChange = (delta: number) => {
+    const newCount = Math.max(0, puckCount + delta);
+    puckShotsMutation.mutate(newCount);
+  };
+  
+  const handlePuckSet = (value: number) => {
+    puckShotsMutation.mutate(Math.max(0, value));
+  };
 
   const handleSave = () => {
     updateProfile(formData);
@@ -291,6 +320,65 @@ export default function Home() {
               </CardContent>
             </Card>
           </div>
+        </section>
+
+        {/* Puck Shot Counter */}
+        <section>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-heading font-semibold text-white tracking-wide">Puck Shot Counter</h2>
+            <span className="text-xs text-muted-foreground">Today's shots</span>
+          </div>
+          <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/30 overflow-hidden">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Target className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <Input
+                      type="number"
+                      value={puckCount}
+                      onChange={(e) => handlePuckSet(parseInt(e.target.value) || 0)}
+                      className="text-3xl font-bold font-heading text-white bg-transparent border-none w-24 h-auto p-0 focus-visible:ring-0"
+                      data-testid="input-puck-count"
+                    />
+                    <span className="text-xs text-muted-foreground">pucks shot today</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-full border-white/20 hover:bg-red-500/20 hover:border-red-500/50"
+                    onClick={() => handlePuckChange(-10)}
+                    disabled={puckCount === 0}
+                    data-testid="button-puck-minus-10"
+                  >
+                    <span className="text-sm font-bold">-10</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-full border-white/20 hover:bg-primary/20 hover:border-primary/50"
+                    onClick={() => handlePuckChange(10)}
+                    data-testid="button-puck-plus-10"
+                  >
+                    <span className="text-sm font-bold">+10</span>
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90"
+                    onClick={() => handlePuckChange(50)}
+                    data-testid="button-puck-plus-50"
+                  >
+                    <span className="text-sm font-bold">+50</span>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
         {/* Activity Calendar Section */}

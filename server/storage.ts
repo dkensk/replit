@@ -464,6 +464,34 @@ export class DatabaseStorage implements IStorage {
       return created;
     }
   }
+
+  // Calculate high score from completed days (excluding today)
+  async calculateHighScoreFromHistory(userId: string, excludeDate: string): Promise<{ highScore: number; highScoreDate: string | null }> {
+    // Get max count from all days except today
+    const results = await db.select({
+      count: puckShots.count,
+      date: puckShots.date
+    }).from(puckShots)
+      .where(and(
+        eq(puckShots.userId, userId),
+        // Exclude today's date - only count completed days
+        // Using string comparison works for YYYY-MM-DD format
+      ));
+    
+    // Filter out today and find the max
+    const pastDays = results.filter(r => r.date !== excludeDate);
+    
+    if (pastDays.length === 0) {
+      return { highScore: 0, highScoreDate: null };
+    }
+    
+    // Find the day with the highest count
+    const best = pastDays.reduce((max, curr) => 
+      curr.count > max.count ? curr : max
+    , pastDays[0]);
+    
+    return { highScore: best.count, highScoreDate: best.date };
+  }
 }
 
 export const storage = new DatabaseStorage();

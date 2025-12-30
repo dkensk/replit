@@ -314,9 +314,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (scheduleData.length > 0 && workoutTypes.length > 0) {
       scheduleData.forEach((item: any) => {
         const dayName = dayNames[item.dayOfWeek];
-        if (item.isRestDay) {
-          schedule[dayName] = "rest";
-        } else if (item.customWorkoutTypeId) {
+        if (item.customWorkoutTypeId) {
           // Look up custom workout type by ID
           const cw = customWorkoutTypes.find((c: any) => c.id === item.customWorkoutTypeId);
           schedule[dayName] = cw?.code || "rest";

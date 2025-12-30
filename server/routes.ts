@@ -933,6 +933,7 @@ RESPONSE GUIDELINES:
 // - Upper body integrated (push/pull together) for hockey-specific power
 // - Hockey-specific cardio and skills work
 // - Proper recovery for performance
+// - Weight considerations for injury prevention and optimal gains
 function generateRecommendedSchedule(profile: any, workoutTypes: any[]) {
   const getWorkoutTypeId = (code: string) => {
     const wt = workoutTypes.find(w => w.code === code);
@@ -942,12 +943,32 @@ function generateRecommendedSchedule(profile: any, workoutTypes: any[]) {
   const isGoalie = profile?.positionId === 4;
   const age = profile?.age || 16;
   const goalId = profile?.goalId || 3; // Default to maintain
+  const weight = profile?.weight || 150;
+  const positionId = profile?.positionId || 1;
+  
+  // Weight categories by position (adjusted for youth if under 16)
+  // These determine if player needs more strength work (underweight) or more conditioning (heavy)
+  const ageAdjust = age < 16 ? -15 : 0;
+  let optimalWeightRange: { min: number; max: number };
+  
+  if (isGoalie) {
+    optimalWeightRange = { min: 160 + ageAdjust, max: 210 + ageAdjust };
+  } else if (positionId === 1) { // Defense - typically heavier
+    optimalWeightRange = { min: 155 + ageAdjust, max: 200 + ageAdjust };
+  } else { // Forwards (wing, center)
+    optimalWeightRange = { min: 145 + ageAdjust, max: 185 + ageAdjust };
+  }
+  
+  const isUnderweight = weight < optimalWeightRange.min;
+  const isHeavy = weight > optimalWeightRange.max;
   
   // Optimal hockey training split (based on research):
   // - Legs need BOTH strength AND explosive training for skating power
   // - Upper body combined for hockey-specific movements
   // - Skills/cardio for conditioning
   // - Active recovery for mobility and injury prevention
+  // - Underweight players: extra strength focus
+  // - Heavy players: more conditioning, less plyometric stress
   
   let schedule;
   
@@ -1000,7 +1021,10 @@ function generateRecommendedSchedule(profile: any, workoutTypes: any[]) {
   if (age < 14) {
     // Young players (under 14): More recovery, less intensity
     // Focus on coordination and fundamentals, not heavy lifting
-    schedule[3] = { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false };
+    // But keep strength work if they're underweight and trying to build muscle
+    if (!isUnderweight) {
+      schedule[3] = { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false };
+    }
     schedule[4] = { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("skills_cardio"), customWorkoutTypeId: null, isRestDay: false };
   } else if (age >= 14 && age < 16) {
     // Teen players (14-15): Building foundation with some explosive work
@@ -1008,6 +1032,51 @@ function generateRecommendedSchedule(profile: any, workoutTypes: any[]) {
     schedule[6] = { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("recovery"), customWorkoutTypeId: null, isRestDay: false };
   }
   // 16+ gets the full recommended split
+  
+  // Weight-based adjustments (applied after age/goal adjustments)
+  if (isUnderweight) {
+    // Underweight players need more strength focus to build mass
+    // Replace one cardio/skills day with strength if present
+    const skillsIndex = schedule.findIndex(s => 
+      s.workoutTypeId === getWorkoutTypeId("skills_cardio") || 
+      s.workoutTypeId === getWorkoutTypeId("cardio")
+    );
+    if (skillsIndex !== -1 && skillsIndex !== 0) {
+      // Replace with legs strength for underweight - they need mass
+      schedule[skillsIndex] = { 
+        dayOfWeek: skillsIndex, 
+        workoutTypeId: getWorkoutTypeId("legs_strength"), 
+        customWorkoutTypeId: null, 
+        isRestDay: false 
+      };
+    }
+  } else if (isHeavy) {
+    // Heavy players need more conditioning, less plyometric stress on joints
+    // Replace explosive legs with regular cardio or full body
+    const explosiveIndex = schedule.findIndex(s => 
+      s.workoutTypeId === getWorkoutTypeId("legs_explosive")
+    );
+    if (explosiveIndex !== -1) {
+      schedule[explosiveIndex] = { 
+        dayOfWeek: explosiveIndex, 
+        workoutTypeId: getWorkoutTypeId("cardio"), 
+        customWorkoutTypeId: null, 
+        isRestDay: false 
+      };
+    }
+    // Add extra recovery
+    const upperIndex = schedule.findIndex(s => 
+      s.workoutTypeId === getWorkoutTypeId("upper_body") && s.dayOfWeek >= 4
+    );
+    if (upperIndex !== -1) {
+      schedule[upperIndex] = { 
+        dayOfWeek: upperIndex, 
+        workoutTypeId: getWorkoutTypeId("active_recovery"), 
+        customWorkoutTypeId: null, 
+        isRestDay: false 
+      };
+    }
+  }
   
   return schedule;
 }

@@ -834,5 +834,132 @@ RESPONSE GUIDELINES:
     }
   });
 
+  // Puck shots routes
+  app.get("/api/puck-shots/:date", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const { date } = req.params;
+      
+      const shots = await storage.getPuckShots(userId, date);
+      res.json({ count: shots?.count || 0 });
+    } catch (error) {
+      console.error("Error fetching puck shots:", error);
+      res.status(500).json({ error: "Failed to fetch puck shots" });
+    }
+  });
+
+  app.put("/api/puck-shots", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const { date, count } = req.body;
+      
+      const shots = await storage.upsertPuckShots(userId, date, count);
+      res.json({ count: shots.count });
+    } catch (error) {
+      console.error("Error updating puck shots:", error);
+      res.status(500).json({ error: "Failed to update puck shots" });
+    }
+  });
+
+  // Recommended schedule routes
+  app.get("/api/schedule/recommended", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      
+      const profile = await storage.getProfileByUserId(userId);
+      const workoutTypesData = await storage.getWorkoutTypes();
+      
+      // Generate recommended schedule based on profile
+      const recommended = generateRecommendedSchedule(profile, workoutTypesData);
+      
+      res.json(recommended);
+    } catch (error) {
+      console.error("Error fetching recommended schedule:", error);
+      res.status(500).json({ error: "Failed to fetch recommended schedule" });
+    }
+  });
+
+  app.post("/api/schedule/apply-recommended", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      
+      const profile = await storage.getProfileByUserId(userId);
+      const workoutTypesData = await storage.getWorkoutTypes();
+      
+      // Generate recommended schedule based on profile
+      const recommended = generateRecommendedSchedule(profile, workoutTypesData);
+      
+      // Apply the schedule
+      const updated = await storage.setUserSchedule(userId, recommended);
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error applying recommended schedule:", error);
+      res.status(500).json({ error: "Failed to apply recommended schedule" });
+    }
+  });
+
   return httpServer;
+}
+
+// Helper to generate recommended schedule based on user profile
+function generateRecommendedSchedule(profile: any, workoutTypes: any[]) {
+  const getWorkoutTypeId = (code: string) => {
+    const wt = workoutTypes.find(w => w.code === code);
+    return wt?.id || null;
+  };
+  
+  // Default balanced schedule for most players
+  let schedule = [
+    { dayOfWeek: 0, workoutTypeId: getWorkoutTypeId("rest"), customWorkoutTypeId: null, isRestDay: true },
+    { dayOfWeek: 1, workoutTypeId: getWorkoutTypeId("legs_strength"), customWorkoutTypeId: null, isRestDay: false },
+    { dayOfWeek: 2, workoutTypeId: getWorkoutTypeId("upper_push"), customWorkoutTypeId: null, isRestDay: false },
+    { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("cardio"), customWorkoutTypeId: null, isRestDay: false },
+    { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("upper_pull"), customWorkoutTypeId: null, isRestDay: false },
+    { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("legs_explosive"), customWorkoutTypeId: null, isRestDay: false },
+    { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false },
+  ];
+  
+  // Adjust based on goal
+  if (profile?.goalId === 1) { // Muscle building
+    schedule = [
+      { dayOfWeek: 0, workoutTypeId: getWorkoutTypeId("rest"), customWorkoutTypeId: null, isRestDay: true },
+      { dayOfWeek: 1, workoutTypeId: getWorkoutTypeId("legs_strength"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 2, workoutTypeId: getWorkoutTypeId("chest_triceps"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("back_biceps"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("legs_explosive"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("upper_body"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false },
+    ];
+  } else if (profile?.goalId === 2) { // Fat loss
+    schedule = [
+      { dayOfWeek: 0, workoutTypeId: getWorkoutTypeId("rest"), customWorkoutTypeId: null, isRestDay: true },
+      { dayOfWeek: 1, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 2, workoutTypeId: getWorkoutTypeId("cardio"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("skills_cardio"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false },
+    ];
+  }
+  
+  // Adjust for younger players (more recovery days)
+  if (profile?.age && profile.age < 14) {
+    // Replace one workout day with recovery for young players
+    schedule[3] = { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("recovery"), customWorkoutTypeId: null, isRestDay: false };
+  }
+  
+  return schedule;
 }

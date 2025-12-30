@@ -928,51 +928,86 @@ RESPONSE GUIDELINES:
 }
 
 // Helper to generate recommended schedule based on user profile
+// Optimized for hockey players based on sports science research:
+// - 2-4 leg sessions per week with both strength AND explosive work
+// - Upper body integrated (push/pull together) for hockey-specific power
+// - Hockey-specific cardio and skills work
+// - Proper recovery for performance
 function generateRecommendedSchedule(profile: any, workoutTypes: any[]) {
   const getWorkoutTypeId = (code: string) => {
     const wt = workoutTypes.find(w => w.code === code);
     return wt?.id || null;
   };
   
-  // Default balanced schedule for most players
-  let schedule = [
-    { dayOfWeek: 0, workoutTypeId: getWorkoutTypeId("rest"), customWorkoutTypeId: null, isRestDay: true },
-    { dayOfWeek: 1, workoutTypeId: getWorkoutTypeId("legs_strength"), customWorkoutTypeId: null, isRestDay: false },
-    { dayOfWeek: 2, workoutTypeId: getWorkoutTypeId("upper_push"), customWorkoutTypeId: null, isRestDay: false },
-    { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("cardio"), customWorkoutTypeId: null, isRestDay: false },
-    { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("upper_pull"), customWorkoutTypeId: null, isRestDay: false },
-    { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("legs_explosive"), customWorkoutTypeId: null, isRestDay: false },
-    { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false },
-  ];
+  const isGoalie = profile?.positionId === 4;
+  const age = profile?.age || 16;
+  const goalId = profile?.goalId || 3; // Default to maintain
   
-  // Adjust based on goal
-  if (profile?.goalId === 1) { // Muscle building
+  // Optimal hockey training split (based on research):
+  // - Legs need BOTH strength AND explosive training for skating power
+  // - Upper body combined for hockey-specific movements
+  // - Skills/cardio for conditioning
+  // - Active recovery for mobility and injury prevention
+  
+  let schedule;
+  
+  if (goalId === 1) {
+    // MUSCLE BUILDING: More volume, still hockey-focused
+    // 2 leg days, 3 upper days, 1 conditioning, 1 recovery
     schedule = [
       { dayOfWeek: 0, workoutTypeId: getWorkoutTypeId("rest"), customWorkoutTypeId: null, isRestDay: true },
       { dayOfWeek: 1, workoutTypeId: getWorkoutTypeId("legs_strength"), customWorkoutTypeId: null, isRestDay: false },
       { dayOfWeek: 2, workoutTypeId: getWorkoutTypeId("chest_triceps"), customWorkoutTypeId: null, isRestDay: false },
-      { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("back_biceps"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("legs_explosive"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("back_biceps"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("upper_body"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false },
+    ];
+  } else if (goalId === 2) {
+    // FAT LOSS: High frequency, metabolic focus
+    // Full body sessions + cardio for calorie burn
+    schedule = [
+      { dayOfWeek: 0, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 1, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 2, workoutTypeId: getWorkoutTypeId("skills_cardio"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("legs_explosive"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("cardio"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("rest"), customWorkoutTypeId: null, isRestDay: true },
+    ];
+  } else {
+    // MAINTAIN / DEFAULT: Optimal hockey performance split
+    // Balanced approach with explosive legs, integrated upper body, skills
+    schedule = [
+      { dayOfWeek: 0, workoutTypeId: getWorkoutTypeId("rest"), customWorkoutTypeId: null, isRestDay: true },
+      { dayOfWeek: 1, workoutTypeId: getWorkoutTypeId("legs_strength"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 2, workoutTypeId: getWorkoutTypeId("upper_body"), customWorkoutTypeId: null, isRestDay: false },
+      { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("skills_cardio"), customWorkoutTypeId: null, isRestDay: false },
       { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("legs_explosive"), customWorkoutTypeId: null, isRestDay: false },
       { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("upper_body"), customWorkoutTypeId: null, isRestDay: false },
       { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false },
     ];
-  } else if (profile?.goalId === 2) { // Fat loss
-    schedule = [
-      { dayOfWeek: 0, workoutTypeId: getWorkoutTypeId("rest"), customWorkoutTypeId: null, isRestDay: true },
-      { dayOfWeek: 1, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false },
-      { dayOfWeek: 2, workoutTypeId: getWorkoutTypeId("cardio"), customWorkoutTypeId: null, isRestDay: false },
-      { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false },
-      { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("skills_cardio"), customWorkoutTypeId: null, isRestDay: false },
-      { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false },
-      { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false },
-    ];
   }
   
-  // Adjust for younger players (more recovery days)
-  if (profile?.age && profile.age < 14) {
-    // Replace one workout day with recovery for young players
-    schedule[3] = { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("recovery"), customWorkoutTypeId: null, isRestDay: false };
+  // Goalie-specific adjustments: More core, mobility, reaction work
+  if (isGoalie) {
+    // Goalies need more recovery, flexibility, and reaction training
+    schedule[3] = { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false };
+    schedule[5] = { dayOfWeek: 5, workoutTypeId: getWorkoutTypeId("full_body"), customWorkoutTypeId: null, isRestDay: false };
   }
+  
+  // Age-based adjustments for proper development
+  if (age < 14) {
+    // Young players (under 14): More recovery, less intensity
+    // Focus on coordination and fundamentals, not heavy lifting
+    schedule[3] = { dayOfWeek: 3, workoutTypeId: getWorkoutTypeId("active_recovery"), customWorkoutTypeId: null, isRestDay: false };
+    schedule[4] = { dayOfWeek: 4, workoutTypeId: getWorkoutTypeId("skills_cardio"), customWorkoutTypeId: null, isRestDay: false };
+  } else if (age >= 14 && age < 16) {
+    // Teen players (14-15): Building foundation with some explosive work
+    // Keep one extra recovery day
+    schedule[6] = { dayOfWeek: 6, workoutTypeId: getWorkoutTypeId("recovery"), customWorkoutTypeId: null, isRestDay: false };
+  }
+  // 16+ gets the full recommended split
   
   return schedule;
 }

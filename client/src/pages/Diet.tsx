@@ -1031,11 +1031,13 @@ export default function Diet() {
                                 {option.name}
                               </p>
                               <p className="text-xs text-muted-foreground mt-0.5">
-                                <span className="text-primary font-semibold">{option.protein}g Protein</span>
+                                <span className="text-yellow-400 font-semibold">{option.calories} cal</span>
                                 <span className="mx-1.5">•</span>
-                                <span>{option.carbs}g Carbs</span>
+                                <span className="text-primary font-semibold">{option.protein}g P</span>
                                 <span className="mx-1.5">•</span>
-                                <span>{option.fats}g Fat</span>
+                                <span>{option.carbs}g C</span>
+                                <span className="mx-1.5">•</span>
+                                <span>{option.fats}g F</span>
                               </p>
                             </div>
                             {selectedMeals[section.id] === option.id && (

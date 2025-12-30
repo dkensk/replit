@@ -199,6 +199,16 @@ export const puckShotHighScores = pgTable("puck_shot_high_scores", {
   highScoreDate: text("high_score_date"), // YYYY-MM-DD when high score was set
 });
 
+// AI-personalized workouts cached per user per workout type
+export const personalizedWorkouts = pgTable("personalized_workouts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  workoutTypeCode: text("workout_type_code").notNull(), // legs_strength, upper_body, etc.
+  exercises: jsonb("exercises").notNull(), // AI-generated exercises array
+  profileSnapshot: jsonb("profile_snapshot"), // Profile data used to generate (for cache invalidation)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,

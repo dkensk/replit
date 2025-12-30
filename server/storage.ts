@@ -45,7 +45,8 @@ import {
   userProgress,
   xpEvents,
   puckShots,
-  puckShotHighScores
+  puckShotHighScores,
+  personalizedWorkouts
 } from "@shared/schema";
 import { db, pool } from "../db/index";
 import { eq, and, desc, asc, gte, lte } from "drizzle-orm";
@@ -463,6 +464,38 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  // Personalized workouts methods
+  async getPersonalizedWorkout(userId: string, workoutTypeCode: string): Promise<any | undefined> {
+    const [result] = await db.select().from(personalizedWorkouts)
+      .where(and(
+        eq(personalizedWorkouts.userId, userId),
+        eq(personalizedWorkouts.workoutTypeCode, workoutTypeCode)
+      ))
+      .orderBy(desc(personalizedWorkouts.createdAt))
+      .limit(1);
+    return result;
+  }
+
+  async savePersonalizedWorkout(userId: string, workoutTypeCode: string, exercises: any, profileSnapshot: any): Promise<any> {
+    // Delete old cached workout for this type
+    await db.delete(personalizedWorkouts)
+      .where(and(
+        eq(personalizedWorkouts.userId, userId),
+        eq(personalizedWorkouts.workoutTypeCode, workoutTypeCode)
+      ));
+    
+    // Insert new one
+    const [created] = await db.insert(personalizedWorkouts)
+      .values({ userId, workoutTypeCode, exercises, profileSnapshot })
+      .returning();
+    return created;
+  }
+
+  async getAllPersonalizedWorkouts(userId: string): Promise<any[]> {
+    return db.select().from(personalizedWorkouts)
+      .where(eq(personalizedWorkouts.userId, userId));
   }
 
   // Calculate high score from completed days (excluding today)

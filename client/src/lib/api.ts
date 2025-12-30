@@ -125,7 +125,8 @@ export async function fetchSchedule(): Promise<any[]> {
 // Update user schedule - converts object format to array format
 export async function updateSchedule(
   scheduleObj: Record<string, string>,
-  workoutTypes: any[]
+  workoutTypes: any[],
+  customWorkoutTypes: any[] = []
 ): Promise<any[]> {
   const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   
@@ -133,11 +134,25 @@ export async function updateSchedule(
     const workoutCode = scheduleObj[dayName] || "rest";
     // Rest and recovery types are considered rest days for scheduling purposes
     const isRestDay = workoutCode === "rest" || workoutCode === "recovery" || workoutCode === "active_recovery";
+    
+    // Check if it's a custom workout type first
+    const customWorkoutType = customWorkoutTypes.find((cw: any) => cw.code === workoutCode);
+    if (customWorkoutType) {
+      return {
+        dayOfWeek: index,
+        workoutTypeId: null,
+        customWorkoutTypeId: customWorkoutType.id,
+        isRestDay
+      };
+    }
+    
+    // Otherwise look up in standard workout types
     const workoutType = workoutTypes.find((wt: any) => wt.code === workoutCode);
     
     return {
       dayOfWeek: index,
       workoutTypeId: workoutType?.id || null,
+      customWorkoutTypeId: null,
       isRestDay
     };
   });

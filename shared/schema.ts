@@ -140,6 +140,7 @@ export const customWorkoutTypes = pgTable("custom_workout_types", {
   name: text("name").notNull(),
   code: text("code").notNull(),
   categories: text("categories").array().notNull(), // Array of exercise category keys
+  generatedExercises: jsonb("generated_exercises"), // AI-generated exercises based on categories and user stats
   xpReward: integer("xp_reward").notNull().default(15),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -153,6 +154,7 @@ export const userWorkoutSchedule = pgTable("user_workout_schedule", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   dayOfWeek: integer("day_of_week").notNull(), // 0=Sunday, 1=Monday, etc.
   workoutTypeId: integer("workout_type_id").references(() => workoutTypes.id),
+  customWorkoutTypeId: varchar("custom_workout_type_id").references(() => customWorkoutTypes.id, { onDelete: "set null" }),
   isRestDay: boolean("is_rest_day").notNull().default(false),
 });
 

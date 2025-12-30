@@ -614,21 +614,97 @@ Be reasonable with portion sizes. If you cannot identify the food, provide your 
         return res.status(401).json({ error: "Not authenticated" });
       }
       const userId = req.user?.id;
-      const { name, categories } = req.body;
+      const { name, categories, day, profile } = req.body;
       
       if (!name || !categories || !Array.isArray(categories) || categories.length === 0) {
         return res.status(400).json({ error: "Name and categories are required" });
       }
       
-      const code = name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const code = 'custom_' + name.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Math.random().toString(36).substring(2, 8);
       
+      // Generate personalized exercises using AI
+      let generatedExercises = null;
+      try {
+        
+        const goalMapping: Record<string, string> = {
+          muscle: "building muscle mass with higher volume",
+          fatloss: "fat loss with shorter rest periods and circuit-style training",
+          maintain: "maintaining current fitness with balanced volume"
+        };
+        
+        const prompt = `Create a personalized workout for a hockey player with these specifications:
+- Workout name: ${name}
+- Exercise categories to include: ${categories.join(", ")}
+- Player position: ${profile?.position || "unknown"}
+- Competition level: ${profile?.level || "unknown"}
+- Age: ${profile?.age || "unknown"} years old
+- Weight: ${profile?.weight || "unknown"} lbs
+- Training goal: ${goalMapping[profile?.goal] || "general fitness"}
+
+Generate 5-7 exercises that combine these categories appropriately for a hockey player.
+For each exercise, provide: name, sets, reps, rest time, and which category it belongs to.
+
+Return ONLY a JSON array (no markdown, no explanation) in this exact format:
+[{"name": "Exercise Name", "sets": "3", "reps": "10", "rest": "60s", "category": "category_name"}]`;
+
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 600,
+          temperature: 0.7
+        });
+        
+        const responseText = completion.choices[0]?.message?.content?.trim() || "[]";
+        try {
+          generatedExercises = JSON.parse(responseText);
+        } catch {
+          console.error("Failed to parse AI response:", responseText);
+        }
+      } catch (aiError) {
+        console.error("AI generation failed:", aiError);
+      }
+      
+      // Create the custom workout with generated exercises
       const newWorkout = await storage.createCustomWorkoutType({
         userId,
         name,
         code,
         categories,
+        generatedExercises,
         xpReward: 15
       });
+      
+      // If a day is specified, update the schedule to use this custom workout
+      if (day) {
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        const dayIndex = dayNames.indexOf(day.toLowerCase());
+        
+        if (dayIndex !== -1) {
+          // Get existing schedule
+          const existingSchedule = await storage.getUserSchedule(userId);
+          
+          // Build new schedule array
+          const newSchedule = dayNames.map((_, index) => {
+            const existing = existingSchedule.find(s => s.dayOfWeek === index);
+            if (index === dayIndex) {
+              return {
+                dayOfWeek: index,
+                workoutTypeId: null,
+                customWorkoutTypeId: newWorkout.id,
+                isRestDay: false
+              };
+            }
+            return {
+              dayOfWeek: index,
+              workoutTypeId: existing?.workoutTypeId || null,
+              customWorkoutTypeId: existing?.customWorkoutTypeId || null,
+              isRestDay: existing?.isRestDay ?? (index === 0 || index === 6)
+            };
+          });
+          
+          await storage.setUserSchedule(userId, newSchedule);
+        }
+      }
       
       res.json(newWorkout);
     } catch (error) {

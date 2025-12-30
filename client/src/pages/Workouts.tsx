@@ -566,6 +566,8 @@ export default function Workouts() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newWorkoutName, setNewWorkoutName] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedDay, setSelectedDay] = useState<string>("monday");
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Fetch custom workout types
   const { data: customWorkoutTypes = [] } = useQuery<CustomWorkoutType[]>({
@@ -577,23 +579,41 @@ export default function Workouts() {
     }
   });
   
-  // Create custom workout mutation
+  // Create custom workout mutation with AI generation
   const createCustomWorkout = useMutation({
-    mutationFn: async (data: { name: string; categories: string[] }) => {
-      const res = await fetch("/api/custom-workouts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error("Failed to create custom workout");
-      return res.json();
+    mutationFn: async (data: { name: string; categories: string[]; day: string }) => {
+      setIsGenerating(true);
+      try {
+        const res = await fetch("/api/custom-workouts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            name: data.name,
+            categories: data.categories,
+            day: data.day,
+            profile: {
+              position: profile.position,
+              level: profile.level,
+              age: profile.age,
+              weight: profile.weight,
+              goal: profile.goal
+            }
+          })
+        });
+        if (!res.ok) throw new Error("Failed to create custom workout");
+        return res.json();
+      } finally {
+        setIsGenerating(false);
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/custom-workouts"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule"] });
       setShowCreateDialog(false);
       setNewWorkoutName("");
       setSelectedCategories([]);
+      setSelectedDay("monday");
     }
   });
   
@@ -1008,6 +1028,20 @@ export default function Workouts() {
             </div>
             
             <div className="space-y-2">
+              <Label className="text-sm text-white">Assign to Day</Label>
+              <Select value={selectedDay} onValueChange={setSelectedDay}>
+                <SelectTrigger className="bg-secondary/50 border-white/10 text-white" data-testid="select-custom-workout-day">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DAYS.map((day) => (
+                    <SelectItem key={day} value={day} className="capitalize">{day}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
               <Label className="text-sm text-white">Exercise Categories</Label>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
                 {EXERCISE_CATEGORIES.map((cat) => (
@@ -1065,17 +1099,18 @@ export default function Workouts() {
                 setShowCreateDialog(false);
                 setNewWorkoutName("");
                 setSelectedCategories([]);
+                setSelectedDay("monday");
               }}
               className="border-white/10"
             >
               Cancel
             </Button>
             <Button
-              onClick={() => createCustomWorkout.mutate({ name: newWorkoutName, categories: selectedCategories })}
-              disabled={!newWorkoutName.trim() || selectedCategories.length === 0 || createCustomWorkout.isPending}
+              onClick={() => createCustomWorkout.mutate({ name: newWorkoutName, categories: selectedCategories, day: selectedDay })}
+              disabled={!newWorkoutName.trim() || selectedCategories.length === 0 || isGenerating}
               data-testid="button-save-custom-workout"
             >
-              {createCustomWorkout.isPending ? "Saving..." : "Create Workout"}
+              {isGenerating ? "Generating Workout..." : "Create & Assign"}
             </Button>
           </DialogFooter>
         </DialogContent>

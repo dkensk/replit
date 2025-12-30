@@ -108,6 +108,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     queryFn: api.fetchWorkoutTypes,
   });
 
+  // Fetch custom workout types
+  const { data: customWorkoutTypes = [] } = useQuery({
+    queryKey: ["/api/custom-workouts"],
+    queryFn: async () => {
+      const res = await fetch("/api/custom-workouts", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
   // Fetch lookup tables for mapping IDs
   const { data: goals = [] } = useQuery({
     queryKey: ["goals"],
@@ -146,7 +156,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Schedule update mutation
   const scheduleMutation = useMutation({
     mutationFn: (scheduleObj: Record<string, string>) => 
-      api.updateSchedule(scheduleObj, workoutTypes),
+      api.updateSchedule(scheduleObj, workoutTypes, customWorkoutTypes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedule"] });
     },
@@ -306,6 +316,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const dayName = dayNames[item.dayOfWeek];
         if (item.isRestDay) {
           schedule[dayName] = "rest";
+        } else if (item.customWorkoutTypeId) {
+          // Look up custom workout type by ID
+          const cw = customWorkoutTypes.find((c: any) => c.id === item.customWorkoutTypeId);
+          schedule[dayName] = cw?.code || "rest";
         } else if (item.workoutTypeId) {
           const wt = workoutTypes.find((w: any) => w.id === item.workoutTypeId);
           schedule[dayName] = wt?.code || "rest";

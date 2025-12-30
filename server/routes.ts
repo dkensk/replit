@@ -834,6 +834,128 @@ RESPONSE GUIDELINES:
     }
   });
 
+  // Personalized AI workout generation
+  app.get("/api/personalized-workout/:workoutType", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const { workoutType } = req.params;
+      const forceRegenerate = req.query.regenerate === "true";
+      
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      
+      // Check for cached workout (unless force regenerate)
+      if (!forceRegenerate) {
+        const cached = await storage.getPersonalizedWorkout(userId, workoutType);
+        if (cached) {
+          // Check if profile has changed
+          const snapshot = cached.profileSnapshot as any;
+          if (snapshot && 
+              snapshot.age === profile.age && 
+              snapshot.weight === profile.weight &&
+              snapshot.position === profile.position &&
+              snapshot.level === profile.level &&
+              snapshot.goal === profile.goal) {
+            return res.json({ exercises: cached.exercises, cached: true });
+          }
+        }
+      }
+      
+      // Get goals, positions for labels
+      const goalsData = await storage.getGoals();
+      const positionsData = await storage.getPositions();
+      const levelsData = await storage.getCompetitionLevels();
+      
+      const goal = goalsData.find(g => g.id === profile.goal);
+      const position = positionsData.find(p => p.id === profile.position);
+      const level = levelsData.find(l => l.id === profile.level);
+      
+      // Determine weight category for hockey
+      const isUnder16 = (profile.age || 16) < 16;
+      const positionCode = position?.code || "center";
+      
+      let optimalWeight = { min: 150, max: 190 };
+      if (positionCode === "defense") {
+        optimalWeight = isUnder16 ? { min: 140, max: 185 } : { min: 155, max: 200 };
+      } else if (positionCode === "goalie") {
+        optimalWeight = isUnder16 ? { min: 145, max: 195 } : { min: 160, max: 210 };
+      } else {
+        optimalWeight = isUnder16 ? { min: 130, max: 170 } : { min: 145, max: 185 };
+      }
+      
+      const weight = profile.weight || 150;
+      let weightCategory = "optimal";
+      if (weight < optimalWeight.min) weightCategory = "underweight";
+      else if (weight > optimalWeight.max) weightCategory = "heavy";
+      
+      // Generate personalized workout using AI
+      const prompt = `Generate a personalized ${workoutType.replace(/_/g, " ")} workout for a hockey player with these characteristics:
+
+PLAYER PROFILE:
+- Age: ${profile.age} years old
+- Weight: ${weight} lbs (${weightCategory} for position)
+- Position: ${position?.name || "Forward"}
+- Competition Level: ${level?.name || "Recreational"}
+- Training Goal: ${goal?.name || "General fitness"}
+
+WORKOUT TYPE: ${workoutType.replace(/_/g, " ")}
+
+Generate 5-8 exercises that are:
+1. Age-appropriate (${(profile.age || 16) < 14 ? "focus on form, lighter weights, no heavy compounds" : (profile.age || 16) < 16 ? "moderate intensity, building foundations" : "can include heavier compound lifts"})
+2. Position-specific (${positionCode === "defense" ? "emphasize hip strength, core stability, lateral power" : positionCode === "goalie" ? "emphasize flexibility, lateral movement, reaction training" : "emphasize explosive speed, quick changes of direction"})
+3. Goal-aligned (${goal?.code === "muscle" ? "higher volume, progressive overload" : goal?.code === "fat_loss" ? "higher intensity, shorter rest" : "balanced approach"})
+4. Hockey-relevant (translate to on-ice performance)
+
+Return ONLY a JSON array with this exact format (no other text):
+[
+  {"id": "unique_id", "name": "Exercise Name", "sets": "3", "reps": "10", "rest": "90s", "category": "category_name", "notes": "Brief coaching tip"}
+]
+
+Categories: legs_compound, legs_explosive, legs_hinge, legs_unilateral, upper_push, upper_pull, core, mobility, shoulders, calves, isolation_bicep, isolation_tricep`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+
+      let exercises = [];
+      try {
+        const content = completion.choices[0]?.message?.content || "[]";
+        // Extract JSON from response (in case there's extra text)
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          exercises = JSON.parse(jsonMatch[0]);
+        }
+      } catch (parseError) {
+        console.error("Failed to parse AI workout response:", parseError);
+        return res.status(500).json({ error: "Failed to generate workout" });
+      }
+
+      // Save to cache
+      const profileSnapshot = {
+        age: profile.age,
+        weight: profile.weight,
+        position: profile.position,
+        level: profile.level,
+        goal: profile.goal
+      };
+      
+      await storage.savePersonalizedWorkout(userId, workoutType, exercises, profileSnapshot);
+
+      res.json({ exercises, cached: false });
+    } catch (error) {
+      console.error("Error generating personalized workout:", error);
+      res.status(500).json({ error: "Failed to generate personalized workout" });
+    }
+  });
+
   // Puck shots routes
   app.get("/api/puck-shots/:date", async (req, res) => {
     try {

@@ -2,14 +2,22 @@ import type { Profile, UpdateProfile, WorkoutLog, MealLog } from "@shared/schema
 
 const API_BASE = "/api";
 
+// Helper to add credentials to all requests
+const fetchWithCredentials = (url: string, options: RequestInit = {}): Promise<Response> => {
+  return fetch(url, {
+    ...options,
+    credentials: "include",
+  });
+};
+
 export async function fetchProfile(): Promise<Profile> {
-  const res = await fetch(`${API_BASE}/profile`);
+  const res = await fetchWithCredentials(`${API_BASE}/profile`);
   if (!res.ok) throw new Error("Failed to fetch profile");
   return res.json();
 }
 
 export async function updateProfile(updates: UpdateProfile): Promise<Profile> {
-  const res = await fetch(`${API_BASE}/profile`, {
+  const res = await fetchWithCredentials(`${API_BASE}/profile`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
@@ -19,13 +27,13 @@ export async function updateProfile(updates: UpdateProfile): Promise<Profile> {
 }
 
 export async function fetchWorkoutLogs(): Promise<WorkoutLog[]> {
-  const res = await fetch(`${API_BASE}/workouts`);
+  const res = await fetchWithCredentials(`${API_BASE}/workouts`);
   if (!res.ok) throw new Error("Failed to fetch workout logs");
   return res.json();
 }
 
 export async function logWorkout(date: string, workoutType: string): Promise<WorkoutLog> {
-  const res = await fetch(`${API_BASE}/workouts`, {
+  const res = await fetchWithCredentials(`${API_BASE}/workouts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ date, workoutType }),
@@ -38,7 +46,7 @@ export async function logWorkout(date: string, workoutType: string): Promise<Wor
 }
 
 export async function deleteWorkout(date: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/workouts/${date}`, {
+  const res = await fetchWithCredentials(`${API_BASE}/workouts/${date}`, {
     method: "DELETE",
   });
   if (!res.ok) {
@@ -48,7 +56,7 @@ export async function deleteWorkout(date: string): Promise<void> {
 }
 
 export async function fetchMealLogs(date: string): Promise<MealLog[]> {
-  const res = await fetch(`${API_BASE}/meals/${date}`);
+  const res = await fetchWithCredentials(`${API_BASE}/meals/${date}`);
   if (!res.ok) throw new Error("Failed to fetch meal logs");
   return res.json();
 }
@@ -59,7 +67,7 @@ export async function upsertMealLog(
   mealId: string,
   consumed: boolean
 ): Promise<MealLog> {
-  const res = await fetch(`${API_BASE}/meals`, {
+  const res = await fetchWithCredentials(`${API_BASE}/meals`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ date, mealType, mealId, consumed }),
@@ -69,7 +77,7 @@ export async function upsertMealLog(
 }
 
 export async function toggleMealConsumed(date: string, mealType: string): Promise<MealLog> {
-  const res = await fetch(`${API_BASE}/meals/toggle`, {
+  const res = await fetchWithCredentials(`${API_BASE}/meals/toggle`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ date, mealType }),
@@ -79,7 +87,7 @@ export async function toggleMealConsumed(date: string, mealType: string): Promis
 }
 
 export async function promoteTier(): Promise<Profile> {
-  const res = await fetch(`${API_BASE}/profile/promote`, {
+  const res = await fetchWithCredentials(`${API_BASE}/profile/promote`, {
     method: "POST",
   });
   if (!res.ok) {
@@ -101,7 +109,7 @@ export async function saveMealLog(data: {
   carbs?: number;
   fats?: number;
 }): Promise<MealLog> {
-  const res = await fetch(`${API_BASE}/meals`, {
+  const res = await fetchWithCredentials(`${API_BASE}/meals`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -117,7 +125,7 @@ export async function toggleMeal(data: { date: string; mealType: string }): Prom
 
 // Fetch user schedule
 export async function fetchSchedule(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/schedule`);
+  const res = await fetchWithCredentials(`${API_BASE}/schedule`);
   if (!res.ok) throw new Error("Failed to fetch schedule");
   return res.json();
 }
@@ -157,7 +165,7 @@ export async function updateSchedule(
     };
   });
   
-  const res = await fetch(`${API_BASE}/schedule`, {
+  const res = await fetchWithCredentials(`${API_BASE}/schedule`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ schedule: scheduleArray }),
@@ -168,42 +176,42 @@ export async function updateSchedule(
 
 // Fetch workout types
 export async function fetchWorkoutTypes(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/lookups/workout-types`);
+  const res = await fetchWithCredentials(`${API_BASE}/lookups/workout-types`);
   if (!res.ok) throw new Error("Failed to fetch workout types");
   return res.json();
 }
 
 // Fetch goals lookup
 export async function fetchGoals(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/lookups/goals`);
+  const res = await fetchWithCredentials(`${API_BASE}/lookups/goals`);
   if (!res.ok) throw new Error("Failed to fetch goals");
   return res.json();
 }
 
 // Fetch positions lookup
 export async function fetchPositions(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/lookups/positions`);
+  const res = await fetchWithCredentials(`${API_BASE}/lookups/positions`);
   if (!res.ok) throw new Error("Failed to fetch positions");
   return res.json();
 }
 
 // Fetch levels lookup
 export async function fetchLevels(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/lookups/levels`);
+  const res = await fetchWithCredentials(`${API_BASE}/lookups/levels`);
   if (!res.ok) throw new Error("Failed to fetch levels");
   return res.json();
 }
 
 // Fetch tiers lookup
 export async function fetchTiers(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/lookups/tiers`);
+  const res = await fetchWithCredentials(`${API_BASE}/lookups/tiers`);
   if (!res.ok) throw new Error("Failed to fetch tiers");
   return res.json();
 }
 
 // Fetch user progress (xp/tier)
 export async function fetchProgress(): Promise<any> {
-  const res = await fetch(`${API_BASE}/progress`);
+  const res = await fetchWithCredentials(`${API_BASE}/progress`);
   if (!res.ok) throw new Error("Failed to fetch progress");
   return res.json();
 }
@@ -212,7 +220,7 @@ export async function sendChatMessage(
   messages: { role: string; content: string }[],
   profile: { position: string; level: string; age: number; weight: number } | null
 ): Promise<string> {
-  const res = await fetch(`${API_BASE}/chat`, {
+  const res = await fetchWithCredentials(`${API_BASE}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages, profile }),
@@ -223,4 +231,37 @@ export async function sendChatMessage(
   }
   const data = await res.json();
   return data.response;
+}
+
+// Puck shots API
+export async function fetchPuckShots(date: string): Promise<{ count: number }> {
+  const res = await fetchWithCredentials(`${API_BASE}/puck-shots/${date}`);
+  if (!res.ok) throw new Error("Failed to fetch puck shots");
+  return res.json();
+}
+
+export async function updatePuckShots(date: string, count: number): Promise<{ count: number }> {
+  const res = await fetchWithCredentials(`${API_BASE}/puck-shots`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date, count }),
+  });
+  if (!res.ok) throw new Error("Failed to update puck shots");
+  return res.json();
+}
+
+// Get recommended schedule based on profile
+export async function fetchRecommendedSchedule(): Promise<any[]> {
+  const res = await fetchWithCredentials(`${API_BASE}/schedule/recommended`);
+  if (!res.ok) throw new Error("Failed to fetch recommended schedule");
+  return res.json();
+}
+
+// Apply recommended schedule
+export async function applyRecommendedSchedule(): Promise<any[]> {
+  const res = await fetchWithCredentials(`${API_BASE}/schedule/apply-recommended`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to apply recommended schedule");
+  return res.json();
 }

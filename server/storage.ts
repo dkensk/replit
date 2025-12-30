@@ -25,6 +25,8 @@ import {
   type InsertUserProgress,
   type XpEvent,
   type InsertXpEvent,
+  type PuckShots,
+  type InsertPuckShots,
   users,
   profiles,
   workoutLogs,
@@ -40,7 +42,8 @@ import {
   mealCatalog,
   userWorkoutSchedule,
   userProgress,
-  xpEvents
+  xpEvents,
+  puckShots
 } from "@shared/schema";
 import { db, pool } from "../db/index";
 import { eq, and, desc, asc, gte, lte } from "drizzle-orm";
@@ -102,6 +105,10 @@ export interface IStorage {
   getXpEvents(userId: string, limit?: number): Promise<XpEvent[]>;
   updateUserXp(userId: string, xpChange: number): Promise<UserProgress | undefined>;
   promoteUserTier(userId: string, newTierId: number): Promise<UserProgress | undefined>;
+
+  // Puck shots methods
+  getPuckShots(userId: string, date: string): Promise<PuckShots | undefined>;
+  upsertPuckShots(userId: string, date: string, count: number): Promise<PuckShots>;
 }
 
 const PostgresSessionStore = connectPg(session);
@@ -403,6 +410,29 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updated;
+  }
+
+  // Puck shots methods
+  async getPuckShots(userId: string, date: string): Promise<PuckShots | undefined> {
+    const [result] = await db.select().from(puckShots)
+      .where(and(eq(puckShots.userId, userId), eq(puckShots.date, date)));
+    return result;
+  }
+
+  async upsertPuckShots(userId: string, date: string, count: number): Promise<PuckShots> {
+    const existing = await this.getPuckShots(userId, date);
+    if (existing) {
+      const [updated] = await db.update(puckShots)
+        .set({ count })
+        .where(eq(puckShots.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(puckShots)
+        .values({ userId, date, count })
+        .returning();
+      return created;
+    }
   }
 }
 

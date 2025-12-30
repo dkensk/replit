@@ -133,6 +133,17 @@ export const customMeals = pgTable("custom_meals", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Custom user-defined workout types
+export const customWorkoutTypes = pgTable("custom_workout_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  code: text("code").notNull(),
+  categories: text("categories").array().notNull(), // Array of exercise category keys
+  xpReward: integer("xp_reward").notNull().default(15),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ============================================
 // USER WORKOUT SCHEDULE (3NF - Replaces JSONB)
 // ============================================
@@ -196,6 +207,11 @@ export const insertCustomMealSchema = createInsertSchema(customMeals).omit({
   createdAt: true,
 });
 
+export const insertCustomWorkoutTypeSchema = createInsertSchema(customWorkoutTypes).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const updateProfileSchema = createInsertSchema(profiles).omit({
   id: true,
   userId: true,
@@ -228,6 +244,8 @@ export type MealLog = typeof mealLogs.$inferSelect;
 export type InsertCustomMeal = z.infer<typeof insertCustomMealSchema>;
 export type CustomMeal = typeof customMeals.$inferSelect;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
+export type InsertCustomWorkoutType = z.infer<typeof insertCustomWorkoutTypeSchema>;
+export type CustomWorkoutType = typeof customWorkoutTypes.$inferSelect;
 
 // Lookup table types
 export type Goal = typeof goals.$inferSelect;

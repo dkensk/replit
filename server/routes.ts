@@ -590,6 +590,69 @@ Be reasonable with portion sizes. If you cannot identify the food, provide your 
     }
   });
 
+  // ============================================
+  // CUSTOM WORKOUT TYPES ROUTES
+  // ============================================
+
+  app.get("/api/custom-workouts", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const customWorkouts = await storage.getCustomWorkoutTypes(userId);
+      res.json(customWorkouts);
+    } catch (error) {
+      console.error("Error fetching custom workouts:", error);
+      res.status(500).json({ error: "Failed to fetch custom workouts" });
+    }
+  });
+
+  app.post("/api/custom-workouts", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const { name, categories } = req.body;
+      
+      if (!name || !categories || !Array.isArray(categories) || categories.length === 0) {
+        return res.status(400).json({ error: "Name and categories are required" });
+      }
+      
+      const code = name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      
+      const newWorkout = await storage.createCustomWorkoutType({
+        userId,
+        name,
+        code,
+        categories,
+        xpReward: 15
+      });
+      
+      res.json(newWorkout);
+    } catch (error) {
+      console.error("Error creating custom workout:", error);
+      res.status(500).json({ error: "Failed to create custom workout" });
+    }
+  });
+
+  app.delete("/api/custom-workouts/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = req.user?.id;
+      const { id } = req.params;
+      
+      await storage.deleteCustomWorkoutType(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting custom workout:", error);
+      res.status(500).json({ error: "Failed to delete custom workout" });
+    }
+  });
+
   // AI Chat endpoint
   app.post("/api/chat", async (req, res) => {
     try {

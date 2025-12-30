@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell, Activity, Move, Timer, Flame, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, Calendar, PlayCircle, RefreshCw, Dumbbell, Activity, Move, Timer, Flame, Plus, Trash2, Sparkles } from "lucide-react";
 import gymImage from "@assets/generated_images/athletic_gym_training_equipment.png";
 import { useUser } from "@/lib/UserContext";
 import { useState, useEffect } from "react";
@@ -553,6 +553,17 @@ const STRETCHES = {
   ]
 };
 
+// Type for AI-generated exercises
+type PersonalizedExercise = {
+  id: string;
+  name: string;
+  sets: string;
+  reps: string;
+  rest: string;
+  category: string;
+  notes?: string;
+};
+
 export default function Workouts() {
   const { profile, updateProfile } = useUser();
   const [activeTab, setActiveTab] = useState("schedule");
@@ -568,6 +579,51 @@ export default function Workouts() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState<string>("monday");
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Get current workout type for personalized query
+  const currentDayForQuery = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+  const currentWorkoutTypeForQuery = profile.schedule[currentDayForQuery] || "rest";
+  
+  // Check if workout type is a built-in type (not custom)
+  const builtInWorkoutTypes = ["legs_strength", "legs_explosive", "upper_body", "back_biceps", "chest_triceps", "shoulders_traps", "full_body", "skills_cardio", "active_recovery"];
+  const isBuiltInWorkout = builtInWorkoutTypes.includes(currentWorkoutTypeForQuery);
+  
+  // Fetch personalized AI-generated exercises for today's workout (only for built-in types)
+  const { data: personalizedData, isLoading: isLoadingPersonalized, error: personalizedError } = useQuery<{
+    exercises: PersonalizedExercise[];
+    cached: boolean;
+  }>({
+    queryKey: ["/api/personalized-workout", currentWorkoutTypeForQuery],
+    queryFn: async () => {
+      const res = await fetch(`/api/personalized-workout/${currentWorkoutTypeForQuery}`, {
+        credentials: "include"
+      });
+      if (!res.ok) {
+        // Gracefully handle errors - we'll fall back to static workouts
+        return { exercises: [], cached: false };
+      }
+      return res.json();
+    },
+    enabled: currentWorkoutTypeForQuery !== "rest" && currentWorkoutTypeForQuery !== "active_recovery" && isBuiltInWorkout,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    retry: false, // Don't retry on failure
+  });
+  
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  
+  const handleRegenerateWorkout = async () => {
+    setIsRegenerating(true);
+    try {
+      const res = await fetch(`/api/personalized-workout/${currentWorkoutTypeForQuery}?regenerate=true`, {
+        credentials: "include"
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ["/api/personalized-workout", currentWorkoutTypeForQuery] });
+      }
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
   
   // Fetch custom workout types
   const { data: customWorkoutTypes = [] } = useQuery<CustomWorkoutType[]>({
@@ -864,77 +920,82 @@ export default function Workouts() {
                   </p>
                 </CardContent>
               </Card>
+            ) : (isBuiltInWorkout && (isLoadingPersonalized || isRegenerating)) ? (
+              <Card className="glass-panel rounded-xl">
+                <CardContent className="p-8 text-center flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mb-4 animate-pulse">
+                    <Sparkles className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {isRegenerating ? "Generating New Workout..." : "Creating Your Personalized Workout..."}
+                  </h3>
+                  <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                    Our AI is customizing exercises based on your age, weight, position, and goals.
+                  </p>
+                </CardContent>
+              </Card>
             ) : (
               <div className="space-y-3">
-                {baseWorkout.slice(0, Math.ceil(profile.workoutDuration / 12)).map((ex, i) => {
-                  const currentExerciseId = customWorkout[i] || ex.id;
-                  const currentExerciseName = getExerciseName(currentExerciseId, ex.category);
+                {isBuiltInWorkout && personalizedData?.exercises && personalizedData.exercises.length > 0 && (
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <span className="text-xs text-primary font-medium">AI-Personalized for You</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRegenerateWorkout}
+                      className="text-xs text-muted-foreground hover:text-primary"
+                      data-testid="button-regenerate-workout"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      New Exercises
+                    </Button>
+                  </div>
+                )}
+                {((isBuiltInWorkout && personalizedData?.exercises && personalizedData.exercises.length > 0) 
+                  ? personalizedData.exercises 
+                  : baseWorkout
+                ).slice(0, Math.ceil(profile.workoutDuration / 12)).map((ex: any, i: number) => {
+                  const isPersonalized = isBuiltInWorkout && personalizedData?.exercises && personalizedData.exercises.length > 0;
                   
                   return (
-                    <Dialog key={i}>
-                      <DialogTrigger asChild>
-                        <Card 
-                          className="bg-card/60 border-white/5 hover:border-primary/30 hover:bg-card/80 transition-all duration-200 cursor-pointer group"
-                          data-testid={`card-exercise-${i}`}
-                        >
-                          <CardContent className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="h-11 w-11 rounded-xl bg-secondary/70 flex items-center justify-center text-muted-foreground font-bold text-lg group-hover:bg-primary/20 group-hover:text-primary transition-all">
-                                {i + 1}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-bold text-white group-hover:text-primary transition-colors">{currentExerciseName}</h4>
-                                  <RefreshCw className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
-                                  <span className="font-medium">{ex.sets} Sets × {ex.reps}</span>
-                                  <span className="text-white/20">•</span>
-                                  <span>Rest: {ex.rest}</span>
-                                </div>
-                              </div>
+                    <Card 
+                      key={i}
+                      className="bg-card/60 border-white/5 hover:border-primary/30 hover:bg-card/80 transition-all duration-200 group"
+                      data-testid={`card-exercise-${i}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="h-11 w-11 rounded-xl bg-secondary/70 flex items-center justify-center text-muted-foreground font-bold text-lg group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                              {i + 1}
                             </div>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="w-10 h-10 rounded-xl text-primary/50 group-hover:text-primary group-hover:bg-primary/10 transition-all"
-                            >
-                              <PlayCircle className="w-6 h-6" />
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      </DialogTrigger>
-                      <DialogContent className="bg-card border-white/10 text-white max-h-[80vh] overflow-y-auto rounded-2xl">
-                        <DialogHeader className="pb-4 border-b border-white/5">
-                          <DialogTitle className="text-lg">Substitute Exercise</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid gap-2 py-4">
-                          {EXERCISES[ex.category]?.map((alt) => (
-                            <Button 
-                              key={alt.id}
-                              variant="ghost" 
-                              className={cn(
-                                "justify-start h-auto py-3 px-4 rounded-xl transition-all",
-                                currentExerciseId === alt.id 
-                                  ? "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20" 
-                                  : "hover:bg-white/5 border border-transparent"
-                              )}
-                              onClick={() => {
-                                setCustomWorkout(prev => ({ ...prev, [i]: alt.id }));
-                              }}
-                              data-testid={`button-exercise-${alt.id}`}
-                            >
-                              <div className="text-left">
-                                <div className="font-bold">{alt.name}</div>
-                                {currentExerciseId === alt.id && (
-                                  <span className="text-[10px] uppercase font-bold text-primary mt-0.5 block">Selected</span>
-                                )}
+                            <div>
+                              <h4 className="font-bold text-white group-hover:text-primary transition-colors">
+                                {isPersonalized ? ex.name : getExerciseName(ex.id, ex.category)}
+                              </h4>
+                              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                                <span className="font-medium">{ex.sets} Sets × {ex.reps}</span>
+                                <span className="text-white/20">•</span>
+                                <span>Rest: {ex.rest}</span>
                               </div>
-                            </Button>
-                          ))}
+                              {isPersonalized && ex.notes && (
+                                <p className="text-xs text-primary/70 mt-1.5 italic">{ex.notes}</p>
+                              )}
+                            </div>
+                          </div>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="w-10 h-10 rounded-xl text-primary/50 group-hover:text-primary group-hover:bg-primary/10 transition-all"
+                          >
+                            <PlayCircle className="w-6 h-6" />
+                          </Button>
                         </div>
-                      </DialogContent>
-                    </Dialog>
+                      </CardContent>
+                    </Card>
                   );
                 })}
               </div>

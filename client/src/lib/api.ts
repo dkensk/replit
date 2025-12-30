@@ -133,7 +133,7 @@ export async function updateSchedule(
   const scheduleArray = dayNames.map((dayName, index) => {
     const workoutCode = scheduleObj[dayName] || "rest";
     // Rest and recovery types are considered rest days for scheduling purposes
-    const isRestDay = workoutCode === "rest" || workoutCode === "recovery" || workoutCode === "active_recovery";
+    const isRestDay = workoutCode === "rest";
     
     // Check if it's a custom workout type first
     const customWorkoutType = customWorkoutTypes.find((cw: any) => cw.code === workoutCode);

@@ -234,13 +234,19 @@ export async function sendChatMessage(
 }
 
 // Puck shots API
-export async function fetchPuckShots(date: string): Promise<{ count: number }> {
+export interface PuckShotsData {
+  count: number;
+  highScore: number;
+  highScoreDate: string | null;
+}
+
+export async function fetchPuckShots(date: string): Promise<PuckShotsData> {
   const res = await fetchWithCredentials(`${API_BASE}/puck-shots/${date}`);
   if (!res.ok) throw new Error("Failed to fetch puck shots");
   return res.json();
 }
 
-export async function updatePuckShots(date: string, count: number): Promise<{ count: number }> {
+export async function updatePuckShots(date: string, count: number): Promise<PuckShotsData> {
   const res = await fetchWithCredentials(`${API_BASE}/puck-shots`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

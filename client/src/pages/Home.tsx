@@ -12,7 +12,7 @@ import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay, parseISO, startOfToday } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchPuckShots, updatePuckShots } from "@/lib/api";
+import { fetchPuckShots, updatePuckShots, type PuckShotsData } from "@/lib/api";
 
 const WORKOUT_LABELS: Record<string, string> = {
   legs_strength: "Legs - Strength",
@@ -118,6 +118,8 @@ export default function Home() {
   });
   
   const puckCount = puckShotsData?.count || 0;
+  const highScore = puckShotsData?.highScore || 0;
+  const highScoreDate = puckShotsData?.highScoreDate;
   
   const handlePuckChange = (delta: number) => {
     const newCount = Math.max(0, puckCount + delta);
@@ -375,6 +377,25 @@ export default function Home() {
                   >
                     <span className="text-sm font-bold">+50</span>
                   </Button>
+                </div>
+              </div>
+              
+              {/* High Score Display */}
+              <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                  <span className="text-sm text-muted-foreground">Personal Best</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-bold font-heading text-yellow-400" data-testid="text-high-score">
+                    {highScore}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-1">shots</span>
+                  {highScoreDate && (
+                    <p className="text-[10px] text-muted-foreground/70">
+                      {new Date(highScoreDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>

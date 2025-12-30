@@ -80,7 +80,7 @@ export default function Diet() {
   const { data: mealLogs = [] } = useQuery<any[]>({
     queryKey: ["/api/meals", getTodayDate()],
     queryFn: async () => {
-      const res = await fetch(`/api/meals/${getTodayDate()}`);
+      const res = await fetch(`/api/meals/${getTodayDate()}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch meal logs");
       return res.json();
     },
@@ -130,7 +130,7 @@ export default function Diet() {
   const { data: savedCustomMeals = [] } = useQuery<SavedCustomMeal[]>({
     queryKey: ["/api/custom-meals"],
     queryFn: async () => {
-      const res = await fetch("/api/custom-meals");
+      const res = await fetch("/api/custom-meals", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch custom meals");
       return res.json();
     },
@@ -143,6 +143,7 @@ export default function Diet() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(meal),
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to save custom meal");
       return res.json();
@@ -159,6 +160,7 @@ export default function Diet() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to save meal log");
       return res.json();
@@ -192,6 +194,7 @@ export default function Diet() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ imageBase64: base64 }),
+          credentials: "include",
         });
         
         if (response.ok) {
@@ -862,6 +865,7 @@ export default function Diet() {
               carbs: meal.carbs,
               fats: meal.fats,
             }),
+            credentials: "include",
           }).catch(console.error);
         }
       }

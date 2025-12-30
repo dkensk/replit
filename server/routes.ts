@@ -844,11 +844,12 @@ RESPONSE GUIDELINES:
       const { date } = req.params;
       
       const shots = await storage.getPuckShots(userId, date);
-      const highScore = await storage.getPuckShotHighScore(userId);
+      // Calculate high score from completed days only (excludes today)
+      const highScoreData = await storage.calculateHighScoreFromHistory(userId, date);
       res.json({ 
         count: shots?.count || 0,
-        highScore: highScore?.highScore || 0,
-        highScoreDate: highScore?.highScoreDate || null
+        highScore: highScoreData.highScore,
+        highScoreDate: highScoreData.highScoreDate
       });
     } catch (error) {
       console.error("Error fetching puck shots:", error);
@@ -864,13 +865,14 @@ RESPONSE GUIDELINES:
       const userId = req.user?.id;
       const { date, count } = req.body;
       
+      // Only update today's count - don't touch high score until day is complete
       const shots = await storage.upsertPuckShots(userId, date, count);
-      // Update high score if this is a new record
-      const highScore = await storage.updatePuckShotHighScore(userId, count, date);
+      // Return high score from completed days only (excludes today)
+      const highScoreData = await storage.calculateHighScoreFromHistory(userId, date);
       res.json({ 
         count: shots.count,
-        highScore: highScore.highScore,
-        highScoreDate: highScore.highScoreDate
+        highScore: highScoreData.highScore,
+        highScoreDate: highScoreData.highScoreDate
       });
     } catch (error) {
       console.error("Error updating puck shots:", error);

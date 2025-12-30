@@ -378,17 +378,35 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     : defaultProfile;
 
   const updateProfile = useCallback(async (updates: Partial<UserProfile>): Promise<void> => {
-    const { schedule, ...profileUpdates } = updates;
+    const { schedule, position, level, goal, ...profileUpdates } = updates;
     
     // If schedule is included, update it separately
     if (schedule) {
       scheduleMutation.mutate(schedule);
     }
     
+    // Convert codes to IDs for backend
+    const backendUpdates: any = { ...profileUpdates };
+    
+    if (position) {
+      const positionObj = positions.find((p: any) => p.code === position);
+      if (positionObj) backendUpdates.positionId = positionObj.id;
+    }
+    
+    if (level) {
+      const levelObj = levels.find((l: any) => l.code === level);
+      if (levelObj) backendUpdates.levelId = levelObj.id;
+    }
+    
+    if (goal) {
+      const goalObj = goals.find((g: any) => g.code === goal);
+      if (goalObj) backendUpdates.goalId = goalObj.id;
+    }
+    
     // If there are other profile updates, send them to profile API
-    if (Object.keys(profileUpdates).length > 0) {
+    if (Object.keys(backendUpdates).length > 0) {
       return new Promise((resolve, reject) => {
-        updateMutation.mutate(profileUpdates as any, {
+        updateMutation.mutate(backendUpdates as any, {
           onSuccess: () => resolve(),
           onError: (error) => reject(error)
         });
@@ -396,7 +414,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
     
     return Promise.resolve();
-  }, [updateMutation, scheduleMutation]);
+  }, [updateMutation, scheduleMutation, positions, levels, goals]);
 
   const refetchProfile = useCallback(async (): Promise<void> => {
     await queryClient.invalidateQueries({ queryKey: ["/api/profile"] });

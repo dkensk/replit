@@ -312,6 +312,24 @@ export default function Diet() {
           carbs: 15, 
           fats: 26,
           recipe: "1. Whisk 6 eggs with diced veggies and cheese.\n2. Pour into muffin tin and bake at 350°F for 20 mins.\n3. Store extras in fridge for quick breakfasts."
+        },
+        { 
+          id: "power_breakfast", 
+          name: "Power Breakfast Platter", 
+          calories: 750, 
+          protein: 55, 
+          carbs: 65, 
+          fats: 32,
+          recipe: "1. Scramble 4 eggs with cheese.\n2. Add 2 strips bacon and 2 turkey sausage links.\n3. Serve with 2 slices toast and a banana."
+        },
+        { 
+          id: "mega_oatmeal", 
+          name: "Mega Muscle Oatmeal", 
+          calories: 700, 
+          protein: 50, 
+          carbs: 90, 
+          fats: 18,
+          recipe: "1. Cook 1.5 cups oats with milk.\n2. Add 2 scoops protein powder and peanut butter.\n3. Top with banana, honey, and walnuts."
         }
       ]
     },
@@ -417,6 +435,24 @@ export default function Diet() {
           carbs: 48, 
           fats: 20,
           recipe: "1. Sauté shrimp with taco seasoning.\n2. Serve in corn tortillas with cabbage slaw.\n3. Top with lime crema and cilantro."
+        },
+        { 
+          id: "double_chicken", 
+          name: "Double Chicken Bowl", 
+          calories: 850, 
+          protein: 75, 
+          carbs: 80, 
+          fats: 24,
+          recipe: "1. Grill 10oz chicken breast with seasoning.\n2. Serve over 1.5 cups rice with black beans.\n3. Top with salsa, cheese, and guacamole."
+        },
+        { 
+          id: "steak_bowl", 
+          name: "Steak Power Bowl", 
+          calories: 780, 
+          protein: 65, 
+          carbs: 65, 
+          fats: 30,
+          recipe: "1. Grill 8oz flank steak to medium.\n2. Slice and serve over quinoa with roasted peppers.\n3. Top with chimichurri sauce."
         }
       ]
     },
@@ -531,6 +567,33 @@ export default function Diet() {
           carbs: 28, 
           fats: 14,
           recipe: "1. Mix oats, peanut butter, honey, and chocolate chips.\n2. Roll into 6 balls.\n3. Refrigerate for 30 mins before eating."
+        },
+        { 
+          id: "mass_gainer", 
+          name: "Mass Gainer Shake", 
+          calories: 650, 
+          protein: 50, 
+          carbs: 80, 
+          fats: 18,
+          recipe: "1. Blend 2 scoops protein powder with 2 cups whole milk.\n2. Add 1 banana, 2 tbsp peanut butter, and oats.\n3. Add honey and blend until smooth."
+        },
+        { 
+          id: "pb_banana_toast", 
+          name: "PB Banana Toast", 
+          calories: 480, 
+          protein: 18, 
+          carbs: 55, 
+          fats: 24,
+          recipe: "1. Toast 2 slices of whole grain bread.\n2. Spread 3 tbsp peanut butter.\n3. Top with sliced banana and drizzle with honey."
+        },
+        { 
+          id: "cheese_crackers", 
+          name: "Cheese & Crackers Plate", 
+          calories: 420, 
+          protein: 22, 
+          carbs: 35, 
+          fats: 24,
+          recipe: "1. Arrange variety of cheese slices on plate.\n2. Add whole grain crackers.\n3. Include some nuts and grapes."
         }
       ]
     },
@@ -645,6 +708,24 @@ export default function Diet() {
           carbs: 35, 
           fats: 18,
           recipe: "1. Season cod with lemon and dill.\n2. Bake at 400°F with zucchini and tomatoes.\n3. Serve with a side of brown rice."
+        },
+        { 
+          id: "mega_steak", 
+          name: "Mega Steak Dinner", 
+          calories: 950, 
+          protein: 75, 
+          carbs: 70, 
+          fats: 42,
+          recipe: "1. Grill 12oz ribeye steak to preference.\n2. Serve with loaded baked potato (butter, cheese, sour cream).\n3. Add Caesar salad on the side."
+        },
+        { 
+          id: "double_pasta", 
+          name: "Double Portion Pasta", 
+          calories: 1000, 
+          protein: 60, 
+          carbs: 120, 
+          fats: 30,
+          recipe: "1. Cook 3 cups pasta with meat sauce.\n2. Add extra ground beef and parmesan.\n3. Serve with garlic bread."
         }
       ]
     }

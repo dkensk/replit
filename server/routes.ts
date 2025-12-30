@@ -844,7 +844,12 @@ RESPONSE GUIDELINES:
       const { date } = req.params;
       
       const shots = await storage.getPuckShots(userId, date);
-      res.json({ count: shots?.count || 0 });
+      const highScore = await storage.getPuckShotHighScore(userId);
+      res.json({ 
+        count: shots?.count || 0,
+        highScore: highScore?.highScore || 0,
+        highScoreDate: highScore?.highScoreDate || null
+      });
     } catch (error) {
       console.error("Error fetching puck shots:", error);
       res.status(500).json({ error: "Failed to fetch puck shots" });
@@ -860,7 +865,13 @@ RESPONSE GUIDELINES:
       const { date, count } = req.body;
       
       const shots = await storage.upsertPuckShots(userId, date, count);
-      res.json({ count: shots.count });
+      // Update high score if this is a new record
+      const highScore = await storage.updatePuckShotHighScore(userId, count, date);
+      res.json({ 
+        count: shots.count,
+        highScore: highScore.highScore,
+        highScoreDate: highScore.highScoreDate
+      });
     } catch (error) {
       console.error("Error updating puck shots:", error);
       res.status(500).json({ error: "Failed to update puck shots" });

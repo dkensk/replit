@@ -27,6 +27,7 @@ import {
   type InsertXpEvent,
   type PuckShots,
   type InsertPuckShots,
+  type PuckShotHighScore,
   users,
   profiles,
   workoutLogs,
@@ -43,7 +44,8 @@ import {
   userWorkoutSchedule,
   userProgress,
   xpEvents,
-  puckShots
+  puckShots,
+  puckShotHighScores
 } from "@shared/schema";
 import { db, pool } from "../db/index";
 import { eq, and, desc, asc, gte, lte } from "drizzle-orm";
@@ -109,6 +111,8 @@ export interface IStorage {
   // Puck shots methods
   getPuckShots(userId: string, date: string): Promise<PuckShots | undefined>;
   upsertPuckShots(userId: string, date: string, count: number): Promise<PuckShots>;
+  getPuckShotHighScore(userId: string): Promise<PuckShotHighScore | undefined>;
+  updatePuckShotHighScore(userId: string, count: number, date: string): Promise<PuckShotHighScore>;
 }
 
 const PostgresSessionStore = connectPg(session);
@@ -430,6 +434,32 @@ export class DatabaseStorage implements IStorage {
     } else {
       const [created] = await db.insert(puckShots)
         .values({ userId, date, count })
+        .returning();
+      return created;
+    }
+  }
+
+  async getPuckShotHighScore(userId: string): Promise<PuckShotHighScore | undefined> {
+    const [result] = await db.select().from(puckShotHighScores)
+      .where(eq(puckShotHighScores.userId, userId));
+    return result;
+  }
+
+  async updatePuckShotHighScore(userId: string, count: number, date: string): Promise<PuckShotHighScore> {
+    const existing = await this.getPuckShotHighScore(userId);
+    if (existing) {
+      // Only update if new count is higher
+      if (count > existing.highScore) {
+        const [updated] = await db.update(puckShotHighScores)
+          .set({ highScore: count, highScoreDate: date })
+          .where(eq(puckShotHighScores.id, existing.id))
+          .returning();
+        return updated;
+      }
+      return existing;
+    } else {
+      const [created] = await db.insert(puckShotHighScores)
+        .values({ userId, highScore: count, highScoreDate: date })
         .returning();
       return created;
     }

@@ -191,6 +191,14 @@ export const puckShots = pgTable("puck_shots", {
   count: integer("count").notNull().default(0),
 });
 
+// User high scores for puck shots
+export const puckShotHighScores = pgTable("puck_shot_high_scores", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  highScore: integer("high_score").notNull().default(0),
+  highScoreDate: text("high_score_date"), // YYYY-MM-DD when high score was set
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -242,6 +250,7 @@ export const insertUserWorkoutScheduleSchema = createInsertSchema(userWorkoutSch
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true, updatedAt: true });
 export const insertXpEventSchema = createInsertSchema(xpEvents).omit({ id: true, createdAt: true });
 export const insertPuckShotsSchema = createInsertSchema(puckShots).omit({ id: true });
+export const insertPuckShotHighScoreSchema = createInsertSchema(puckShotHighScores).omit({ id: true });
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -283,3 +292,5 @@ export type XpEvent = typeof xpEvents.$inferSelect;
 export type InsertXpEvent = z.infer<typeof insertXpEventSchema>;
 export type PuckShots = typeof puckShots.$inferSelect;
 export type InsertPuckShots = z.infer<typeof insertPuckShotsSchema>;
+export type PuckShotHighScore = typeof puckShotHighScores.$inferSelect;
+export type InsertPuckShotHighScore = z.infer<typeof insertPuckShotHighScoreSchema>;

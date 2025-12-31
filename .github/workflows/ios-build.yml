@@ -139,5 +139,3 @@ jobs:
           name: ios-app-signed
           path: ios/App/build/App-signed.ipa
           retention-days: 30
-
-# Trigger build

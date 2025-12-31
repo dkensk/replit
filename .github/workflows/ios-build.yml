@@ -66,6 +66,7 @@ jobs:
 
       - name: Build iOS Archive
         working-directory: ios/App
+        id: build
         run: |
           mkdir -p ./build
           echo "=== Starting Xcode build ==="
@@ -88,9 +89,18 @@ jobs:
               exit 1
             }
           echo "=== Build succeeded ==="
-          ls -lh ./build/App.xcarchive || echo "Archive not found at expected path"
+          if [ -d "./build/App.xcarchive" ]; then
+            echo "✓ Archive created successfully"
+            ls -lh ./build/App.xcarchive
+            echo "archive_created=true" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Archive not found after build"
+            echo "Build directory contents:"
+            ls -lah ./build/ || echo "Build directory doesn't exist"
+            exit 1
+          fi
 
-      - name: Verify archive exists
+      - name: Verify and prepare archive
         working-directory: ios/App
         run: |
           echo "=== Checking build directory ==="
@@ -98,10 +108,14 @@ jobs:
           if [ -d "./build/App.xcarchive" ]; then
             echo "✓ Archive found at ./build/App.xcarchive"
             du -sh ./build/App.xcarchive
+            # Create a marker file to confirm archive exists
+            touch ./build/.archive-ready
           else
             echo "✗ Archive NOT found at ./build/App.xcarchive"
+            echo "Searching for archive..."
+            find . -name "*.xcarchive" -type d 2>/dev/null || echo "No .xcarchive files found"
             echo "Contents of build directory:"
-            find ./build -type f -o -type d | head -20
+            find ./build -type f -o -type d 2>/dev/null | head -20 || echo "Build directory empty or not found"
             exit 1
           fi
 
@@ -139,7 +153,7 @@ jobs:
 
       - name: Upload iOS Archive artifact
         uses: actions/upload-artifact@v4
-        if: always()
+        if: steps.build.outcome == 'success'
         with:
           name: ios-app-archive
           path: ios/App/build/App.xcarchive

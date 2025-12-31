@@ -36,27 +36,39 @@ jobs:
       - name: Install CocoaPods
         run: gem install cocoapods
 
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
       - name: Install iOS dependencies
         working-directory: ios/App
         run: pod install
-
-      - name: Sync Capacitor
-        run: npx cap sync ios
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
+      - name: Verify workspace exists
+        working-directory: ios/App
+        run: |
+          if [ ! -d "App.xcworkspace" ]; then
+            echo "ERROR: App.xcworkspace not found after pod install"
+            ls -la
+            exit 1
+          fi
+          echo "✓ Workspace found"
+
       - name: List available schemes
         working-directory: ios/App
         run: |
-          xcodebuild -list -workspace App.xcworkspace || xcodebuild -list -project App.xcodeproj
+          echo "=== Listing schemes ==="
+          xcodebuild -list -workspace App.xcworkspace || (echo "Failed to list schemes" && exit 1)
 
       - name: Build iOS Archive
         working-directory: ios/App
         run: |
           mkdir -p ./build
+          echo "=== Starting Xcode build ==="
           xcodebuild clean archive \
             -workspace App.xcworkspace \
             -scheme App \
@@ -66,16 +78,17 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             -allowProvisioningUpdates \
-            -showBuildSettings 2>&1 | head -20 || true
-          xcodebuild clean archive \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -archivePath ./build/App.xcarchive \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            -allowProvisioningUpdates
+            -showBuildTimingSummary \
+            2>&1 | tee build.log || {
+              echo "=== Build failed ==="
+              echo "Last 50 lines of build log:"
+              tail -50 build.log
+              echo "=== Full error details ==="
+              grep -i "error:" build.log | head -20 || echo "No error messages found in expected format"
+              exit 1
+            }
+          echo "=== Build succeeded ==="
+          ls -lh ./build/App.xcarchive || echo "Archive not found at expected path"
 
       - name: Export IPA (unsigned)
         working-directory: ios/App

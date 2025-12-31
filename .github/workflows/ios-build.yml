@@ -89,16 +89,55 @@ jobs:
           
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
           if [ $BUILD_EXIT_CODE -ne 0 ]; then
-            echo "=== ❌ BUILD FAILED (exit code: $BUILD_EXIT_CODE) ==="
             echo ""
-            echo "=== Last 100 lines of build log ==="
-            tail -100 build.log
+            echo "╔════════════════════════════════════════════════════════════╗"
+            echo "║  ❌ BUILD FAILED (exit code: $BUILD_EXIT_CODE)              ║"
+            echo "╚════════════════════════════════════════════════════════════╝"
             echo ""
-            echo "=== Searching for errors ==="
-            grep -i "error" build.log | tail -30 || echo "No 'error' found, checking for other failure indicators..."
-            grep -i "failed\|failure\|fatal" build.log | tail -20 || echo "No failure keywords found"
+            
+            # Extract failed build commands
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📋 FAILED BUILD COMMANDS:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            FAILED_COMMANDS=$(grep -A 20 "The following build commands failed" build.log | head -25)
+            if [ -n "$FAILED_COMMANDS" ]; then
+              echo "$FAILED_COMMANDS"
+            else
+              echo "No 'failed commands' section found in standard format"
+              # Try alternative patterns
+              grep -B 5 -A 10 "failed\|FAILED" build.log | grep -E "(Compile|Ld|CodeSign|Copy|Process)" | head -20 || echo "Could not extract failed commands"
+            fi
             echo ""
-            echo "=== Full build log saved above ==="
+            
+            # Extract all errors
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🔴 ALL ERROR MESSAGES:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            ERRORS=$(grep -i "error:" build.log | tail -30)
+            if [ -n "$ERRORS" ]; then
+              echo "$ERRORS"
+            else
+              echo "No 'error:' messages found"
+            fi
+            echo ""
+            
+            # Extract warnings that might be relevant
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "⚠️  CRITICAL WARNINGS:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            grep -i "warning:" build.log | grep -iE "missing|not found|cannot|unable|failed" | tail -20 || echo "No critical warnings found"
+            echo ""
+            
+            # Show context around failures
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📝 FAILURE CONTEXT (last 200 lines):"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            tail -200 build.log
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "💡 TIP: Look for 'error:' lines above to identify the issue"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
             exit 1
           fi
           

@@ -1,6 +1,18 @@
 import type { Profile, UpdateProfile, WorkoutLog, MealLog } from "@shared/schema";
+import { Capacitor } from "@capacitor/core";
 
-const API_BASE = "/api";
+// Get API base URL - use production URL on native, relative path on web
+const getApiBase = () => {
+  // Check if running on native platform (iOS/Android)
+  if (Capacitor.isNativePlatform()) {
+    // Use production backend URL - UPDATE THIS with your actual backend URL
+    return process.env.VITE_API_URL || "https://your-backend-url.com/api";
+  }
+  // On web, use relative path (works with dev server or same-origin backend)
+  return "/api";
+};
+
+const API_BASE = getApiBase();
 
 // Helper to add credentials to all requests
 const fetchWithCredentials = (url: string, options: RequestInit = {}): Promise<Response> => {

@@ -1,4 +1,15 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { Capacitor } from "@capacitor/core";
+
+// Get API base URL - use production URL on native, relative path on web
+const getApiBase = () => {
+  if (Capacitor.isNativePlatform()) {
+    return process.env.VITE_API_URL || "https://your-backend-url.com/api";
+  }
+  return "/api";
+};
+
+const API_BASE = getApiBase();
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -12,7 +23,10 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // If URL is relative, prepend API_BASE
+  const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
+  
+  const res = await fetch(fullUrl, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -29,7 +43,11 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const url = queryKey.join("/") as string;
+    // If URL is relative, prepend API_BASE
+    const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
+    
+    const res = await fetch(fullUrl, {
       credentials: "include",
     });
 

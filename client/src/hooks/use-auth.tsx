@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User as SelectUser } from "@shared/schema";
-import { queryClient } from "../lib/queryClient";
+import { queryClient, apiRequest } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -27,21 +27,6 @@ type RegisterData = {
   password: string;
 };
 
-async function apiRequest(method: string, url: string, body?: any) {
-  const res = await fetch(url, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include",
-  });
-  
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: "Request failed" }));
-    throw new Error(data.error || "Request failed");
-  }
-  
-  return res;
-}
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -55,10 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: async () => {
-      const res = await fetch("/api/user", { credentials: "include" });
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error("Failed to fetch user");
-      return res.json();
+      try {
+        const res = await apiRequest("GET", "/api/user");
+        return res.json();
+      } catch (error: any) {
+        // Return null for 401 (not authenticated)
+        if (error.message?.includes("401")) return null;
+        throw error;
+      }
     },
     retry: false,
     staleTime: Infinity,

@@ -73,6 +73,9 @@ jobs:
           echo "=== Starting Xcode build ==="
           echo "Archive will be created at: $ARCHIVE_PATH"
           
+          # Clean any existing archive
+          rm -rf "$ARCHIVE_PATH"
+          
           xcodebuild clean archive \
             -workspace App.xcworkspace \
             -scheme App \
@@ -85,6 +88,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             -allowProvisioningUpdates \
             -showBuildTimingSummary \
+            SKIP_INSTALL=NO \
+            COPY_PHASE_STRIP=NO \
             2>&1 | tee build.log
           
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
@@ -147,7 +152,29 @@ jobs:
           # Check expected location
           if [ -d "$ARCHIVE_PATH" ]; then
             echo "✓ Archive found at expected path: $ARCHIVE_PATH"
-            ls -lh "$ARCHIVE_PATH"
+            echo ""
+            echo "=== Archive directory structure ==="
+            ls -lah "$ARCHIVE_PATH"
+            echo ""
+            echo "=== Checking for app bundle ==="
+            if [ -d "$ARCHIVE_PATH/Products/Applications/App.app" ]; then
+              echo "✓ App bundle found in archive"
+              ls -lh "$ARCHIVE_PATH/Products/Applications/App.app" | head -5
+            else
+              echo "✗ App bundle NOT found in archive!"
+              echo "Looking for app bundle..."
+              find "$ARCHIVE_PATH" -name "*.app" -type d 2>/dev/null || echo "No .app bundles found"
+              echo ""
+              echo "Products directory contents:"
+              ls -lah "$ARCHIVE_PATH/Products/" 2>/dev/null || echo "Products directory doesn't exist"
+            fi
+            echo ""
+            echo "=== Archive Info.plist ==="
+            if [ -f "$ARCHIVE_PATH/Info.plist" ]; then
+              echo "✓ Info.plist found"
+            else
+              echo "✗ Info.plist NOT found!"
+            fi
             echo "archive_created=true" >> $GITHUB_OUTPUT
           else
             echo "✗ Archive not found at expected path: $ARCHIVE_PATH"
@@ -169,21 +196,52 @@ jobs:
       - name: Verify and prepare archive
         working-directory: ios/App
         run: |
-          echo "=== Checking build directory ==="
-          ls -lah ./build/ || echo "Build directory not found"
-          if [ -d "./build/App.xcarchive" ]; then
-            echo "✓ Archive found at ./build/App.xcarchive"
-            du -sh ./build/App.xcarchive
-            # Create a marker file to confirm archive exists
-            touch ./build/.archive-ready
-          else
+          echo "=== Verifying archive structure ==="
+          if [ ! -d "./build/App.xcarchive" ]; then
             echo "✗ Archive NOT found at ./build/App.xcarchive"
-            echo "Searching for archive..."
-            find . -name "*.xcarchive" -type d 2>/dev/null || echo "No .xcarchive files found"
-            echo "Contents of build directory:"
-            find ./build -type f -o -type d 2>/dev/null | head -20 || echo "Build directory empty or not found"
             exit 1
           fi
+          
+          echo "✓ Archive found"
+          echo "=== Archive contents ==="
+          ls -lah ./build/App.xcarchive/
+          
+          echo ""
+          echo "=== Verifying required archive components ==="
+          
+          # Check for required files/folders
+          MISSING=""
+          if [ ! -f "./build/App.xcarchive/Info.plist" ]; then
+            MISSING="$MISSING Info.plist"
+          fi
+          if [ ! -d "./build/App.xcarchive/Products" ]; then
+            MISSING="$MISSING Products"
+          fi
+          if [ ! -d "./build/App.xcarchive/Products/Applications" ]; then
+            MISSING="$MISSING Products/Applications"
+          fi
+          if [ ! -d "./build/App.xcarchive/Products/Applications/App.app" ]; then
+            MISSING="$MISSING Products/Applications/App.app"
+          fi
+          
+          if [ -n "$MISSING" ]; then
+            echo "✗ Archive is missing required components:$MISSING"
+            echo "Archive structure:"
+            find ./build/App.xcarchive -type f -o -type d | head -30
+            exit 1
+          fi
+          
+          echo "✓ Archive structure is valid"
+          echo "Archive size:"
+          du -sh ./build/App.xcarchive
+          
+          # Create a ZIP file for easier download
+          echo ""
+          echo "=== Creating ZIP archive for download ==="
+          cd ./build
+          zip -r App.xcarchive.zip App.xcarchive
+          ls -lh App.xcarchive.zip
+          cd ..
 
       - name: Export IPA (unsigned)
         working-directory: ios/App
@@ -222,7 +280,9 @@ jobs:
         if: steps.build.outcome == 'success'
         with:
           name: ios-app-archive
-          path: ios/App/build/App.xcarchive
+          path: |
+            ios/App/build/App.xcarchive
+            ios/App/build/App.xcarchive.zip
           retention-days: 30
           if-no-files-found: error
 

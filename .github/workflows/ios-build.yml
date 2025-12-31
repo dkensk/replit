@@ -69,35 +69,61 @@ jobs:
         id: build
         run: |
           mkdir -p ./build
+          ARCHIVE_PATH=$(pwd)/build/App.xcarchive
           echo "=== Starting Xcode build ==="
+          echo "Archive will be created at: $ARCHIVE_PATH"
+          
           xcodebuild clean archive \
             -workspace App.xcworkspace \
             -scheme App \
-            -archivePath ./build/App.xcarchive \
+            -archivePath "$ARCHIVE_PATH" \
             -configuration Release \
+            -sdk iphoneos \
             -destination "generic/platform=iOS" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             -allowProvisioningUpdates \
             -showBuildTimingSummary \
-            2>&1 | tee build.log || {
-              echo "=== Build failed ==="
-              echo "Last 50 lines of build log:"
-              tail -50 build.log
-              echo "=== Full error details ==="
-              grep -i "error:" build.log | head -20 || echo "No error messages found in expected format"
-              exit 1
-            }
-          echo "=== Build succeeded ==="
-          if [ -d "./build/App.xcarchive" ]; then
-            echo "✓ Archive created successfully"
-            ls -lh ./build/App.xcarchive
+            2>&1 | tee build.log
+          
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "=== ❌ BUILD FAILED (exit code: $BUILD_EXIT_CODE) ==="
+            echo ""
+            echo "=== Last 100 lines of build log ==="
+            tail -100 build.log
+            echo ""
+            echo "=== Searching for errors ==="
+            grep -i "error" build.log | tail -30 || echo "No 'error' found, checking for other failure indicators..."
+            grep -i "failed\|failure\|fatal" build.log | tail -20 || echo "No failure keywords found"
+            echo ""
+            echo "=== Full build log saved above ==="
+            exit 1
+          fi
+          
+          echo "=== Build completed (exit code: $BUILD_EXIT_CODE) ==="
+          echo "=== Searching for archive ==="
+          
+          # Check expected location
+          if [ -d "$ARCHIVE_PATH" ]; then
+            echo "✓ Archive found at expected path: $ARCHIVE_PATH"
+            ls -lh "$ARCHIVE_PATH"
             echo "archive_created=true" >> $GITHUB_OUTPUT
           else
-            echo "✗ Archive not found after build"
-            echo "Build directory contents:"
-            ls -lah ./build/ || echo "Build directory doesn't exist"
+            echo "✗ Archive not found at expected path: $ARCHIVE_PATH"
+            echo ""
+            echo "=== Searching entire directory for .xcarchive ==="
+            find . -name "*.xcarchive" -type d 2>/dev/null | head -10 || echo "No .xcarchive files found"
+            echo ""
+            echo "=== Checking build directory ==="
+            ls -lah ./build/ 2>/dev/null || echo "Build directory doesn't exist"
+            echo ""
+            echo "=== Checking for archive in common locations ==="
+            ls -lah ~/Library/Developer/Xcode/Archives/ 2>/dev/null | head -5 || echo "No archives in Xcode default location"
+            echo ""
+            echo "=== Last 20 lines of build log (looking for archive path) ==="
+            tail -20 build.log | grep -i "archive\|xcarchive" || echo "No archive mentions in last 20 lines"
             exit 1
           fi
 

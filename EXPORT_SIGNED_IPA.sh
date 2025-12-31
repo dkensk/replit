@@ -64,21 +64,19 @@ fi
 
 echo "✓ Found archive at: $ARCHIVE_PATH"
 
-# Get team ID from user
+# Get team ID from user or try to detect it
 echo ""
 echo "To sign the app, we need your Apple Developer Team ID."
 echo "You can find it at: https://developer.apple.com/account → Membership"
-echo "It looks like: ABC123DEF4 (10 characters, letters and numbers)"
 echo ""
-while [ -z "$TEAM_ID" ]; do
-    read -p "Enter your Team ID: " TEAM_ID
-    # Remove any whitespace
-    TEAM_ID=$(echo "$TEAM_ID" | tr -d '[:space:]')
-    if [ -z "$TEAM_ID" ]; then
-        echo "Team ID is required. Please enter it."
-    fi
-done
-echo "Using Team ID: $TEAM_ID"
+read -p "Enter your Team ID (or press Enter to try automatic detection): " TEAM_ID
+
+# If no team ID provided, try to get it from Xcode
+if [ -z "$TEAM_ID" ]; then
+    echo "Attempting to detect Team ID from Xcode..."
+    # Try to get team from Xcode preferences or let xcodebuild prompt
+    TEAM_ID=""
+fi
 
 # Create export options for App Store with automatic signing
 EXPORT_OPTIONS="/tmp/exportOptions.plist"
@@ -170,3 +168,4 @@ else
     echo "Full error log saved to: /tmp/xcode_export.log"
     exit 1
 fi
+

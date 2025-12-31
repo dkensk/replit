@@ -1,0 +1,347 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          # Try npm ci first, fall back to npm install if lock file is out of sync
+          npm ci || npm install
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install CocoaPods
+        run: gem install cocoapods
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
+      - name: Install iOS dependencies
+        working-directory: ios/App
+        run: pod install
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Verify workspace exists
+        working-directory: ios/App
+        run: |
+          if [ ! -d "App.xcworkspace" ]; then
+            echo "ERROR: App.xcworkspace not found after pod install"
+            ls -la
+            exit 1
+          fi
+          echo "✓ Workspace found"
+
+      - name: List available schemes
+        working-directory: ios/App
+        run: |
+          echo "=== Listing schemes ==="
+          xcodebuild -list -workspace App.xcworkspace || (echo "Failed to list schemes" && exit 1)
+
+      - name: Build iOS Archive
+        working-directory: ios/App
+        id: build
+        run: |
+          mkdir -p ./build
+          ARCHIVE_PATH=$(pwd)/build/App.xcarchive
+          echo "=== Starting Xcode build ==="
+          echo "Archive will be created at: $ARCHIVE_PATH"
+          
+          # Clean any existing archive
+          rm -rf "$ARCHIVE_PATH"
+          
+          xcodebuild clean archive \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -archivePath "$ARCHIVE_PATH" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -allowProvisioningUpdates \
+            -showBuildTimingSummary \
+            SKIP_INSTALL=NO \
+            COPY_PHASE_STRIP=NO \
+            2>&1 | tee build.log
+          
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo ""
+            echo "╔════════════════════════════════════════════════════════════╗"
+            echo "║  ❌ BUILD FAILED (exit code: $BUILD_EXIT_CODE)              ║"
+            echo "╚════════════════════════════════════════════════════════════╝"
+            echo ""
+            
+            # Extract failed build commands
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📋 FAILED BUILD COMMANDS:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            FAILED_COMMANDS=$(grep -A 20 "The following build commands failed" build.log | head -25)
+            if [ -n "$FAILED_COMMANDS" ]; then
+              echo "$FAILED_COMMANDS"
+            else
+              echo "No 'failed commands' section found in standard format"
+              # Try alternative patterns
+              grep -B 5 -A 10 "failed\|FAILED" build.log | grep -E "(Compile|Ld|CodeSign|Copy|Process)" | head -20 || echo "Could not extract failed commands"
+            fi
+            echo ""
+            
+            # Extract all errors
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🔴 ALL ERROR MESSAGES:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            ERRORS=$(grep -i "error:" build.log | tail -30)
+            if [ -n "$ERRORS" ]; then
+              echo "$ERRORS"
+            else
+              echo "No 'error:' messages found"
+            fi
+            echo ""
+            
+            # Extract warnings that might be relevant
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "⚠️  CRITICAL WARNINGS:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            grep -i "warning:" build.log | grep -iE "missing|not found|cannot|unable|failed" | tail -20 || echo "No critical warnings found"
+            echo ""
+            
+            # Show context around failures
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📝 FAILURE CONTEXT (last 200 lines):"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            tail -200 build.log
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "💡 TIP: Look for 'error:' lines above to identify the issue"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            exit 1
+          fi
+          
+          echo "=== Build completed (exit code: $BUILD_EXIT_CODE) ==="
+          echo "=== Searching for archive ==="
+          
+          # Check expected location
+          if [ -d "$ARCHIVE_PATH" ]; then
+            echo "✓ Archive found at expected path: $ARCHIVE_PATH"
+            echo ""
+            echo "=== Archive directory structure ==="
+            ls -lah "$ARCHIVE_PATH"
+            echo ""
+            echo "=== Checking for app bundle ==="
+            if [ -d "$ARCHIVE_PATH/Products/Applications/App.app" ]; then
+              echo "✓ App bundle found in archive"
+              ls -lh "$ARCHIVE_PATH/Products/Applications/App.app" | head -5
+            else
+              echo "✗ App bundle NOT found in archive!"
+              echo "Looking for app bundle..."
+              find "$ARCHIVE_PATH" -name "*.app" -type d 2>/dev/null || echo "No .app bundles found"
+              echo ""
+              echo "Products directory contents:"
+              ls -lah "$ARCHIVE_PATH/Products/" 2>/dev/null || echo "Products directory doesn't exist"
+            fi
+            echo ""
+            echo "=== Archive Info.plist ==="
+            if [ -f "$ARCHIVE_PATH/Info.plist" ]; then
+              echo "✓ Info.plist found"
+            else
+              echo "✗ Info.plist NOT found!"
+            fi
+            echo "archive_created=true" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Archive not found at expected path: $ARCHIVE_PATH"
+            echo ""
+            echo "=== Searching entire directory for .xcarchive ==="
+            find . -name "*.xcarchive" -type d 2>/dev/null | head -10 || echo "No .xcarchive files found"
+            echo ""
+            echo "=== Checking build directory ==="
+            ls -lah ./build/ 2>/dev/null || echo "Build directory doesn't exist"
+            echo ""
+            echo "=== Checking for archive in common locations ==="
+            ls -lah ~/Library/Developer/Xcode/Archives/ 2>/dev/null | head -5 || echo "No archives in Xcode default location"
+            echo ""
+            echo "=== Last 20 lines of build log (looking for archive path) ==="
+            tail -20 build.log | grep -i "archive\|xcarchive" || echo "No archive mentions in last 20 lines"
+            exit 1
+          fi
+
+      - name: Verify and prepare archive
+        working-directory: ios/App
+        run: |
+          echo "=== Verifying archive structure ==="
+          if [ ! -d "./build/App.xcarchive" ]; then
+            echo "✗ Archive NOT found at ./build/App.xcarchive"
+            exit 1
+          fi
+          
+          echo "✓ Archive found"
+          echo "=== Archive contents ==="
+          ls -lah ./build/App.xcarchive/
+          
+          echo ""
+          echo "=== Verifying required archive components ==="
+          
+          # Check for required files/folders
+          MISSING=""
+          if [ ! -f "./build/App.xcarchive/Info.plist" ]; then
+            MISSING="$MISSING Info.plist"
+          fi
+          if [ ! -d "./build/App.xcarchive/Products" ]; then
+            MISSING="$MISSING Products"
+          fi
+          if [ ! -d "./build/App.xcarchive/Products/Applications" ]; then
+            MISSING="$MISSING Products/Applications"
+          fi
+          if [ ! -d "./build/App.xcarchive/Products/Applications/App.app" ]; then
+            MISSING="$MISSING Products/Applications/App.app"
+          fi
+          
+          if [ -n "$MISSING" ]; then
+            echo "✗ Archive is missing required components:$MISSING"
+            echo "Archive structure:"
+            find ./build/App.xcarchive -type f -o -type d | head -30
+            exit 1
+          fi
+          
+          echo "✓ Archive structure is valid"
+          echo "Archive size:"
+          du -sh ./build/App.xcarchive
+          
+          # Create a ZIP file for easier download
+          echo ""
+          echo "=== Creating ZIP archive for download ==="
+          cd ./build
+          zip -r App.xcarchive.zip App.xcarchive
+          ls -lh App.xcarchive.zip
+          cd ..
+
+      - name: Export IPA (unsigned)
+        working-directory: ios/App
+        continue-on-error: true
+        run: |
+          # Create a basic exportOptions.plist if it doesn't exist
+          if [ ! -f exportOptions.plist ]; then
+            cat > exportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>development</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+          </dict>
+          </plist>
+          EOF
+          fi
+          
+          xcodebuild -exportArchive \
+            -archivePath ./build/App.xcarchive \
+            -exportPath ./build/ipa \
+            -exportOptionsPlist exportOptions.plist \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO || echo "Export failed - Archive is available for manual export"
+          
+          # List what was created
+          echo "=== Export results ==="
+          ls -lah ./build/ipa/ 2>/dev/null || echo "IPA directory not created"
+
+      - name: Upload iOS Archive artifact
+        uses: actions/upload-artifact@v4
+        if: steps.build.outcome == 'success'
+        with:
+          name: ios-app-archive
+          path: |
+            ios/App/build/App.xcarchive
+            ios/App/build/App.xcarchive.zip
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload IPA artifact (if available)
+        uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: ios-app-ipa
+          path: ios/App/build/ipa/*.ipa
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Create signed build (if certificates provided)
+        continue-on-error: true
+        working-directory: ios/App
+        run: |
+          # Skip if certificates not provided
+          if [ -z "${{ secrets.APPLE_CERTIFICATE_BASE64 }}" ] || [ -z "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" ] || [ -z "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" ]; then
+            echo "Skipping signed build - certificates not provided"
+            exit 0
+          fi
+          
+          # Create keychain
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          
+          # Import certificate
+          echo "${{ secrets.APPLE_CERTIFICATE_BASE64 }}" | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" build.keychain
+          
+          # Import provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+          
+          # Get provisioning profile UUID
+          PROFILE_UUID=$(grep -aA1 UUID ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision | grep -o '[-A-F0-9]\{36\}')
+          
+          # Export signed IPA
+          xcodebuild -exportArchive \
+            -archivePath ./build/App.xcarchive \
+            -exportPath ./build/ipa-signed \
+            -exportOptionsPlist exportOptions.plist \
+            -allowProvisioningUpdates
+          
+          # Upload signed IPA
+          cp ./build/ipa-signed/*.ipa ./build/App-signed.ipa
+
+      - name: Upload signed IPA artifact
+        continue-on-error: true
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-signed
+          path: ios/App/build/App-signed.ipa
+          retention-days: 30
+          if-no-files-found: warn

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Distribution method: app-store, ad-hoc, enterprise, or development -->
+    <key>method</key>
+    <string>app-store</string>
+    
+    <!-- Your Apple Developer Team ID (replace YOUR_TEAM_ID) -->
+    <key>teamID</key>
+    <string>YOUR_TEAM_ID</string>
+    
+    <!-- Disable bitcode (required for modern apps) -->
+    <key>uploadBitcode</key>
+    <false/>
+    <key>compileBitcode</key>
+    <false/>
+    
+    <!-- Upload debug symbols for crash reporting -->
+    <key>uploadSymbols</key>
+    <true/>
+    
+    <!-- Signing style: automatic or manual -->
+    <key>signingStyle</key>
+    <string>manual</string>
+    
+    <!-- Provisioning profiles mapping (replace with your actual profile UUID) -->
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.edgehockey.app</key>
+        <string>YOUR_PROVISIONING_PROFILE_UUID</string>
+    </dict>
+</dict>
+</plist>
+

@@ -51,6 +51,7 @@ jobs:
       - name: Build iOS Archive
         working-directory: ios/App
         run: |
+          mkdir -p ./build
           xcodebuild clean archive \
             -workspace App.xcworkspace \
             -scheme App \
@@ -58,7 +59,8 @@ jobs:
             -configuration Release \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            -allowProvisioningUpdates || (echo "Build failed with exit code $?" && exit 1)
 
       - name: Export IPA (unsigned)
         working-directory: ios/App
@@ -91,12 +93,14 @@ jobs:
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: ios-app
           path: |
             ios/App/build/App.xcarchive
             ios/App/build/ipa/*.ipa
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Create signed build (if certificates provided)
         continue-on-error: true
@@ -144,3 +148,4 @@ jobs:
           name: ios-app-signed
           path: ios/App/build/App-signed.ipa
           retention-days: 30
+          if-no-files-found: warn

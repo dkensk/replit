@@ -48,6 +48,11 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: List available schemes
+        working-directory: ios/App
+        run: |
+          xcodebuild -list -workspace App.xcworkspace || xcodebuild -list -project App.xcodeproj
+
       - name: Build iOS Archive
         working-directory: ios/App
         run: |
@@ -60,7 +65,17 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            -allowProvisioningUpdates || (echo "Build failed with exit code $?" && exit 1)
+            -allowProvisioningUpdates \
+            -showBuildSettings 2>&1 | head -20 || true
+          xcodebuild clean archive \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -archivePath ./build/App.xcarchive \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -allowProvisioningUpdates
 
       - name: Export IPA (unsigned)
         working-directory: ios/App

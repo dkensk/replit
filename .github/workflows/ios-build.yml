@@ -90,6 +90,21 @@ jobs:
           echo "=== Build succeeded ==="
           ls -lh ./build/App.xcarchive || echo "Archive not found at expected path"
 
+      - name: Verify archive exists
+        working-directory: ios/App
+        run: |
+          echo "=== Checking build directory ==="
+          ls -lah ./build/ || echo "Build directory not found"
+          if [ -d "./build/App.xcarchive" ]; then
+            echo "✓ Archive found at ./build/App.xcarchive"
+            du -sh ./build/App.xcarchive
+          else
+            echo "✗ Archive NOT found at ./build/App.xcarchive"
+            echo "Contents of build directory:"
+            find ./build -type f -o -type d | head -20
+            exit 1
+          fi
+
       - name: Export IPA (unsigned)
         working-directory: ios/App
         continue-on-error: true
@@ -117,18 +132,29 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO || echo "Export failed - Archive is available for manual export"
+          
+          # List what was created
+          echo "=== Export results ==="
+          ls -lah ./build/ipa/ 2>/dev/null || echo "IPA directory not created"
 
-      - name: Upload IPA artifact
+      - name: Upload iOS Archive artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-app-archive
+          path: ios/App/build/App.xcarchive
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload IPA artifact (if available)
         uses: actions/upload-artifact@v4
         if: always()
         continue-on-error: true
         with:
-          name: ios-app
-          path: |
-            ios/App/build/App.xcarchive
-            ios/App/build/ipa/*.ipa
+          name: ios-app-ipa
+          path: ios/App/build/ipa/*.ipa
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: ignore
 
       - name: Create signed build (if certificates provided)
         continue-on-error: true

@@ -99,10 +99,15 @@ jobs:
           retention-days: 30
 
       - name: Create signed build (if certificates provided)
-        if: ${{ secrets.APPLE_CERTIFICATE_BASE64 != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.APPLE_PROVISIONING_PROFILE_BASE64 != '' }}
         continue-on-error: true
         working-directory: ios/App
         run: |
+          # Skip if certificates not provided
+          if [ -z "${{ secrets.APPLE_CERTIFICATE_BASE64 }}" ] || [ -z "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" ] || [ -z "${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}" ]; then
+            echo "Skipping signed build - certificates not provided"
+            exit 0
+          fi
+          
           # Create keychain
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
@@ -132,8 +137,8 @@ jobs:
           cp ./build/ipa-signed/*.ipa ./build/App-signed.ipa
 
       - name: Upload signed IPA artifact
-        if: ${{ secrets.APPLE_CERTIFICATE_BASE64 != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.APPLE_PROVISIONING_PROFILE_BASE64 != '' }}
         continue-on-error: true
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ios-app-signed

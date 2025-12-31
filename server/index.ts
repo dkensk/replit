@@ -3,6 +3,19 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
+// Check required environment variables
+if (!process.env.DATABASE_URL) {
+  console.error("❌ ERROR: DATABASE_URL environment variable is not set!");
+  console.error("Please set DATABASE_URL in your Railway environment variables.");
+  process.exit(1);
+}
+
+if (!process.env.SESSION_SECRET) {
+  console.error("❌ ERROR: SESSION_SECRET environment variable is not set!");
+  console.error("Please set SESSION_SECRET in your Railway environment variables.");
+  process.exit(1);
+}
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -84,8 +97,9 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
+    log(`Error ${status}: ${message}`, "error");
     res.status(status).json({ message });
-    throw err;
+    // Don't throw - just log the error
   });
 
   // importantly only setup vite in development and after

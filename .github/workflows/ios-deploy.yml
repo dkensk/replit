@@ -14,7 +14,7 @@ on:
 jobs:
   deploy:
     runs-on: macos-latest
-    if: ${{ secrets.APPLE_CERTIFICATE_BASE64 && secrets.APPLE_CERTIFICATE_PASSWORD && secrets.APPLE_PROVISIONING_PROFILE_BASE64 && secrets.APP_STORE_CONNECT_API_KEY }}
+    if: false  # Disabled - requires certificates and API keys to be set up
     
     steps:
       - name: Checkout code

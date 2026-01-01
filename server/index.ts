@@ -38,15 +38,22 @@ app.use(express.urlencoded({ extended: false }));
 
 // CORS middleware - allow requests from mobile apps
 app.use((req, res, next) => {
-  // Log all incoming requests for debugging
-  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  const origin = req.headers.origin;
   
-  // Allow requests from any origin (for mobile apps)
-  // In production, you might want to restrict this to specific domains
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  // Log all incoming requests for debugging
+  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${origin || 'none'} - User-Agent: ${req.headers['user-agent']?.substring(0, 80) || 'none'}`);
+  
+  // Allow requests from any origin (for mobile apps and web)
+  // If origin is present, use it; otherwise allow all (mobile apps often don't send origin)
+  if (origin) {
+    res.header("Access-Control-Allow-Origin", origin);
+  } else {
+    res.header("Access-Control-Allow-Origin", "*");
+  }
+  
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept");
   
   // Handle preflight requests
   if (req.method === "OPTIONS") {

@@ -170,8 +170,14 @@ process.on("uncaughtException", (error) => {
     // doesn't interfere with the other routes
     if (process.env.NODE_ENV === "production") {
       console.log("Setting up static file serving...");
-      serveStatic(app);
-      console.log("✅ Static files configured");
+      try {
+        serveStatic(app);
+        console.log("✅ Static files configured");
+      } catch (error) {
+        console.error("❌ Error setting up static files:", error);
+        // Don't exit - continue without static files for now
+        console.log("⚠️ Continuing without static file serving");
+      }
     } else {
       console.log("Setting up Vite dev server...");
       const { setupVite } = await import("./vite");

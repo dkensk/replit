@@ -38,6 +38,9 @@ app.use(express.urlencoded({ extended: false }));
 
 // CORS middleware - allow requests from mobile apps
 app.use((req, res, next) => {
+  // Log all incoming requests for debugging
+  console.log(`[CORS] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  
   // Allow requests from any origin (for mobile apps)
   // In production, you might want to restrict this to specific domains
   res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
@@ -47,6 +50,7 @@ app.use((req, res, next) => {
   
   // Handle preflight requests
   if (req.method === "OPTIONS") {
+    console.log(`[CORS] Handling OPTIONS preflight for ${req.path}`);
     return res.sendStatus(200);
   }
   
@@ -64,12 +68,13 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-  // Log ALL requests for debugging
+  // Log ALL requests for debugging - moved after CORS
   app.use((req, res, next) => {
     const start = Date.now();
     const path = req.path;
     
-    // Log incoming request immediately
+    // Log incoming request immediately (using console.log for visibility)
+    console.log(`[REQUEST] ${req.method} ${path} - IP: ${req.ip} - Origin: ${req.headers.origin || 'none'} - User-Agent: ${req.headers['user-agent']?.substring(0, 50) || 'none'}`);
     log(`${req.method} ${path} - IP: ${req.ip} - Origin: ${req.headers.origin || 'none'}`);
     
     let capturedJsonResponse: Record<string, any> | undefined = undefined;
@@ -87,7 +92,7 @@ export function log(message: string, source = "express") {
         if (capturedJsonResponse) {
           logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
         }
-
+        console.log(`[RESPONSE] ${logLine}`);
         log(logLine);
       }
     });

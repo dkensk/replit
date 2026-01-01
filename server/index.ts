@@ -149,6 +149,18 @@ process.on("uncaughtException", (error) => {
       console.log("Setting up static file serving...");
       serveStatic(app);
       console.log("✅ Static files configured");
+      
+      // Add fallback for root path to return JSON (for Railway health checks)
+      // This needs to be after serveStatic's catch-all but will override it for /
+      app.get("/", (req, res, next) => {
+        // Only return JSON if it's a health check (no Accept header or Accept: application/json)
+        const accept = req.headers.accept || "";
+        if (accept.includes("application/json") || !accept.includes("text/html")) {
+          return res.json({ status: "ok", service: "edge-hockey-api", timestamp: new Date().toISOString() });
+        }
+        // Otherwise let serveStatic handle it (serve index.html)
+        next();
+      });
     } else {
       console.log("Setting up Vite dev server...");
       const { setupVite } = await import("./vite");

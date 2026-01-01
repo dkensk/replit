@@ -107,48 +107,89 @@ export function log(message: string, source = "express") {
     next();
   });
 
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+  // Don't exit - let the error handler catch it
+});
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (error) => {
+  console.error("❌ Uncaught Exception:", error);
+  process.exit(1);
+});
+
 (async () => {
   try {
+    console.log("Starting server...");
+    console.log("DATABASE_URL:", process.env.DATABASE_URL ? "✅ Set" : "❌ Not set");
+    console.log("SESSION_SECRET:", process.env.SESSION_SECRET ? "✅ Set" : "❌ Not set");
+    console.log("NODE_ENV:", process.env.NODE_ENV);
+    console.log("PORT:", process.env.PORT || "5000 (default)");
+    
     // Database schema is pushed during Railway build phase (npm run db:push)
     // Tables should already exist when server starts
+    console.log("Registering routes...");
     await registerRoutes(httpServer, app);
+    console.log("✅ Routes registered");
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-    log(`Error ${status}: ${message}`, "error");
-    res.status(status).json({ message });
-    // Don't throw - just log the error
-  });
+      log(`Error ${status}: ${message}`, "error");
+      res.status(status).json({ message });
+      // Don't throw - just log the error
+    });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
-  }
+    // importantly only setup vite in development and after
+    // setting up all the other routes so the catch-all route
+    // doesn't interfere with the other routes
+    if (process.env.NODE_ENV === "production") {
+      console.log("Setting up static file serving...");
+      serveStatic(app);
+      console.log("✅ Static files configured");
+    } else {
+      console.log("Setting up Vite dev server...");
+      const { setupVite } = await import("./vite");
+      await setupVite(httpServer, app);
+      console.log("✅ Vite configured");
+    }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+    // ALWAYS serve the app on the port specified in the environment variable PORT
+    // Other ports are firewalled. Default to 5000 if not specified.
+    // this serves both the API and the client.
+    // It is the only port that is not firewalled.
+    const port = parseInt(process.env.PORT || "5000", 10);
+    console.log(`Starting HTTP server on port ${port}...`);
+    httpServer.listen(
+      {
+        port,
+        host: "0.0.0.0",
+        reusePort: true,
+      },
+      () => {
+        log(`✅ Server is serving on port ${port}`);
+        console.log(`✅ Server started successfully on port ${port}`);
+      },
+    );
+    
+    httpServer.on("error", (error: any) => {
+      console.error("❌ HTTP server error:", error);
+      if (error.code === "EADDRINUSE") {
+        console.error(`❌ Port ${port} is already in use`);
+      }
+      process.exit(1);
+    });
+    
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+    console.error("❌ Failed to start server:");
+    console.error(error);
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     process.exit(1);
   }
 })();

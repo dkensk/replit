@@ -129,6 +129,16 @@ process.on("uncaughtException", (error) => {
     
     // Database schema is pushed during Railway build phase (npm run db:push)
     // Tables should already exist when server starts
+    // Register health check routes FIRST (before API routes)
+    // This ensures Railway's health checks work even if other routes fail
+    app.get("/", (req, res) => {
+      res.json({ status: "ok", service: "edge-hockey-api", timestamp: new Date().toISOString() });
+    });
+    
+    app.get("/health", (req, res) => {
+      res.json({ status: "ok", timestamp: new Date().toISOString() });
+    });
+    
     console.log("Registering routes...");
     await registerRoutes(httpServer, app);
     console.log("✅ Routes registered");

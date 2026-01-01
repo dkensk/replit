@@ -15,17 +15,21 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  app.use(express.static(distPath, {
+    // Don't serve index.html for API routes
+    // Health check routes are handled by route handlers registered earlier
+    index: false, // Disable automatic index.html serving
+  }));
 
   // fall through to index.html if the file doesn't exist
   // BUT skip API routes and health check routes (those should return JSON)
   // Note: /health, /api/health, and / are handled by route handlers registered before this
-  app.use("*", (req, res, next) => {
+  app.get("*", (req, res, next) => {
     // Don't serve index.html for API routes or health checks
-    // These routes are already registered in registerRoutes()
     if (req.path.startsWith("/api") || req.path === "/health" || req.path === "/") {
-      return next(); // Let the route handlers handle it
+      return next(); // Let the route handlers handle it (should return 404 if not found)
     }
+    // For all other GET requests, serve index.html (SPA fallback)
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

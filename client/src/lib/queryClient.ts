@@ -6,7 +6,7 @@ const getApiBase = () => {
   if (Capacitor.isNativePlatform()) {
     // For iOS/Android, always use the production Railway URL
     // Environment variables aren't available in built apps, so we hardcode it
-    const apiUrl = "https://replit-production-2505.up.railway.app/api";
+    const apiUrl = "https://replit-production-3505.up.railway.app/api";
     console.log("[API] Native platform detected, using API URL:", apiUrl);
     return apiUrl;
   }

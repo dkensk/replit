@@ -28,7 +28,11 @@ async function throwIfResNotOk(res: Response) {
       const text = await res.text();
       errorText = text || res.statusText;
     }
-    throw new Error(errorText);
+    // Create a more descriptive error that includes status code
+    const error = new Error(errorText);
+    (error as any).status = res.status;
+    (error as any).statusText = res.statusText;
+    throw error;
   }
 }
 

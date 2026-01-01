@@ -31,6 +31,11 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
+  // Health check endpoint
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   // Get profile for the current session
   app.get("/api/profile", async (req, res) => {
     try {

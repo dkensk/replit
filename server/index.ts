@@ -132,15 +132,24 @@ process.on("uncaughtException", (error) => {
     // Register health check routes FIRST (before API routes)
     // This ensures Railway's health checks work even if other routes fail
     app.get("/", (req, res) => {
+      console.log("[HEALTH] GET / request received");
       res.json({ status: "ok", service: "edge-hockey-api", timestamp: new Date().toISOString() });
     });
     
     app.get("/health", (req, res) => {
+      console.log("[HEALTH] GET /health request received");
       res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
     
     app.get("/api/health", (req, res) => {
+      console.log("[HEALTH] GET /api/health request received");
       res.json({ status: "ok", timestamp: new Date().toISOString() });
+    });
+    
+    // Test route to verify routing is working
+    app.get("/test", (req, res) => {
+      console.log("[TEST] GET /test request received");
+      res.json({ status: "test", message: "Server is responding", timestamp: new Date().toISOString() });
     });
     
     console.log("Registering routes...");

@@ -51,6 +51,8 @@ export async function apiRequest(
     console.log("[API] Request body:", typeof data === 'object' ? JSON.stringify(data) : data);
   }
   
+  let fetchError: any = null;
+  
   try {
     const fetchOptions: RequestInit = {
       method,
@@ -74,6 +76,7 @@ export async function apiRequest(
     await throwIfResNotOk(res);
     return res;
   } catch (error: any) {
+    fetchError = error;
     console.error("[API] Request failed with error:", error);
     console.error("[API] Error type:", error?.constructor?.name);
     console.error("[API] Error name:", error?.name);
@@ -81,20 +84,30 @@ export async function apiRequest(
     console.error("[API] Error status:", error?.status);
     console.error("[API] Error stack:", error?.stack);
     
-    // Re-throw with more descriptive error
+    // Network errors (fetch fails completely)
     if (error instanceof TypeError) {
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        throw new Error(`Network error: Cannot connect to server at ${fullUrl}. Please check your internet connection.`);
+      const networkError = `Network error: Cannot connect to ${fullUrl}. This usually means:
+1. The server is not running
+2. The URL is incorrect
+3. There's a network connectivity issue
+
+Please check:
+- Server URL: ${fullUrl}
+- Is the server running? Visit: ${API_BASE.replace('/api', '/health')}`;
+      throw new Error(networkError);
+    }
+    
+    // HTTP errors (server responded with error status)
+    if (error instanceof Error && error.message) {
+      // If error already has a good message, use it
+      if (error.message.includes('Network error') || error.message.includes('Cannot connect')) {
+        throw error;
       }
-      throw new Error(`Network error: ${error.message}. URL: ${fullUrl}`);
+      // Otherwise, enhance it with context
+      throw new Error(`Server error: ${error.message} (Status: ${(error as any).status || 'unknown'})`);
     }
     
-    // If it's an Error with a message, use it directly
-    if (error instanceof Error) {
-      throw error;
-    }
-    
-    // Fallback
+    // Unknown errors
     throw new Error(`Request failed: ${String(error)}`);
   }
 }

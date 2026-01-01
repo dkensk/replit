@@ -41,23 +41,44 @@ export async function apiRequest(
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
   
   console.log(`[API] ${method} request to:`, fullUrl);
+  console.log(`[API] API_BASE is:`, API_BASE);
+  console.log(`[API] Is native platform:`, Capacitor.isNativePlatform());
   if (data) {
-    console.log("[API] Request body:", data);
+    console.log("[API] Request body:", typeof data === 'object' ? JSON.stringify(data) : data);
   }
   
   try {
-    const res = await fetch(fullUrl, {
+    const fetchOptions: RequestInit = {
       method,
       headers: data ? { "Content-Type": "application/json" } : {},
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
+    };
+    
+    console.log("[API] Fetch options:", {
+      method: fetchOptions.method,
+      hasHeaders: !!fetchOptions.headers,
+      hasBody: !!fetchOptions.body,
+      credentials: fetchOptions.credentials,
     });
+    
+    const res = await fetch(fullUrl, fetchOptions);
 
     console.log(`[API] Response status:`, res.status, res.statusText);
+    console.log(`[API] Response headers:`, Object.fromEntries(res.headers.entries()));
+    
     await throwIfResNotOk(res);
     return res;
-  } catch (error) {
-    console.error("[API] Request failed:", error);
+  } catch (error: any) {
+    console.error("[API] Request failed with error:", error);
+    console.error("[API] Error type:", error?.constructor?.name);
+    console.error("[API] Error message:", error?.message);
+    console.error("[API] Error stack:", error?.stack);
+    
+    // Re-throw with more context
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(`Network error: Failed to connect to ${fullUrl}. Please check your internet connection and ensure the server is running.`);
+    }
     throw error;
   }
 }

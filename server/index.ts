@@ -139,6 +139,10 @@ process.on("uncaughtException", (error) => {
       res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
     
+    app.get("/api/health", (req, res) => {
+      res.json({ status: "ok", timestamp: new Date().toISOString() });
+    });
+    
     console.log("Registering routes...");
     await registerRoutes(httpServer, app);
     console.log("✅ Routes registered");

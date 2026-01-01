@@ -215,11 +215,13 @@ process.on("uncaughtException", (error) => {
     });
     
     httpServer.listen(port, "0.0.0.0", () => {
+      const addr = httpServer.address();
+      const address = typeof addr === "string" ? addr : `${addr?.address}:${addr?.port}`;
       log(`✅ Server is serving on port ${port}`);
       console.log(`✅ Server started successfully on port ${port}`);
+      console.log(`✅ Server address: ${address}`);
       console.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
       console.log(`✅ Root endpoint available at: http://0.0.0.0:${port}/`);
-      console.log(`✅ Server address: ${httpServer.address()}`);
     });
     
     // Handle graceful shutdown

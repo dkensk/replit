@@ -162,17 +162,12 @@ process.on("uncaughtException", (error) => {
     // It is the only port that is not firewalled.
     const port = parseInt(process.env.PORT || "5000", 10);
     console.log(`Starting HTTP server on port ${port}...`);
-    httpServer.listen(
-      {
-        port,
-        host: "0.0.0.0",
-        reusePort: true,
-      },
-      () => {
-        log(`✅ Server is serving on port ${port}`);
-        console.log(`✅ Server started successfully on port ${port}`);
-      },
-    );
+    
+    httpServer.listen(port, "0.0.0.0", () => {
+      log(`✅ Server is serving on port ${port}`);
+      console.log(`✅ Server started successfully on port ${port}`);
+      console.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
+    });
     
     httpServer.on("error", (error: any) => {
       console.error("❌ HTTP server error:", error);
@@ -180,6 +175,11 @@ process.on("uncaughtException", (error) => {
         console.error(`❌ Port ${port} is already in use`);
       }
       process.exit(1);
+    });
+    
+    // Keep the process alive
+    httpServer.on("listening", () => {
+      console.log("✅ HTTP server is listening and ready to accept connections");
     });
     
   } catch (error) {

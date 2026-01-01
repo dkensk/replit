@@ -31,9 +31,18 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
-  // Health check endpoint
+  // Health check endpoints (for Railway and monitoring)
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+  
+  app.get("/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+  
+  // Root endpoint for Railway health checks
+  app.get("/", (req, res) => {
+    res.json({ status: "ok", service: "edge-hockey-api", timestamp: new Date().toISOString() });
   });
 
   // Get profile for the current session

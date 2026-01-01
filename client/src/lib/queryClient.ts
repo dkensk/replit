@@ -72,14 +72,26 @@ export async function apiRequest(
   } catch (error: any) {
     console.error("[API] Request failed with error:", error);
     console.error("[API] Error type:", error?.constructor?.name);
+    console.error("[API] Error name:", error?.name);
     console.error("[API] Error message:", error?.message);
+    console.error("[API] Error status:", error?.status);
     console.error("[API] Error stack:", error?.stack);
     
-    // Re-throw with more context
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error(`Network error: Failed to connect to ${fullUrl}. Please check your internet connection and ensure the server is running.`);
+    // Re-throw with more descriptive error
+    if (error instanceof TypeError) {
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        throw new Error(`Network error: Cannot connect to server at ${fullUrl}. Please check your internet connection.`);
+      }
+      throw new Error(`Network error: ${error.message}. URL: ${fullUrl}`);
     }
-    throw error;
+    
+    // If it's an Error with a message, use it directly
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    // Fallback
+    throw new Error(`Request failed: ${String(error)}`);
   }
 }
 

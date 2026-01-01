@@ -181,6 +181,19 @@ process.on("uncaughtException", (error) => {
       log(`✅ Server is serving on port ${port}`);
       console.log(`✅ Server started successfully on port ${port}`);
       console.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
+      console.log(`✅ Root endpoint available at: http://0.0.0.0:${port}/`);
+      
+      // Test that the server is actually responding
+      const testReq = require("http").get(`http://localhost:${port}/health`, (res: any) => {
+        let data = "";
+        res.on("data", (chunk: any) => { data += chunk; });
+        res.on("end", () => {
+          console.log(`✅ Health check test response: ${res.statusCode} - ${data}`);
+        });
+      });
+      testReq.on("error", (err: any) => {
+        console.error("❌ Health check test failed:", err);
+      });
     });
     
     httpServer.on("error", (error: any) => {
@@ -194,6 +207,15 @@ process.on("uncaughtException", (error) => {
     // Keep the process alive
     httpServer.on("listening", () => {
       console.log("✅ HTTP server is listening and ready to accept connections");
+    });
+    
+    // Handle graceful shutdown
+    process.on("SIGTERM", () => {
+      console.log("⚠️  Received SIGTERM, shutting down gracefully...");
+      httpServer.close(() => {
+        console.log("✅ Server closed");
+        process.exit(0);
+      });
     });
     
   } catch (error) {

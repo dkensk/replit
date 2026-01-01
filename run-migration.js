@@ -1,5 +1,5 @@
 // Run database migration on startup
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 try {
   console.log('Running database migration...');

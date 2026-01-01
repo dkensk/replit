@@ -131,19 +131,20 @@ process.on("uncaughtException", (error) => {
     // Tables should already exist when server starts
     // Register health check routes FIRST (before API routes)
     // This ensures Railway's health checks work even if other routes fail
+    // Railway checks the root path / by default - respond immediately
     app.get("/", (req, res) => {
-      console.log("[HEALTH] GET / request received");
-      res.json({ status: "ok", service: "edge-hockey-api", timestamp: new Date().toISOString() });
+      console.log("[HEALTH] GET / request received from:", req.ip);
+      res.status(200).json({ status: "ok", service: "edge-hockey-api", timestamp: new Date().toISOString() });
     });
     
     app.get("/health", (req, res) => {
-      console.log("[HEALTH] GET /health request received");
-      res.json({ status: "ok", timestamp: new Date().toISOString() });
+      console.log("[HEALTH] GET /health request received from:", req.ip);
+      res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
     });
     
     app.get("/api/health", (req, res) => {
-      console.log("[HEALTH] GET /api/health request received");
-      res.json({ status: "ok", timestamp: new Date().toISOString() });
+      console.log("[HEALTH] GET /api/health request received from:", req.ip);
+      res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
     });
     
     // Test route to verify routing is working

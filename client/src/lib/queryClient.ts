@@ -4,7 +4,7 @@ import { Capacitor } from "@capacitor/core";
 // Get API base URL - use production URL on native, relative path on web
 const getApiBase = () => {
   if (Capacitor.isNativePlatform()) {
-    return process.env.VITE_API_URL || "https://replit-production-3505.up.railway.app/api";
+    return import.meta.env.VITE_API_URL || "https://replit-production-3505.up.railway.app/api";
   }
   return "/api";
 };

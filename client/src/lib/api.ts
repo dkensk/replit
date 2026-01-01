@@ -6,7 +6,7 @@ const getApiBase = () => {
   // Check if running on native platform (iOS/Android)
   if (Capacitor.isNativePlatform()) {
     // Use production backend URL - UPDATE THIS with your actual backend URL
-    return process.env.VITE_API_URL || "https://replit-production-3505.up.railway.app/api";
+    return import.meta.env.VITE_API_URL || "https://replit-production-3505.up.railway.app/api";
   }
   // On web, use relative path (works with dev server or same-origin backend)
   return "/api";

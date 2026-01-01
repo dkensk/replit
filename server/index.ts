@@ -192,13 +192,6 @@ process.on("uncaughtException", (error) => {
     const port = parseInt(process.env.PORT || "5000", 10);
     console.log(`Starting HTTP server on port ${port}...`);
     
-    httpServer.listen(port, "0.0.0.0", () => {
-      log(`✅ Server is serving on port ${port}`);
-      console.log(`✅ Server started successfully on port ${port}`);
-      console.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
-      console.log(`✅ Root endpoint available at: http://0.0.0.0:${port}/`);
-    });
-    
     httpServer.on("error", (error: any) => {
       console.error("❌ HTTP server error:", error);
       if (error.code === "EADDRINUSE") {
@@ -210,6 +203,23 @@ process.on("uncaughtException", (error) => {
     // Keep the process alive
     httpServer.on("listening", () => {
       console.log("✅ HTTP server is listening and ready to accept connections");
+      console.log(`✅ Server listening on 0.0.0.0:${port}`);
+    });
+    
+    httpServer.on("request", (req, res) => {
+      console.log(`[SERVER] Incoming request: ${req.method} ${req.url}`);
+    });
+    
+    httpServer.on("connection", (socket) => {
+      console.log(`[SERVER] New connection from ${socket.remoteAddress}:${socket.remotePort}`);
+    });
+    
+    httpServer.listen(port, "0.0.0.0", () => {
+      log(`✅ Server is serving on port ${port}`);
+      console.log(`✅ Server started successfully on port ${port}`);
+      console.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
+      console.log(`✅ Root endpoint available at: http://0.0.0.0:${port}/`);
+      console.log(`✅ Server address: ${httpServer.address()}`);
     });
     
     // Handle graceful shutdown

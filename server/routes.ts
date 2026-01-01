@@ -681,6 +681,9 @@ Return ONLY a JSON array (no markdown, no explanation) in this exact format:
             console.error("AI generation failed:", aiError);
           }
         }
+      } catch (error) {
+        console.error("Error generating custom workout:", error);
+        // Continue without AI-generated exercises
       }
       
       // Create the custom workout with generated exercises

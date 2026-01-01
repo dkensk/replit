@@ -4,12 +4,19 @@ import { Capacitor } from "@capacitor/core";
 // Get API base URL - use production URL on native, relative path on web
 const getApiBase = () => {
   if (Capacitor.isNativePlatform()) {
-    return import.meta.env.VITE_API_URL || "https://replit-production-3505.up.railway.app/api";
+    // For iOS/Android, always use the production Railway URL
+    // Environment variables aren't available in built apps, so we hardcode it
+    const apiUrl = "https://replit-production-3505.up.railway.app/api";
+    console.log("[API] Native platform detected, using API URL:", apiUrl);
+    return apiUrl;
   }
+  // On web, use relative path (works with dev server or same-origin backend)
+  console.log("[API] Web platform, using relative API path: /api");
   return "/api";
 };
 
 const API_BASE = getApiBase();
+console.log("[API] API_BASE initialized to:", API_BASE);
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -33,15 +40,26 @@ export async function apiRequest(
   // If URL is relative, prepend API_BASE
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
   
-  const res = await fetch(fullUrl, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  console.log(`[API] ${method} request to:`, fullUrl);
+  if (data) {
+    console.log("[API] Request body:", data);
+  }
+  
+  try {
+    const res = await fetch(fullUrl, {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    console.log(`[API] Response status:`, res.status, res.statusText);
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error("[API] Request failed:", error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

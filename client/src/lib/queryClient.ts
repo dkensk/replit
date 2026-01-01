@@ -21,13 +21,32 @@ console.log("[API] API_BASE initialized to:", API_BASE);
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     let errorText = res.statusText;
+    const contentType = res.headers.get("content-type");
+    
     try {
-      const json = await res.json();
-      errorText = json.error || json.message || JSON.stringify(json);
-    } catch {
-      const text = await res.text();
-      errorText = text || res.statusText;
+      // Only try to parse as JSON if content-type says it's JSON
+      if (contentType && contentType.includes("application/json")) {
+        const json = await res.json();
+        errorText = json.error || json.message || JSON.stringify(json);
+      } else {
+        // Not JSON, get as text
+        const text = await res.text();
+        errorText = text || res.statusText;
+        // If it looks like HTML, provide a better error
+        if (text.includes("<!DOCTYPE") || text.includes("<html")) {
+          errorText = `Server returned HTML instead of JSON (Status: ${res.status}). This usually means the request reached the wrong endpoint or the server is returning an error page.`;
+        }
+      }
+    } catch (parseError) {
+      // If JSON parsing fails, try to get text
+      try {
+        const text = await res.text();
+        errorText = text || res.statusText;
+      } catch {
+        errorText = res.statusText || `HTTP ${res.status} Error`;
+      }
     }
+    
     // Create a more descriptive error that includes status code
     const error = new Error(errorText);
     (error as any).status = res.status;

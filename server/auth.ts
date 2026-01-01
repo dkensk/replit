@@ -78,6 +78,9 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
+    console.log("=== REGISTRATION REQUEST ===");
+    console.log("Body:", JSON.stringify(req.body));
+    console.log("Headers:", JSON.stringify(req.headers));
     try {
       const { username, password } = req.body;
       

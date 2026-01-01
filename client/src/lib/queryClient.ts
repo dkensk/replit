@@ -13,8 +13,15 @@ const API_BASE = getApiBase();
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    let errorText = res.statusText;
+    try {
+      const json = await res.json();
+      errorText = json.error || json.message || JSON.stringify(json);
+    } catch {
+      const text = await res.text();
+      errorText = text || res.statusText;
+    }
+    throw new Error(errorText);
   }
 }
 

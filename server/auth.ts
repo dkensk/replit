@@ -126,9 +126,21 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         res.status(201).json(sanitizeUser(user));
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
-      res.status(500).json({ error: "Registration failed" });
+      // Check if it's a Zod validation error
+      if (error?.issues) {
+        const zodError = error.issues.map((issue: any) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+        return res.status(400).json({ error: zodError });
+      }
+      // Check if it's a database constraint error
+      if (error?.code === '23505') { // Unique violation
+        return res.status(400).json({ error: "Username already exists" });
+      }
+      // Return detailed error message
+      const errorMessage = error?.message || error?.toString() || "Registration failed";
+      const statusCode = error?.status || error?.statusCode || 500;
+      res.status(statusCode).json({ error: errorMessage });
     }
   });
 

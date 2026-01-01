@@ -12,10 +12,18 @@ import { z } from "zod";
 import OpenAI from "openai";
 import { setupAuth } from "./auth";
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+// Initialize OpenAI client only if API key is provided (optional for basic functionality)
+const getOpenAIClient = () => {
+  if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+    return null;
+  }
+  return new OpenAI({
+    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  });
+};
+
+const openai = getOpenAIClient();
 
 export async function registerRoutes(
   httpServer: Server,
@@ -384,6 +392,10 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Image data required" });
       }
 
+      if (!openai) {
+        return res.status(503).json({ error: "AI features are not available. Please configure OPENAI_API_KEY." });
+      }
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -647,21 +659,27 @@ For each exercise, provide: name, sets, reps, rest time, and which category it b
 Return ONLY a JSON array (no markdown, no explanation) in this exact format:
 [{"name": "Exercise Name", "sets": "3", "reps": "10", "rest": "60s", "category": "category_name"}]`;
 
-        const completion = await openai.chat.completions.create({
+        if (!openai) {
+          console.warn("AI features not available - skipping custom workout generation");
+          // Continue without AI - will use default exercises
+        } else {
+          const completion = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 600,
           temperature: 0.7
         });
         
-        const responseText = completion.choices[0]?.message?.content?.trim() || "[]";
-        try {
-          generatedExercises = JSON.parse(responseText);
-        } catch {
-          console.error("Failed to parse AI response:", responseText);
+          const responseText = completion.choices[0]?.message?.content?.trim() || "[]";
+          try {
+            generatedExercises = JSON.parse(responseText);
+          } catch {
+            console.error("Failed to parse AI response:", responseText);
+          }
+        } catch (aiError) {
+          console.error("AI generation failed:", aiError);
         }
-      } catch (aiError) {
-        console.error("AI generation failed:", aiError);
+      }
       }
       
       // Create the custom workout with generated exercises
@@ -810,6 +828,10 @@ RESPONSE GUIDELINES:
 - For younger players (under 14), emphasize fun, fundamentals, and coordination over intensity
 - Be like a supportive, knowledgeable coach who genuinely cares about their development`;
 
+      if (!openai) {
+        return res.status(503).json({ error: "AI chat is not available. Please configure OPENAI_API_KEY." });
+      }
+
       const chatMessages = [
         { role: "system" as const, content: systemPrompt },
         ...messages.map((m: { role: string; content: string }) => ({
@@ -917,6 +939,10 @@ Return ONLY a JSON array with this exact format (no other text):
 ]
 
 Categories: legs_compound, legs_explosive, legs_hinge, legs_unilateral, upper_push, upper_pull, core, mobility, shoulders, calves, isolation_bicep, isolation_tricep`;
+
+      if (!openai) {
+        return res.status(503).json({ error: "AI workout generation is not available. Please configure OPENAI_API_KEY." });
+      }
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",

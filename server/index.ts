@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { get as httpGet } from "http";
 
 // Check required environment variables
 if (!process.env.DATABASE_URL) {
@@ -183,17 +184,19 @@ process.on("uncaughtException", (error) => {
       console.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
       console.log(`✅ Root endpoint available at: http://0.0.0.0:${port}/`);
       
-      // Test that the server is actually responding
-      const testReq = require("http").get(`http://localhost:${port}/health`, (res: any) => {
-        let data = "";
-        res.on("data", (chunk: any) => { data += chunk; });
-        res.on("end", () => {
-          console.log(`✅ Health check test response: ${res.statusCode} - ${data}`);
+      // Test that the server is actually responding (after a short delay)
+      setTimeout(() => {
+        const testReq = httpGet(`http://localhost:${port}/health`, (res) => {
+          let data = "";
+          res.on("data", (chunk) => { data += chunk.toString(); });
+          res.on("end", () => {
+            console.log(`✅ Health check test response: ${res.statusCode} - ${data}`);
+          });
         });
-      });
-      testReq.on("error", (err: any) => {
-        console.error("❌ Health check test failed:", err);
-      });
+        testReq.on("error", (err) => {
+          console.error("❌ Health check test failed:", err);
+        });
+      }, 100);
     });
     
     httpServer.on("error", (error: any) => {

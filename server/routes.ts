@@ -663,23 +663,24 @@ Return ONLY a JSON array (no markdown, no explanation) in this exact format:
           console.warn("AI features not available - skipping custom workout generation");
           // Continue without AI - will use default exercises
         } else {
-          const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 600,
-          temperature: 0.7
-        });
-        
-          const responseText = completion.choices[0]?.message?.content?.trim() || "[]";
           try {
-            generatedExercises = JSON.parse(responseText);
-          } catch {
-            console.error("Failed to parse AI response:", responseText);
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: prompt }],
+              max_tokens: 600,
+              temperature: 0.7
+            });
+            
+            const responseText = completion.choices[0]?.message?.content?.trim() || "[]";
+            try {
+              generatedExercises = JSON.parse(responseText);
+            } catch {
+              console.error("Failed to parse AI response:", responseText);
+            }
+          } catch (aiError) {
+            console.error("AI generation failed:", aiError);
           }
-        } catch (aiError) {
-          console.error("AI generation failed:", aiError);
         }
-      }
       }
       
       // Create the custom workout with generated exercises

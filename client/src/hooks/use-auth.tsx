@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User as SelectUser } from "@shared/schema";
-import { queryClient } from "../lib/queryClient";
+import { queryClient, apiRequest } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -26,22 +26,6 @@ type RegisterData = {
   username: string;
   password: string;
 };
-
-async function apiRequest(method: string, url: string, body?: any) {
-  const res = await fetch(url, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include",
-  });
-  
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: "Request failed" }));
-    throw new Error(data.error || "Request failed");
-  }
-  
-  return res;
-}
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 

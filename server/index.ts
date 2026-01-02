@@ -154,8 +154,13 @@ process.on("uncaughtException", (error) => {
     });
     
     console.log("Registering routes...");
-    await registerRoutes(httpServer, app);
-    console.log("✅ Routes registered");
+    try {
+      await registerRoutes(httpServer, app);
+      console.log("✅ Routes registered");
+    } catch (error) {
+      console.error("❌ Error registering routes:", error);
+      throw error;
+    }
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;

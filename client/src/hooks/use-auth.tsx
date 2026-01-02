@@ -71,15 +71,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterData) => {
-      // Direct registration attempt - removed health check preflight to simplify
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      console.log("[AUTH] === REGISTRATION ATTEMPT START ===");
+      console.log("[AUTH] Credentials:", { username: credentials.username, passwordLength: credentials.password?.length });
+      console.log("[AUTH] Calling apiRequest with POST /api/register");
+      
+      try {
+        const res = await apiRequest("POST", "/api/register", credentials);
+        console.log("[AUTH] Registration request succeeded, parsing JSON");
+        const result = await res.json();
+        console.log("[AUTH] Registration successful:", result);
+        return result;
+      } catch (error: any) {
+        console.error("[AUTH] Registration request failed in mutationFn");
+        console.error("[AUTH] Error type:", error?.constructor?.name);
+        console.error("[AUTH] Error name:", error?.name);
+        console.error("[AUTH] Error message:", error?.message);
+        console.error("[AUTH] Error stack:", error?.stack);
+        throw error;
+      }
     },
     onSuccess: (user: SelectUser) => {
+      console.log("[AUTH] Registration onSuccess callback");
       queryClient.setQueryData(["/api/user"], user);
     },
     onError: (error: Error) => {
-      console.error("[AUTH] Registration mutation error:", error);
+      console.error("[AUTH] === REGISTRATION MUTATION ERROR ===");
+      console.error("[AUTH] Error object:", error);
+      console.error("[AUTH] Error message:", error.message);
+      console.error("[AUTH] Error stack:", error.stack);
       toast({
         title: "Registration failed",
         description: error.message || "Unknown error occurred",

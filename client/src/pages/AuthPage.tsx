@@ -32,9 +32,20 @@ export default function AuthPage() {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[AUTH PAGE] Register form submitted");
+    console.log("[AUTH PAGE] Form data:", {
+      username: registerForm.username,
+      passwordLength: registerForm.password?.length,
+      confirmPasswordLength: registerForm.confirmPassword?.length,
+      passwordsMatch: registerForm.password === registerForm.confirmPassword,
+    });
+    
     if (registerForm.password !== registerForm.confirmPassword) {
+      console.log("[AUTH PAGE] Passwords do not match, returning early");
       return;
     }
+    
+    console.log("[AUTH PAGE] Calling registerMutation.mutate");
     registerMutation.mutate({
       username: registerForm.username,
       password: registerForm.password,

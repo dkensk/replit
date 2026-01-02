@@ -230,23 +230,32 @@ httpServer.listen(port, "0.0.0.0", () => {
       console.log("✅ Vite configured");
     }
     
-    // Handle graceful shutdown
-    process.on("SIGTERM", () => {
-      console.log("⚠️  Received SIGTERM, shutting down gracefully...");
-      httpServer.close(() => {
-        console.log("✅ Server closed");
-        process.exit(0);
-      });
-    });
+    console.log("✅ Server initialization complete");
     
   } catch (error) {
-    console.error("❌ Failed to start server:");
+    console.error("❌ Failed to initialize server:");
     console.error(error);
     if (error instanceof Error) {
       console.error("Error name:", error.name);
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);
     }
-    process.exit(1);
+    // Don't exit - server is already listening, let it continue
+    console.log("⚠️ Continuing with server running despite initialization error");
   }
 })();
+
+// Handle graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("⚠️  Received SIGTERM, shutting down gracefully...");
+  httpServer.close(() => {
+    console.log("✅ Server closed");
+    process.exit(0);
+  });
+});
+
+// Keep process alive - prevent Node.js from exiting
+// The HTTP server should keep it alive, but this ensures it
+setInterval(() => {
+  // Keep event loop alive
+}, 10000);

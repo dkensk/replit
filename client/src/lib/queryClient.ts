@@ -1,6 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
-import { Http } from "@capacitor-community/http";
+// Import Http to ensure it patches fetch/XHR when enabled in config
+import "@capacitor-community/http";
 
 // Get API base URL - use production URL on native, relative path on web
 const getApiBase = () => {

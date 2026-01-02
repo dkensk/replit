@@ -7,7 +7,7 @@ const getApiBase = () => {
   if (Capacitor.isNativePlatform()) {
     // For iOS/Android, always use the production Railway URL
     // Environment variables aren't available in built apps, so we hardcode it
-    return "https://replit-production-3505.up.railway.app/api";
+    return "https://replit-production-2580.up.railway.app/api";
   }
   // On web, use relative path (works with dev server or same-origin backend)
   return "/api";

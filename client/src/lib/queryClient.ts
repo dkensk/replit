@@ -28,28 +28,37 @@ async function makeRequest(
   // If URL is relative, prepend API_BASE
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
   
-  console.log(`[API] ${method} request to:`, fullUrl);
-  console.log(`[API] API_BASE is:`, API_BASE);
-  console.log(`[API] Is native platform:`, Capacitor.isNativePlatform());
+  console.log(`[API] === REQUEST START ===`);
+  console.log(`[API] Method: ${method}`);
+  console.log(`[API] URL: ${fullUrl}`);
+  console.log(`[API] API_BASE: ${API_BASE}`);
+  console.log(`[API] Platform: ${Capacitor.isNativePlatform() ? 'Native' : 'Web'}`);
   if (data) {
-    console.log("[API] Request body:", typeof data === 'object' ? JSON.stringify(data) : data);
+    console.log("[API] Request data:", typeof data === 'object' ? JSON.stringify(data) : data);
   }
 
   if (Capacitor.isNativePlatform()) {
     // Use Capacitor HTTP plugin for native
     try {
       console.log("[API] Using Capacitor HTTP plugin");
-      // Capacitor HTTP automatically JSON encodes when Content-Type is application/json
-      // So we pass the object directly, not stringified
-      const response = await Http.request({
+      console.log("[API] Http plugin available:", typeof Http !== 'undefined' ? 'YES' : 'NO');
+      
+      const requestOptions = {
         method: method as any,
         url: fullUrl,
         headers: data ? { "Content-Type": "application/json" } : {},
         data: data || undefined,
-      });
+      };
+      
+      console.log("[API] Request options:", JSON.stringify(requestOptions, null, 2));
+      console.log("[API] Calling Http.request...");
+      
+      const response = await Http.request(requestOptions);
 
-      console.log(`[API] Capacitor HTTP response status:`, response.status);
-      console.log(`[API] Capacitor HTTP response data:`, response.data);
+      console.log(`[API] === RESPONSE RECEIVED ===`);
+      console.log(`[API] Status: ${response.status}`);
+      console.log(`[API] Response data:`, typeof response.data === 'object' ? JSON.stringify(response.data) : response.data);
+      console.log(`[API] Response headers:`, response.headers);
 
       // Check if response is ok
       if (response.status >= 200 && response.status < 300) {
@@ -67,17 +76,22 @@ async function makeRequest(
         throw error;
       }
     } catch (error: any) {
-      console.error("[API] Capacitor HTTP request failed:", error);
+      console.error("[API] === REQUEST FAILED ===");
       console.error("[API] Error type:", error?.constructor?.name);
+      console.error("[API] Error name:", error?.name);
       console.error("[API] Error message:", error?.message);
+      console.error("[API] Error status:", error?.status);
+      console.error("[API] Error code:", error?.code);
+      console.error("[API] Full error:", error);
       
       // Capacitor HTTP errors
       if (error.status) {
         // HTTP error (server responded with error status)
         throw error;
       }
-      // Network error
-      throw new Error(`Network error: Cannot connect to ${fullUrl}. ${error.message || 'Connection failed'}`);
+      // Network error - provide more context
+      const errorMsg = error.message || 'Connection failed';
+      throw new Error(`Network error: Cannot connect to ${fullUrl}. ${errorMsg}`);
     }
   } else {
     // Use fetch for web

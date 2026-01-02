@@ -134,16 +134,16 @@ process.on("uncaughtException", (error) => {
     // Railway checks the root path / by default - respond immediately
     app.get("/", (req, res) => {
       console.log("[HEALTH] GET / request received from:", req.ip);
-      const response = { status: "ok", service: "edge-hockey-api", timestamp: new Date().toISOString() };
-      res.status(200).json(response);
-      console.log("[HEALTH] GET / response sent:", JSON.stringify(response));
+      // Railway checks root path - send simple OK response
+      res.status(200).type('text/plain').send('OK');
+      console.log("[HEALTH] GET / response sent: OK");
     });
     
     app.get("/health", (req, res) => {
       console.log("[HEALTH] GET /health request received from:", req.ip);
-      const response = { status: "ok", timestamp: new Date().toISOString() };
-      res.status(200).json(response);
-      console.log("[HEALTH] GET /health response sent:", JSON.stringify(response));
+      // Send plain text "OK" for Railway health checks (some platforms prefer this)
+      res.status(200).type('text/plain').send('OK');
+      console.log("[HEALTH] GET /health response sent: OK");
     });
     
     app.get("/api/health", (req, res) => {

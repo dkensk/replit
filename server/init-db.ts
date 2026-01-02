@@ -1,15 +1,27 @@
 // Database initialization script - runs migrations on startup
-import { exec } from "child_process";
-import { promisify } from "util";
+import { push } from "drizzle-kit";
+import { config } from "dotenv";
 
-const execAsync = promisify(exec);
+// Load environment variables
+config();
 
 export async function initializeDatabase(): Promise<void> {
   try {
     console.log("🔄 Running database migrations...");
-    const { stdout, stderr } = await execAsync("npm run db:push");
-    if (stdout) console.log(stdout);
-    if (stderr && !stderr.includes("warn")) console.error(stderr);
+    if (!process.env.DATABASE_URL) {
+      console.warn("⚠️ DATABASE_URL not set, skipping database migrations");
+      return;
+    }
+    // Import drizzle config and push schema
+    const { db } = await import("../db/index.js");
+    const { drizzleConfig } = await import("../drizzle.config.js");
+    
+    // Use drizzle-kit push programmatically
+    await push({
+      ...drizzleConfig,
+      driver: "pg",
+      schema: drizzleConfig.schema,
+    });
     console.log("✅ Database migrations complete");
   } catch (error: any) {
     // Don't crash if migrations fail - database might already be set up

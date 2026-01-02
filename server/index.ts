@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { initializeDatabase } from "./init-db";
 
 // Check required environment variables
 if (!process.env.DATABASE_URL) {
@@ -182,8 +183,9 @@ httpServer.listen(port, "0.0.0.0", () => {
     console.log("NODE_ENV:", process.env.NODE_ENV);
     console.log("PORT:", process.env.PORT || "5000 (default)");
     
-    // Database schema is pushed during Railway build phase (npm run db:push)
-    // Tables should already exist when server starts
+    // Initialize database schema (runs migrations, but doesn't crash if they fail)
+    await initializeDatabase();
+    
     // HTTP server is already listening (started above)
     
     // Test route to verify routing is working

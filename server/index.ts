@@ -119,6 +119,25 @@ process.on("uncaughtException", (error) => {
   process.exit(1);
 });
 
+// Register health check routes IMMEDIATELY (before anything else)
+// This ensures Railway's health checks work even during server startup
+app.get("/", (req, res) => {
+  console.log("[HEALTH] GET / request received from:", req.ip);
+  res.status(200).type('text/plain').send('OK');
+  console.log("[HEALTH] GET / response sent: OK");
+});
+
+app.get("/health", (req, res) => {
+  console.log("[HEALTH] GET /health request received from:", req.ip);
+  res.status(200).type('text/plain').send('OK');
+  console.log("[HEALTH] GET /health response sent: OK");
+});
+
+app.get("/api/health", (req, res) => {
+  console.log("[HEALTH] GET /api/health request received from:", req.ip);
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 (async () => {
   try {
     console.log("Starting server...");
@@ -129,27 +148,7 @@ process.on("uncaughtException", (error) => {
     
     // Database schema is pushed during Railway build phase (npm run db:push)
     // Tables should already exist when server starts
-    // Register health check routes FIRST (before API routes)
-    // This ensures Railway's health checks work even if other routes fail
-    // Railway checks the root path / by default - respond immediately
-    app.get("/", (req, res) => {
-      console.log("[HEALTH] GET / request received from:", req.ip);
-      // Railway checks root path - send simple OK response
-      res.status(200).type('text/plain').send('OK');
-      console.log("[HEALTH] GET / response sent: OK");
-    });
-    
-    app.get("/health", (req, res) => {
-      console.log("[HEALTH] GET /health request received from:", req.ip);
-      // Send plain text "OK" for Railway health checks (some platforms prefer this)
-      res.status(200).type('text/plain').send('OK');
-      console.log("[HEALTH] GET /health response sent: OK");
-    });
-    
-    app.get("/api/health", (req, res) => {
-      console.log("[HEALTH] GET /api/health request received from:", req.ip);
-      res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
-    });
+    // Health check routes are registered above (before this async function)
     
     // Test route to verify routing is working
     app.get("/test", (req, res) => {

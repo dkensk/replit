@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
+import { CapacitorHttp } from "@capacitor-community/http";
 
 // Get API base URL - use production URL on native, relative path on web
 const getApiBase = () => {
@@ -18,47 +19,11 @@ const getApiBase = () => {
 const API_BASE = getApiBase();
 console.log("[API] API_BASE initialized to:", API_BASE);
 
-async function throwIfResNotOk(res: Response) {
-  if (!res.ok) {
-    let errorText = res.statusText;
-    const contentType = res.headers.get("content-type");
-    
-    try {
-      // Only try to parse as JSON if content-type says it's JSON
-      if (contentType && contentType.includes("application/json")) {
-        const json = await res.json();
-        errorText = json.error || json.message || JSON.stringify(json);
-      } else {
-        // Not JSON, get as text
-        const text = await res.text();
-        errorText = text || res.statusText;
-        // If it looks like HTML, provide a better error
-        if (text.includes("<!DOCTYPE") || text.includes("<html")) {
-          errorText = `Server returned HTML instead of JSON (Status: ${res.status}). This usually means the request reached the wrong endpoint or the server is returning an error page.`;
-        }
-      }
-    } catch (parseError) {
-      // If JSON parsing fails, try to get text
-      try {
-        const text = await res.text();
-        errorText = text || res.statusText;
-      } catch {
-        errorText = res.statusText || `HTTP ${res.status} Error`;
-      }
-    }
-    
-    // Create a more descriptive error that includes status code
-    const error = new Error(errorText);
-    (error as any).status = res.status;
-    (error as any).statusText = res.statusText;
-    throw error;
-  }
-}
-
-export async function apiRequest(
+// Use Capacitor HTTP on native, fetch on web
+async function makeRequest(
   method: string,
   url: string,
-  data?: unknown | undefined,
+  data?: unknown,
 ): Promise<Response> {
   // If URL is relative, prepend API_BASE
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
@@ -69,66 +34,99 @@ export async function apiRequest(
   if (data) {
     console.log("[API] Request body:", typeof data === 'object' ? JSON.stringify(data) : data);
   }
-  
-  let fetchError: any = null;
-  
-  try {
-    const fetchOptions: RequestInit = {
-      method,
-      headers: data ? { "Content-Type": "application/json" } : {},
-      body: data ? JSON.stringify(data) : undefined,
-      credentials: "include",
-    };
-    
-    console.log("[API] Fetch options:", {
-      method: fetchOptions.method,
-      hasHeaders: !!fetchOptions.headers,
-      hasBody: !!fetchOptions.body,
-      credentials: fetchOptions.credentials,
-    });
-    
-    const res = await fetch(fullUrl, fetchOptions);
 
-    console.log(`[API] Response status:`, res.status, res.statusText);
-    console.log(`[API] Response headers:`, Object.fromEntries(res.headers.entries()));
-    
-    await throwIfResNotOk(res);
-    return res;
-  } catch (error: any) {
-    fetchError = error;
-    console.error("[API] Request failed with error:", error);
-    console.error("[API] Error type:", error?.constructor?.name);
-    console.error("[API] Error name:", error?.name);
-    console.error("[API] Error message:", error?.message);
-    console.error("[API] Error status:", error?.status);
-    console.error("[API] Error stack:", error?.stack);
-    
-    // Network errors (fetch fails completely)
-    if (error instanceof TypeError) {
-      const networkError = `Network error: Cannot connect to ${fullUrl}. This usually means:
-1. The server is not running
-2. The URL is incorrect
-3. There's a network connectivity issue
+  if (Capacitor.isNativePlatform()) {
+    // Use Capacitor HTTP plugin for native
+    try {
+      console.log("[API] Using Capacitor HTTP plugin");
+      const response = await CapacitorHttp.request({
+        method: method as any,
+        url: fullUrl,
+        headers: data ? { "Content-Type": "application/json" } : {},
+        data: data ? JSON.stringify(data) : undefined,
+      });
 
-Please check:
-- Server URL: ${fullUrl}
-- Is the server running? Visit: ${API_BASE.replace('/api', '/health')}`;
-      throw new Error(networkError);
-    }
-    
-    // HTTP errors (server responded with error status)
-    if (error instanceof Error && error.message) {
-      // If error already has a good message, use it
-      if (error.message.includes('Network error') || error.message.includes('Cannot connect')) {
+      console.log(`[API] Capacitor HTTP response status:`, response.status);
+      console.log(`[API] Capacitor HTTP response data:`, response.data);
+
+      // Check if response is ok
+      if (response.status >= 200 && response.status < 300) {
+        // Create a Response-like object for compatibility
+        const blob = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
+        return new Response(blob, { status: response.status });
+      } else {
+        // Error response
+        const errorMessage = typeof response.data === 'object' 
+          ? (response.data.error || response.data.message || JSON.stringify(response.data))
+          : String(response.data || response.statusText || 'Request failed');
+        const error = new Error(errorMessage);
+        (error as any).status = response.status;
+        (error as any).statusText = response.statusText || `HTTP ${response.status}`;
         throw error;
       }
-      // Otherwise, enhance it with context
-      throw new Error(`Server error: ${error.message} (Status: ${(error as any).status || 'unknown'})`);
+    } catch (error: any) {
+      console.error("[API] Capacitor HTTP request failed:", error);
+      console.error("[API] Error type:", error?.constructor?.name);
+      console.error("[API] Error message:", error?.message);
+      
+      // Capacitor HTTP errors
+      if (error.status) {
+        // HTTP error (server responded with error status)
+        throw error;
+      }
+      // Network error
+      throw new Error(`Network error: Cannot connect to ${fullUrl}. ${error.message || 'Connection failed'}`);
     }
-    
-    // Unknown errors
-    throw new Error(`Request failed: ${String(error)}`);
+  } else {
+    // Use fetch for web
+    try {
+      console.log("[API] Using fetch for web");
+      const fetchOptions: RequestInit = {
+        method,
+        headers: data ? { "Content-Type": "application/json" } : {},
+        body: data ? JSON.stringify(data) : undefined,
+        credentials: "include",
+      };
+      
+      const res = await fetch(fullUrl, fetchOptions);
+      console.log(`[API] Fetch response status:`, res.status, res.statusText);
+      
+      if (!res.ok) {
+        let errorText = res.statusText;
+        const contentType = res.headers.get("content-type");
+        
+        try {
+          if (contentType && contentType.includes("application/json")) {
+            const json = await res.json();
+            errorText = json.error || json.message || JSON.stringify(json);
+          } else {
+            const text = await res.text();
+            errorText = text || res.statusText;
+          }
+        } catch (parseError) {
+          errorText = res.statusText || `HTTP ${res.status} Error`;
+        }
+        
+        const error = new Error(errorText);
+        (error as any).status = res.status;
+        (error as any).statusText = res.statusText;
+        throw error;
+      }
+      
+      return res;
+    } catch (error: any) {
+      console.error("[API] Fetch request failed:", error);
+      throw error;
+    }
   }
+}
+
+export async function apiRequest(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<Response> {
+  return makeRequest(method, url, data);
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -138,18 +136,19 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const url = queryKey.join("/") as string;
-    // If URL is relative, prepend API_BASE
-    const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
-    
-    const res = await fetch(fullUrl, {
-      credentials: "include",
-    });
+    const res = await makeRequest("GET", url);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
     }
 
-    await throwIfResNotOk(res);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: res.statusText }));
+      const error = new Error(errorData.error || errorData.message || `HTTP ${res.status}`);
+      (error as any).status = res.status;
+      throw error;
+    }
+
     return await res.json();
   };
 

@@ -39,11 +39,13 @@ async function makeRequest(
     // Use Capacitor HTTP plugin for native
     try {
       console.log("[API] Using Capacitor HTTP plugin");
+      // Capacitor HTTP automatically JSON encodes when Content-Type is application/json
+      // So we pass the object directly, not stringified
       const response = await Http.request({
         method: method as any,
         url: fullUrl,
         headers: data ? { "Content-Type": "application/json" } : {},
-        data: data ? JSON.stringify(data) : undefined,
+        data: data || undefined,
       });
 
       console.log(`[API] Capacitor HTTP response status:`, response.status);

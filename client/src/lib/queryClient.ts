@@ -58,10 +58,10 @@ async function makeRequest(
         // Error response
         const errorMessage = typeof response.data === 'object' 
           ? (response.data.error || response.data.message || JSON.stringify(response.data))
-          : String(response.data || response.statusText || 'Request failed');
+          : String(response.data || 'Request failed');
         const error = new Error(errorMessage);
         (error as any).status = response.status;
-        (error as any).statusText = response.statusText || `HTTP ${response.status}`;
+        (error as any).statusText = `HTTP ${response.status}`;
         throw error;
       }
     } catch (error: any) {

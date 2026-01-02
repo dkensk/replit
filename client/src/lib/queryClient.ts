@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
-import { CapacitorHttp } from "@capacitor-community/http";
+import { Http } from "@capacitor-community/http";
 
 // Get API base URL - use production URL on native, relative path on web
 const getApiBase = () => {
@@ -39,7 +39,7 @@ async function makeRequest(
     // Use Capacitor HTTP plugin for native
     try {
       console.log("[API] Using Capacitor HTTP plugin");
-      const response = await CapacitorHttp.request({
+      const response = await Http.request({
         method: method as any,
         url: fullUrl,
         headers: data ? { "Content-Type": "application/json" } : {},

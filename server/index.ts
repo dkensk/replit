@@ -138,9 +138,45 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Start HTTP server IMMEDIATELY with just health routes
+// This ensures Railway can reach the server from the very start
+const port = parseInt(process.env.PORT || "5000", 10);
+console.log(`Starting HTTP server immediately on port ${port}...`);
+
+httpServer.on("error", (error: any) => {
+  console.error("❌ HTTP server error:", error);
+  if (error.code === "EADDRINUSE") {
+    console.error(`❌ Port ${port} is already in use`);
+  }
+  process.exit(1);
+});
+
+httpServer.on("listening", () => {
+  console.log("✅ HTTP server is listening and ready to accept connections");
+  console.log(`✅ Server listening on 0.0.0.0:${port}`);
+});
+
+httpServer.on("request", (req, res) => {
+  console.log(`[SERVER] Incoming request: ${req.method} ${req.url}`);
+});
+
+httpServer.on("connection", (socket) => {
+  console.log(`[SERVER] New connection from ${socket.remoteAddress}:${socket.remotePort}`);
+});
+
+httpServer.listen(port, "0.0.0.0", () => {
+  const addr = httpServer.address();
+  const address = typeof addr === "string" ? addr : `${addr?.address}:${addr?.port}`;
+  log(`✅ Server is serving on port ${port}`);
+  console.log(`✅ Server started successfully on port ${port}`);
+  console.log(`✅ Server address: ${address}`);
+  console.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
+  console.log(`✅ Root endpoint available at: http://0.0.0.0:${port}/`);
+});
+
 (async () => {
   try {
-    console.log("Starting server...");
+    console.log("Starting server initialization...");
     console.log("DATABASE_URL:", process.env.DATABASE_URL ? "✅ Set" : "❌ Not set");
     console.log("SESSION_SECRET:", process.env.SESSION_SECRET ? "✅ Set" : "❌ Not set");
     console.log("NODE_ENV:", process.env.NODE_ENV);
@@ -148,7 +184,7 @@ app.get("/api/health", (req, res) => {
     
     // Database schema is pushed during Railway build phase (npm run db:push)
     // Tables should already exist when server starts
-    // Health check routes are registered above (before this async function)
+    // HTTP server is already listening (started above)
     
     // Test route to verify routing is working
     app.get("/test", (req, res) => {
@@ -193,45 +229,6 @@ app.get("/api/health", (req, res) => {
       await setupVite(httpServer, app);
       console.log("✅ Vite configured");
     }
-
-    // ALWAYS serve the app on the port specified in the environment variable PORT
-    // Other ports are firewalled. Default to 5000 if not specified.
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = parseInt(process.env.PORT || "5000", 10);
-    console.log(`Starting HTTP server on port ${port}...`);
-    
-    httpServer.on("error", (error: any) => {
-      console.error("❌ HTTP server error:", error);
-      if (error.code === "EADDRINUSE") {
-        console.error(`❌ Port ${port} is already in use`);
-      }
-      process.exit(1);
-    });
-    
-    // Keep the process alive
-    httpServer.on("listening", () => {
-      console.log("✅ HTTP server is listening and ready to accept connections");
-      console.log(`✅ Server listening on 0.0.0.0:${port}`);
-    });
-    
-    httpServer.on("request", (req, res) => {
-      console.log(`[SERVER] Incoming request: ${req.method} ${req.url}`);
-    });
-    
-    httpServer.on("connection", (socket) => {
-      console.log(`[SERVER] New connection from ${socket.remoteAddress}:${socket.remotePort}`);
-    });
-    
-    httpServer.listen(port, "0.0.0.0", () => {
-      const addr = httpServer.address();
-      const address = typeof addr === "string" ? addr : `${addr?.address}:${addr?.port}`;
-      log(`✅ Server is serving on port ${port}`);
-      console.log(`✅ Server started successfully on port ${port}`);
-      console.log(`✅ Server address: ${address}`);
-      console.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
-      console.log(`✅ Root endpoint available at: http://0.0.0.0:${port}/`);
-    });
     
     // Handle graceful shutdown
     process.on("SIGTERM", () => {

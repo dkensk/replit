@@ -38,103 +38,67 @@ async function makeRequest(
     console.log("[API] Request data:", typeof data === 'object' ? JSON.stringify(data) : data);
   }
 
-  if (Capacitor.isNativePlatform()) {
-    // Use Capacitor HTTP plugin for native
-    try {
-      console.log("[API] Using Capacitor HTTP plugin");
-      console.log("[API] Http plugin available:", typeof Http !== 'undefined' ? 'YES' : 'NO');
+  // Use fetch - Capacitor HTTP plugin patches fetch/XHR automatically when enabled
+  // So fetch() will use native networking on iOS/Android
+  try {
+    console.log("[API] Using fetch (patched by Capacitor HTTP on native)");
+    const fetchOptions: RequestInit = {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    };
+    
+    console.log("[API] Fetch options:", {
+      method: fetchOptions.method,
+      url: fullUrl,
+      hasHeaders: !!fetchOptions.headers,
+      hasBody: !!fetchOptions.body,
+    });
+    
+    const res = await fetch(fullUrl, fetchOptions);
+    
+    console.log(`[API] === RESPONSE RECEIVED ===`);
+    console.log(`[API] Status: ${res.status} ${res.statusText}`);
+    console.log(`[API] OK: ${res.ok}`);
+    
+    if (!res.ok) {
+      let errorText = res.statusText;
+      const contentType = res.headers.get("content-type");
       
-      const requestOptions = {
-        method: method as any,
-        url: fullUrl,
-        headers: data ? { "Content-Type": "application/json" } : {},
-        data: data || undefined,
-      };
-      
-      console.log("[API] Request options:", JSON.stringify(requestOptions, null, 2));
-      console.log("[API] Calling Http.request...");
-      
-      const response = await Http.request(requestOptions);
-
-      console.log(`[API] === RESPONSE RECEIVED ===`);
-      console.log(`[API] Status: ${response.status}`);
-      console.log(`[API] Response data:`, typeof response.data === 'object' ? JSON.stringify(response.data) : response.data);
-      console.log(`[API] Response headers:`, response.headers);
-
-      // Check if response is ok
-      if (response.status >= 200 && response.status < 300) {
-        // Create a Response-like object for compatibility
-        const blob = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
-        return new Response(blob, { status: response.status });
-      } else {
-        // Error response
-        const errorMessage = typeof response.data === 'object' 
-          ? (response.data.error || response.data.message || JSON.stringify(response.data))
-          : String(response.data || 'Request failed');
-        const error = new Error(errorMessage);
-        (error as any).status = response.status;
-        (error as any).statusText = `HTTP ${response.status}`;
-        throw error;
-      }
-    } catch (error: any) {
-      console.error("[API] === REQUEST FAILED ===");
-      console.error("[API] Error type:", error?.constructor?.name);
-      console.error("[API] Error name:", error?.name);
-      console.error("[API] Error message:", error?.message);
-      console.error("[API] Error status:", error?.status);
-      console.error("[API] Error code:", error?.code);
-      console.error("[API] Full error:", error);
-      
-      // Capacitor HTTP errors
-      if (error.status) {
-        // HTTP error (server responded with error status)
-        throw error;
-      }
-      // Network error - provide more context
-      const errorMsg = error.message || 'Connection failed';
-      throw new Error(`Network error: Cannot connect to ${fullUrl}. ${errorMsg}`);
-    }
-  } else {
-    // Use fetch for web
-    try {
-      console.log("[API] Using fetch for web");
-      const fetchOptions: RequestInit = {
-        method,
-        headers: data ? { "Content-Type": "application/json" } : {},
-        body: data ? JSON.stringify(data) : undefined,
-        credentials: "include",
-      };
-      
-      const res = await fetch(fullUrl, fetchOptions);
-      console.log(`[API] Fetch response status:`, res.status, res.statusText);
-      
-      if (!res.ok) {
-        let errorText = res.statusText;
-        const contentType = res.headers.get("content-type");
-        
-        try {
-          if (contentType && contentType.includes("application/json")) {
-            const json = await res.json();
-            errorText = json.error || json.message || JSON.stringify(json);
-          } else {
-            const text = await res.text();
-            errorText = text || res.statusText;
-          }
-        } catch (parseError) {
-          errorText = res.statusText || `HTTP ${res.status} Error`;
+      try {
+        if (contentType && contentType.includes("application/json")) {
+          const json = await res.json();
+          errorText = json.error || json.message || JSON.stringify(json);
+        } else {
+          const text = await res.text();
+          errorText = text || res.statusText;
         }
-        
-        const error = new Error(errorText);
-        (error as any).status = res.status;
-        (error as any).statusText = res.statusText;
-        throw error;
+      } catch (parseError) {
+        errorText = res.statusText || `HTTP ${res.status} Error`;
       }
       
-      return res;
-    } catch (error: any) {
-      console.error("[API] Fetch request failed:", error);
+      const error = new Error(errorText);
+      (error as any).status = res.status;
+      (error as any).statusText = res.statusText;
       throw error;
     }
+    
+    return res;
+  } catch (error: any) {
+    console.error("[API] === REQUEST FAILED ===");
+    console.error("[API] Error type:", error?.constructor?.name);
+    console.error("[API] Error name:", error?.name);
+    console.error("[API] Error message:", error?.message);
+    console.error("[API] Error status:", error?.status);
+    console.error("[API] Full error:", error);
+    
+    if (error.status) {
+      // HTTP error (server responded with error status)
+      throw error;
+    }
+    // Network error
+    throw new Error(`Network error: Cannot connect to ${fullUrl}. ${error.message || 'Connection failed'}`);
   }
 }
 

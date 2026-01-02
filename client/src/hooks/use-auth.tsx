@@ -71,40 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterData) => {
-      console.log("[AUTH] Attempting registration with:", { username: credentials.username, passwordLength: credentials.password?.length });
-      
-      // First, test if we can reach the server
-      try {
-        console.log("[AUTH] Testing server connection...");
-        const healthCheck = await fetch("https://replit-production-3505.up.railway.app/api/health", {
-          method: "GET",
-          credentials: "include",
-        });
-        console.log("[AUTH] Health check response:", healthCheck.status, healthCheck.statusText);
-      } catch (healthError: any) {
-        console.error("[AUTH] Health check failed:", healthError);
-        throw new Error(`Cannot connect to server. Network error: ${healthError?.message || 'Unknown error'}. Please check your internet connection.`);
-      }
-      
-      try {
-        const res = await apiRequest("POST", "/api/register", credentials);
-        console.log("[AUTH] Registration successful");
-        return await res.json();
-      } catch (error: any) {
-        console.error("[AUTH] Registration error:", error);
-        console.error("[AUTH] Error details:", {
-          message: error?.message,
-          stack: error?.stack,
-          name: error?.name,
-          status: error?.status,
-        });
-        
-        // Ensure we throw a clear error message
-        if (error?.message) {
-          throw new Error(error.message);
-        }
-        throw new Error(`Registration failed: ${String(error)}`);
-      }
+      // Direct registration attempt - removed health check preflight to simplify
+      const res = await apiRequest("POST", "/api/register", credentials);
+      return await res.json();
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);

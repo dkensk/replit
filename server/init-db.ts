@@ -1,6 +1,6 @@
 // Database initialization script - runs migrations on startup
 import { execSync } from "child_process";
-import { db, pool } from "../db/index";
+import { db } from "../db/index";
 import { sql } from "drizzle-orm";
 
 export async function initializeDatabase(): Promise<void> {
@@ -15,7 +15,7 @@ export async function initializeDatabase(): Promise<void> {
     
     // Create session table for connect-pg-simple (if it doesn't exist)
     console.log("🔄 Creating session table...");
-    await db.execute(sql`
+    await db.execute(sql.raw(`
       CREATE TABLE IF NOT EXISTS "session" (
         "sid" varchar NOT NULL COLLATE "default",
         "sess" json NOT NULL,
@@ -23,8 +23,10 @@ export async function initializeDatabase(): Promise<void> {
         CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
       )
       WITH (OIDS=FALSE);
+    `));
+    await db.execute(sql.raw(`
       CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
-    `);
+    `));
     console.log("✅ Session table ready");
   } catch (error: any) {
     // Don't crash if migrations fail - database might already be set up or have connection issues
